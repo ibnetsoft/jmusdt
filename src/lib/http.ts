@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { authClient, isDemo } from "./supabase";
 import { isAuthorizedAdmin, canManageFunds } from "./admin-access";
 import { database } from "./db";
-import { ensureChainBinding } from "./chain-binding";
+import { verifyExistingChainBinding } from "./chain-binding";
 export class HttpError extends Error {
   constructor(
     public status: number,
@@ -34,7 +34,7 @@ export async function identity(admin = false, funds = false) {
     if (data?.currentLevel !== "aal2")
       throw new HttpError(403, "관리자 2단계 인증이 필요합니다.");
   }
-  await ensureChainBinding();
+  await verifyExistingChainBinding();
   const result = await database().query(
     `INSERT INTO profiles(id,email,name) VALUES($1,$2,$3)
     ON CONFLICT(id) DO UPDATE SET email=EXCLUDED.email RETURNING *`,

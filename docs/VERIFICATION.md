@@ -1,6 +1,6 @@
 # 개발 검증 결과
 
-2026-10-14 기준, 로컬 데모 + Nile 연결 준비 범위입니다.
+2026-10-14의 **초기 데모 검증** 기록입니다. 이후 실제 Supabase DB·인증 검증은 [SUPABASE_VERIFICATION.md](SUPABASE_VERIFICATION.md)를 참고하세요.
 
 | 검사 | 결과 |
 | --- | --- |

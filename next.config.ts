@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["pg", "tronweb"],
+  outputFileTracingIncludes: { "/*": ["./certs/supabase-prod-ca-2021.crt"] },
   async headers() {
     return [
       {

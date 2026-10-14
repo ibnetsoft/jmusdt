@@ -45,7 +45,7 @@ Supabase 인증은 서버에서 `getUser()`로 재검증하고, 사용자 편집
 - 자동 원장 검증은 PGlite의 실제 PostgreSQL 함수/트랜잭션 엔진을 사용합니다. 다중 연결 동시성은 실제 PostgreSQL 환경에서 추가 검증해야 합니다.
 - 대사 API는 최대 500 입금 주소를 순차 조회하며, 요청 중 새 거래가 일어나면 시점 차이가 생길 수 있습니다. 차이는 바로 손실로 단정하지 말고 동일 확정 높이의 운영 대사 워커로 재검증하세요.
 - 관리자 목록은 최근 회원 500명·거래 200건, 사용자 내역은 최근 100건을 표시합니다. 대규모 운영 전 서버 페이지네이션을 추가하세요.
-- 클라우드 Supabase·실제 체인·이메일·수탁 서비스는 자격 정보 없이 실행 검증하지 않았습니다.
+- 클라우드 Supabase DB·가입 인증 링크·비밀번호 로그인·쿠키·RLS는 실행 검증했습니다(`SUPABASE_VERIFICATION.md`). 실제 메일함 전달·TRON 체인·수탁 서비스는 아직 검증하지 않았습니다.
 - 프로덕션 key management·다중 승인·출금 한도 정책·재난 복구·모니터링은 운영 환경에 맞춰 후속 구축이 필요합니다.
 
 공식 참조: https://developers.tron.network/docs/trc20-contract-interaction, https://developers.tron.network/docs/resource-model, https://tether.to/en/supported-protocols/, https://supabase.com/docs/guides/auth/server-side/creating-a-client

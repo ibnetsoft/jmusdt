@@ -58,9 +58,15 @@ UI 테스트는 실행 중인 localhost 서버를 사용합니다. 서버가 없
 
 ## 실제 연결
 
-웹 앱과 `worker` / `db:apply` 명령은 `.env`와 `.env.local`을 함께 읽습니다. `.env.local`의 값이 `.env`보다 우선하므로, 실제 연결 시 `.env.local`에 남은 데모 설정도 확인하세요. `SERVICE_ROLE_KEY`는 현재 구현에서 사용하지 않습니다. 서명 서비스는 분리된 `.env.custody`만 사용합니다.
+웹 앱과 `worker` / `db:apply` 명령은 `.env`와 `.env.local`을 함께 읽습니다. `.env.local`의 값이 `.env`보다 우선하므로, 실제 연결 시 `.env.local`에 남은 데모 설정도 확인하세요. `SERVICE_ROLE_KEY`는 명시적으로 실행한 QA 검증 스크립트에서만 사용하며, 웹 가입·로그인에 사용하지 않습니다. 서명 서비스는 분리된 `.env.custody`만 사용합니다.
 
-현재는 사용자의 요청에 따라 **데모 + Nile 설정 준비** 단계입니다. 서버 인증·DB·워커·서명 서비스 코드가 포함되어 있지만, Supabase 프로젝트·테스트 토큰·키가 없으므로 실제 온체인 송금은 실행하지 않았습니다.
+Supabase DB에는 저장소의 공개 CA 인증서가 기본 적용되어 TLS·호스트 이름 검증을 유지합니다. `APP_MODE=live`이면 인증과 실제 DB 잔액을 사용합니다. TRON 설정이 없어도 가입·로그인·잔액 조회는 가능하며, 입금 주소 생성과 외부 출금은 토큰 설정이 완료되어야 합니다.
+
+가입 이메일의 PKCE 리다이렉트 `/auth/callback`과 토큰 해시 확인 `/auth/confirm`을 지원합니다. Supabase Auth의 허용 리다이렉트에 `http://127.0.0.1:3000/auth/callback`을 등록하세요. 이메일 템플릿은 필요 시 `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`로 설정합니다. 기본 SMTP는 프로젝트 팀 이메일로만 발송되므로 일반 회원에게 발송하려면 사용자 지정 SMTP가 필요합니다.
+
+실제 Supabase 검증을 재현하려면 실행 중인 live 로컬 서버에서 `npx tsx scripts/verify-supabase.ts --test-account`를 실행하세요. 이 명령은 임시 QA 계정을 생성하고 이메일을 보내지 않은 상태에서 인증 링크·비밀번호 로그인·쿠키 세션·RLS·로그아웃을 확인한 뒤 테스트 계정만 정리합니다. 인증 정보는 출력하지 않습니다.
+
+Supabase DB와 이메일·비밀번호 인증 연결을 완료했습니다. 가입 인증 링크·로그인·회원 잔액 조회·RLS 검증 결과는 `docs/SUPABASE_VERIFICATION.md`에 정리했습니다. SMTP 메일함 전달과 TRON 입출금은 별도 설정·검증이 필요하며, 실제 온체인 송금은 실행하지 않았습니다.
 
 1. `docs/NILE_SETUP.md`대로 별도 Supabase 테스트 프로젝트를 생성하고 환경 변수를 설정합니다.
 2. `npm run db:apply`로 스키마를 적용합니다. 마이그레이션 파일을 임의 생성하지 않도록 이 초기 스키마는 별도 `db/`에 두었습니다. 이후 Supabase CLI를 도입하면 `supabase migration new`로 관리하세요.

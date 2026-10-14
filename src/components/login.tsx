@@ -2,12 +2,18 @@
 import { useState } from "react";
 import { ArrowRight, ArrowUpRight, ShieldCheck } from "lucide-react";
 import { Brand, Token } from "./shared";
-export function Login({ demo }: { demo: boolean }) {
+export function Login({
+  demo,
+  initialMessage = "",
+}: {
+  demo: boolean;
+  initialMessage?: string;
+}) {
   const [signup, setSignup] = useState(false),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [name, setName] = useState(""),
-    [message, setMessage] = useState(""),
+    [message, setMessage] = useState(initialMessage),
     [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent) {
     e.preventDefault();

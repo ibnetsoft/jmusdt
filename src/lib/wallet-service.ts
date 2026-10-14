@@ -2,6 +2,7 @@ import { database, transaction } from "./db";
 import { parseUsdt } from "./money";
 import { chainConfig, custody, validTronAddress } from "./tron";
 import { HttpError } from "./http";
+import { ensureChainBinding } from "./chain-binding";
 export function feeUnits() {
   const value = process.env.WITHDRAWAL_FEE_USDT || "1";
   return value === "0" ? 0n : parseUsdt(value);
@@ -41,6 +42,7 @@ export async function walletSnapshot(profile: {
   };
 }
 export async function provisionAddress(userId: string) {
+  await ensureChainBinding();
   const { network } = chainConfig();
   const entry = await database().query(
     `INSERT INTO deposit_addresses(user_id,network) VALUES($1,$2)
@@ -83,6 +85,7 @@ export async function requestWithdrawal(
   amount: string,
   key: string,
 ) {
+  await ensureChainBinding();
   if (!validTronAddress(address))
     throw new HttpError(400, "올바른 TRON 주소를 입력해 주세요.");
   const units = parseUsdt(amount);

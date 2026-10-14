@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS journal (
  batch_id uuid NOT NULL, account text NOT NULL, units bigint NOT NULL CHECK(units<>0), created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS journal_batch ON journal(batch_id);
+CREATE INDEX IF NOT EXISTS journal_transaction ON journal(transaction_id);
 CREATE OR REPLACE FUNCTION check_journal_balance() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
  IF (SELECT sum(units) FROM journal WHERE batch_id=NEW.batch_id)<>0 THEN RAISE EXCEPTION 'UNBALANCED_JOURNAL'; END IF;
@@ -45,6 +46,7 @@ CREATE TABLE IF NOT EXISTS deposit_events (
  transaction_id uuid NOT NULL REFERENCES transactions(id), block_number bigint NOT NULL,
  PRIMARY KEY(network,txid,log_index)
 );
+CREATE INDEX IF NOT EXISTS deposit_events_transaction ON deposit_events(transaction_id);
 CREATE TABLE IF NOT EXISTS chain_cursor (network text PRIMARY KEY, block_number bigint NOT NULL, updated_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS wallet_configuration (id boolean PRIMARY KEY DEFAULT true CHECK(id), network text NOT NULL, contract text NOT NULL);
 CREATE TABLE IF NOT EXISTS signed_transactions (
@@ -61,6 +63,8 @@ CREATE TABLE IF NOT EXISTS sweep_jobs (
  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), txid text, note text,
  amount bigint, payload jsonb, expiration bigint
 );
+CREATE INDEX IF NOT EXISTS audit_logs_actor ON audit_logs(actor);
+CREATE INDEX IF NOT EXISTS sweep_jobs_user ON sweep_jobs(user_id);
 CREATE UNIQUE INDEX IF NOT EXISTS one_requested_sweep ON sweep_jobs(user_id) WHERE status IN ('requested','signing','broadcast');
 
 -- Serialize idempotency before inspecting existing transactions. Lock accounts in
@@ -197,3 +201,10 @@ REVOKE ALL ON profiles,balances,transactions,deposit_addresses,journal,deposit_e
 GRANT SELECT ON profiles,balances,transactions,deposit_addresses TO authenticated;
 REVOKE ALL ON FUNCTION wallet_transfer(uuid,text,bigint,uuid),wallet_request_withdrawal(uuid,text,bigint,bigint,uuid),wallet_decide_withdrawal(uuid,uuid,text,text),wallet_credit_deposit(uuid,bigint,text,text,integer,bigint),wallet_settle_withdrawal(uuid,boolean,text),check_journal_balance(),immutable_journal() FROM PUBLIC,anon,authenticated;
 -- SQL owner (DATABASE_URL) executes backend functions. No browser EXECUTE grant.
+ALTER FUNCTION wallet_transfer(uuid,text,bigint,uuid) SET search_path=public;
+ALTER FUNCTION wallet_request_withdrawal(uuid,text,bigint,bigint,uuid) SET search_path=public;
+ALTER FUNCTION wallet_decide_withdrawal(uuid,uuid,text,text) SET search_path=public;
+ALTER FUNCTION wallet_credit_deposit(uuid,bigint,text,text,integer,bigint) SET search_path=public;
+ALTER FUNCTION wallet_settle_withdrawal(uuid,boolean,text) SET search_path=public;
+ALTER FUNCTION check_journal_balance() SET search_path=public;
+ALTER FUNCTION immutable_journal() SET search_path=public;

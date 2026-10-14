@@ -29,14 +29,23 @@ export async function POST(request: Request) {
         : await client.auth.signUp({
             email,
             password,
-            options: { data: { name: name || email.split("@")[0] } },
+            options: {
+              data: { name: name || email.split("@")[0] },
+              emailRedirectTo: `${process.env.APP_ORIGIN}/auth/callback`,
+            },
           });
     if (result.error)
       throw new HttpError(
-        400,
+        result.error.code === "over_email_send_rate_limit" ? 429 : 400,
         action === "login"
           ? "이메일, 비밀번호 또는 이메일 인증 상태를 확인해 주세요."
-          : "회원가입을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+          : result.error.code === "email_address_invalid"
+            ? "이메일 주소를 확인해 주세요. 실제 수신 가능한 주소를 사용해 주세요."
+            : result.error.code === "email_address_not_authorized"
+              ? "인증 메일 발송 설정이 필요합니다. 관리자에게 SMTP 설정을 요청해 주세요."
+              : result.error.code === "over_email_send_rate_limit"
+                ? "인증 메일 발송 한도를 초과했습니다. 잠시 후 다시 시도해 주세요."
+                : "회원가입을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       );
     return {
       ok: true,
