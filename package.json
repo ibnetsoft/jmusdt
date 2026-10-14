@@ -1,0 +1,43 @@
+{
+  "name": "jmusdt",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "worker": "tsx workers/tron.ts",
+    "db:apply": "tsx scripts/apply-schema.ts",
+    "custody": "tsx --env-file=.env.custody services/custody.ts",
+    "test:ui": "playwright test"
+  },
+  "dependencies": {
+    "@next/env": "16.4.0",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.3",
+    "ethers": "6.17.0",
+    "lucide-react": "0.468.0",
+    "next": "16.4.0",
+    "pg": "8.22.0",
+    "qrcode.react": "4.2.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "tronweb": "6.5.1",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
+    "@playwright/test": "1.56.1",
+    "@types/node": "22.15.30",
+    "@types/pg": "8.15.5",
+    "@types/react": "19.0.10",
+    "@types/react-dom": "19.0.4",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "axios": "1.20.0"
+  }
+}

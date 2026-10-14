@@ -1,0 +1,102 @@
+import type { WalletData, AdminData } from "./types";
+export const demoWallet: WalletData = {
+  mode: "demo",
+  user: {
+    id: "JM-1001",
+    email: "alex@example.com",
+    name: "Alex Kim",
+    status: "active",
+  },
+  available: "12840500000",
+  reserved: "250000000",
+  address: null,
+  network: "TRON · 데모",
+  fee: "1000000",
+  minimum: "10000000",
+  transactions: [
+    {
+      id: "demo-1",
+      kind: "deposit",
+      amount: "2000000000",
+      fee: "0",
+      status: "completed",
+      created_at: "2026-10-14T00:24:00Z",
+      note: "외부 지갑 입금",
+    },
+    {
+      id: "demo-2",
+      kind: "transfer_out",
+      amount: "150000000",
+      fee: "0",
+      status: "completed",
+      created_at: "2026-10-13T09:12:00Z",
+      destination: "min@example.com",
+    },
+    {
+      id: "demo-3",
+      kind: "withdrawal",
+      amount: "249000000",
+      fee: "1000000",
+      status: "pending",
+      created_at: "2026-10-13T06:40:00Z",
+      destination: "T…데모 출금 주소",
+    },
+    {
+      id: "demo-4",
+      kind: "transfer_in",
+      amount: "500000000",
+      fee: "0",
+      status: "completed",
+      created_at: "2026-10-12T02:30:00Z",
+      note: "회원 송금",
+    },
+  ],
+};
+export const demoAdmin: AdminData = {
+  mode: "demo",
+  users: [
+    {
+      ...demoWallet.user,
+      available: demoWallet.available,
+      reserved: demoWallet.reserved,
+      created_at: "2026-10-01T00:00:00Z",
+    },
+    {
+      id: "JM-1002",
+      name: "Min Park",
+      email: "min@example.com",
+      status: "active",
+      available: "4260000000",
+      reserved: "0",
+      created_at: "2026-10-02T00:00:00Z",
+    },
+    {
+      id: "JM-1003",
+      name: "Jin Lee",
+      email: "jin@example.com",
+      status: "blocked",
+      available: "890000000",
+      reserved: "0",
+      created_at: "2026-10-03T00:00:00Z",
+    },
+  ],
+  withdrawals: [
+    {
+      ...demoWallet.transactions[2],
+      user_id: "JM-1001",
+      email: "alex@example.com",
+    },
+  ],
+  transactions: demoWallet.transactions.map((t) => ({
+    ...t,
+    email: "alex@example.com",
+  })),
+  audit: [],
+  operations: {
+    cursor: null,
+    updated_at: null,
+    hotAddress: null,
+    network: "nile",
+    broadcast: false,
+  },
+};
