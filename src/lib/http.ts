@@ -56,7 +56,11 @@ export async function identity(admin = false, funds = false) {
 }
 export function checkOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin || origin !== process.env.APP_ORIGIN)
+  const allowed = [
+    process.env.APP_ORIGIN,
+    ...(process.env.APP_ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()),
+  ].filter(Boolean);
+  if (!origin || !allowed.includes(origin))
     throw new HttpError(403, "요청 출처를 확인할 수 없습니다.");
 }
 export async function api(run: () => Promise<unknown>) {
