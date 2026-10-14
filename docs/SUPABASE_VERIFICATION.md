@@ -31,3 +31,25 @@
 Supabase MCP로 연결된 계정이 이 `.env`의 프로젝트에 접근하지 못해 공식 get_advisors는 권한 오류로 실행되지 않았습니다. 대신 실제 DB의 RLS·정책·함수 보안 속성과 역할별 권한을 SQL로 확인하고, 회원 JWT의 REST/RPC 접근을 직접 검증했습니다.
 
 공식 안내: [DB SSL 검증](https://supabase.com/docs/guides/platform/ssl-enforcement), [기본 SMTP 제한](https://supabase.com/docs/guides/auth/auth-smtp), [이메일 확인 링크](https://supabase.com/docs/guides/auth/auth-email-templates).
+
+## Vercel 운영 설정 복구 (2026-10-14)
+
+`389game/jmusdt`의 Production 환경변수가 비어 있어 Supabase 인증 초기화 시 `/api/wallet`이 503을 반환했습니다. 로컬 `.env`는 Git에 포함되지 않으므로 Vercel에 별도로 설정해야 합니다.
+
+운영 환경에 아래 변수를 등록하고 기존 Git 배포를 재배포했습니다. 비밀값은 저장소와 로그에 기록하지 않습니다.
+
+| 변수 | 운영 설정 |
+| --- | --- |
+| APP_MODE | live |
+| APP_ORIGIN | https://jmusdt.vercel.app |
+| NEXT_PUBLIC_SUPABASE_URL | 실제 Supabase 프로젝트 URL |
+| NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | 해당 프로젝트의 공개 인증 키 |
+| DATABASE_URL | 로컬에서 검증된 DB 연결 문자열; Vercel sensitive 변수 |
+| DATABASE_SSL | true |
+| DATABASE_SSL_CA_FILE | certs/supabase-prod-ca-2021.crt |
+| TRON_NETWORK | nile |
+| TRON_BROADCAST_ENABLED | false |
+
+SERVICE_ROLE_KEY는 운영 웹 앱에 추가하지 않았습니다. QA 스크립트만 로컬에서 이 키를 사용합니다. 수탁 서비스와 TRON 토큰·주소가 준비되지 않았으므로 실제 입출금 연동은 아직 완료되지 않았습니다.
+
+`APP_ORIGIN=https://jmusdt.vercel.app`로 QA 스크립트를 실행해 운영 배포에서 미인증 로그인 거부, 가입 인증 콜백, 비밀번호 로그인, 인증 지갑 API 200·DB 0 USDT 잔액, 일반 회원 관리자 API 403, 로그아웃 후 익명 지갑 API 401, 잘못된 인증 링크 처리를 모두 확인했습니다. 회원 JWT의 RLS·금융 RPC 접근 제한도 통과했고 임시 계정과 0원 프로필을 정리했습니다. 이 검증은 메일을 발송하지 않으며 앞서 기록한 SMTP 수신 미검증 상태는 그대로입니다.
