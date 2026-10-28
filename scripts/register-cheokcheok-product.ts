@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
-import { chromium, expect, type Browser } from "@playwright/test";
+import { chromium, expect, type Browser, type Page } from "@playwright/test";
 import { database, transaction } from "../src/lib/db";
 import { productInput } from "../src/lib/commerce";
 import { planUnits } from "../src/lib/marketing-plan";
@@ -22,6 +22,8 @@ const email = `product-qa-${randomBytes(8).toString("hex")}@example.com`, passwo
 const directory = "artifacts/cheokcheok-product";
 await mkdir(directory, { recursive: true });
 let userId: string | undefined, cookie = "", browser: Browser | undefined;
+let page: Page | undefined;
+const responses: { path: string; status: number }[] = [];
 let productId: string | undefined;
 try {
   const { data, error } = await client.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name: "QA product registration verification" }, app_metadata: { adminConsole: true } });
@@ -52,8 +54,13 @@ try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   await context.addCookies(cookie.split("; ").map(s => { const i = s.indexOf("="); return { name: s.slice(0, i), value: s.slice(i + 1), url: origin, secure: true, sameSite: "Lax" as const }; }));
-  const page = await context.newPage(), errors: string[] = [];
+  page = await context.newPage();
+  const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
+  page.on("response", response => {
+    const path = new URL(response.url()).pathname;
+    if (path.startsWith("/api/")) responses.push({ path, status: response.status() });
+  });
   await page.goto(origin + "/admin/shop");
   await page.locator(".shop-order").filter({ hasText: input.name }).getByRole("button", { name: "수정", exact: true }).click();
   await expect(page.getByLabel("회원가 (실제 결제가 · P)")).toHaveValue("88000.000000");
@@ -65,8 +72,11 @@ try {
   const card = page.locator(".shop-card").filter({ hasText: input.name });
   await expect(card.getByText("소비자가 98,000 P", { exact: true })).toBeVisible();
   await expect(card.getByText("회원가 88,000 P", { exact: true })).toBeVisible();
+  for (const name of ["복주머니 패키지", "보물상자 패키지"])
+    await expect.poll(() => page!.getByRole("img", { name, exact: true }).evaluate((image: HTMLImageElement) => image.naturalWidth), { timeout: 20000 }).toBeGreaterThan(0);
   await page.screenshot({ path: directory + "/shop-desktop.png", fullPage: true });
   await card.getByRole("link", { name: "상품 상세 보기" }).click();
+  await expect(page.getByRole("heading", { name: input.name, exact: true })).toBeVisible({ timeout: 30000 });
   await expect(page.locator(".shop-total")).toHaveText("결제금액 88,000.000000 포인트");
   await expect(page.getByLabel("배송 주소", { exact: true })).toBeVisible();
   await expect(page.getByText(/상품 1개당 데일리/)).toHaveCount(0);
@@ -79,8 +89,14 @@ try {
   assert.equal(Number((await pool.query("SELECT count(*) AS n FROM shop_orders WHERE user_id=$1", [userId])).rows[0].n), 0, "Catalog QA must not create orders");
   const record = { id: productId, name: input.name, url: origin + "/shop/" + productId, retailPrice: input.retailPrice, memberPrice: input.price, pricing: "All logged-in members", registeredStock: input.stock, shipping: input.shippingType, rewardPlan: input.rewardPlan, image: null };
   await writeFile("assets/products/cheokcheok-bogam.json", JSON.stringify(record, null, 2) + "\n");
-  await writeFile(directory + "/verified.json", JSON.stringify({ ...record, verifiedAt: new Date().toISOString(), checks: ["Admin API and editor preserve both prices", "Comparison price below member price rejected", "Shipping missing rejected before payment", "Live desktop and mobile show 98,000 P / 88,000 P", "No daily allowance and company accrual of 3,000 P each", "No horizontal overflow or browser errors"], financialTransactionsCreated: 0 }, null, 2));
+  await writeFile(directory + "/verified.json", JSON.stringify({ ...record, verifiedAt: new Date().toISOString(), responses, checks: ["Admin API and editor preserve both prices", "Comparison price below member price rejected", "Shipping missing rejected before payment", "Live desktop and mobile show 98,000 P / 88,000 P", "No daily allowance and company accrual of 3,000 P each", "No horizontal overflow or browser errors"], financialTransactionsCreated: 0 }, null, 2));
   console.log(JSON.stringify({ ...record, verification: "PASS", financialTransactionsCreated: 0 }, null, 2));
+} catch (error) {
+  if (page) {
+    await page.screenshot({ path: directory + "/failure.png", fullPage: true });
+    await writeFile(directory + "/failure.json", JSON.stringify({ url: page.url(), text: (await page.locator("body").innerText()).slice(0, 2500), responses }, null, 2));
+  }
+  throw error;
 } finally {
   await browser?.close();
   if (userId) {

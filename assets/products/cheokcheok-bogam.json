@@ -1,0 +1,20 @@
+{
+  "id": "3140db21-c190-442b-a12e-84f11b3d9734",
+  "name": "척척보감",
+  "url": "https://jmusdt.com/shop/3140db21-c190-442b-a12e-84f11b3d9734",
+  "retailPrice": "98000",
+  "memberPrice": "88000",
+  "pricing": "All logged-in members",
+  "registeredStock": 10000,
+  "shipping": "physical",
+  "rewardPlan": {
+    "referral": "9000",
+    "sponsor": "4500",
+    "mom": "4500",
+    "daily": "0",
+    "days": 0,
+    "lucky": 3000,
+    "treasure": 3000
+  },
+  "image": null
+}
