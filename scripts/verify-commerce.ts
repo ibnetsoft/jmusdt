@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { database } from "../src/lib/db";
+import sharp from "sharp";
 if (!process.argv.includes("--test-account"))
   throw new Error("Explicit --test-account required");
 const origin = process.env.APP_ORIGIN!;
@@ -15,6 +16,7 @@ const pool = database();
 const users: string[] = [];
 const cookies: string[] = [];
 let productId: string | undefined;
+let uploadedPath: string | undefined;
 async function call(path: string, cookie?: string, body?: unknown) {
   return fetch(origin + path, {
     method: body ? "POST" : "GET",
@@ -90,10 +92,52 @@ try {
     );
   }
   assert.equal((await call("/api/admin/products", cookies[1])).status, 403);
+  const png = await sharp({
+    create: { width: 8, height: 8, channels: 3, background: "#ef3035" },
+  })
+    .png()
+    .toBuffer();
+  async function upload(cookie: string) {
+    const body = new FormData();
+    body.append(
+      "file",
+      new Blob([new Uint8Array(png)], { type: "image/png" }),
+      "qa.png",
+    );
+    return fetch(origin + "/api/admin/products/upload", {
+      method: "POST",
+      headers: { Origin: origin, Cookie: cookie },
+      body,
+    });
+  }
+  assert.equal((await upload(cookies[1])).status, 403);
+  const uploaded = await upload(cookies[0]);
+  assert.equal(uploaded.status, 200);
+  const imageUrl = (await uploaded.json()).url as string;
+  uploadedPath = decodeURIComponent(
+    new URL(imageUrl).pathname.split("/object/public/product-images/")[1],
+  );
+  assert.ok(uploadedPath.startsWith(users[0] + "/"));
+  const image = await fetch(imageUrl);
+  assert.equal(image.status, 200);
+  assert.ok(image.headers.get("content-type")?.includes("image/webp"));
+  console.log(
+    "HTTP: administrator image upload, public WebP retrieval and ordinary member upload denial PASS",
+  );
   const product = {
     name: "QA commerce verification",
     description: "Line one\n<script>text only</script>",
-    imageUrl: "",
+    imageUrl,
+    detailBlocks: [
+      { type: "heading", text: "QA heading" },
+      { type: "text", text: "<script>literal text only</script>" },
+      {
+        type: "image",
+        url: imageUrl,
+        alt: "QA product",
+        caption: "QA caption",
+      },
+    ],
     price: "1.000001",
     stock: 2,
     active: false,
@@ -101,6 +145,7 @@ try {
   const created = await call("/api/admin/products", cookies[0], product);
   assert.equal(created.status, 200);
   const saved = (await created.json()).product;
+  assert.deepEqual(saved.detail_blocks, product.detailBlocks);
   productId = saved.id;
   assert.ok(
     !(await (await call("/api/shop", cookies[1])).json()).products.some(
@@ -114,7 +159,18 @@ try {
     active: true,
   });
   assert.equal(published.status, 200);
-  const version = (await published.json()).product.version;
+  let version = (await published.json()).product.version;
+  const { detailBlocks: _blocks, ...legacyProduct } = product;
+  const legacyEdit = await call("/api/admin/products", cookies[0], {
+    ...legacyProduct,
+    id: productId,
+    version,
+    active: true,
+  });
+  assert.equal(legacyEdit.status, 200);
+  const preserved = (await legacyEdit.json()).product;
+  assert.deepEqual(preserved.detail_blocks, product.detailBlocks);
+  version = preserved.version;
   assert.equal(
     (
       await call("/api/admin/products", cookies[0], {
@@ -165,6 +221,15 @@ try {
     const first = await db.query(
       "SELECT shop_purchase($1,$2,$3,$4,$5) AS id",
       args,
+    );
+    assert.deepEqual(
+      (
+        await db.query(
+          "SELECT product_detail_blocks FROM shop_orders WHERE id=$1",
+          [first.rows[0].id],
+        )
+      ).rows[0].product_detail_blocks,
+      product.detailBlocks,
     );
     assert.equal(
       (await db.query("SELECT shop_purchase($1,$2,$3,$4,$5) AS id", args))
@@ -243,6 +308,12 @@ try {
     0,
   );
 } finally {
+  if (uploadedPath) {
+    const removed = await admin.storage
+      .from("product-images")
+      .remove([uploadedPath]);
+    if (removed.error) throw new Error("QA image cleanup failed");
+  }
   for (const cookie of cookies)
     await fetch(origin + "/api/auth", {
       method: "DELETE",

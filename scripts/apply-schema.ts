@@ -17,6 +17,18 @@ try {
   await client.query(
     await readFile(new URL("../db/refunds.sql", import.meta.url), "utf8"),
   );
+  await client.query(
+    await readFile(
+      new URL("../db/product-content.sql", import.meta.url),
+      "utf8",
+    ),
+  );
+  await client.query(
+    await readFile(
+      new URL("../db/product-storage.sql", import.meta.url),
+      "utf8",
+    ),
+  );
   await client.query("COMMIT");
   console.log("Wallet schema applied.");
 } catch (error) {

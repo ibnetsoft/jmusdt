@@ -11,7 +11,12 @@ test("shop purchase conserves funds, snapshots prices, deduplicates and rejects 
     await db.exec(
       "CREATE ROLE anon;CREATE ROLE authenticated;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS 'SELECT NULL::uuid';",
     );
-    for (const file of ["schema.sql", "commerce.sql", "points.sql"])
+    for (const file of [
+      "schema.sql",
+      "commerce.sql",
+      "points.sql",
+      "product-content.sql",
+    ])
       await db.exec(
         await readFile(new URL("../db/" + file, import.meta.url), "utf8"),
       );
@@ -37,11 +42,23 @@ test("shop purchase conserves funds, snapshots prices, deduplicates and rejects 
         version,
         k,
       ]);
+    await db.query("UPDATE shop_products SET detail_blocks=$1", [
+      JSON.stringify([{ type: "text", text: "Original detail" }]),
+    ]);
     await db.query("SELECT wallet_swap($1,'usdt_to_points',10000000,$2)", [
       user,
       crypto.randomUUID(),
     ]);
     const order = (await buy(2, 1, key)).rows[0];
+    await db.query("UPDATE shop_products SET detail_blocks='[]'::jsonb");
+    assert.deepEqual(
+      (
+        await db.query<{ product_detail_blocks: unknown }>(
+          "SELECT product_detail_blocks FROM shop_orders",
+        )
+      ).rows[0].product_detail_blocks,
+      [{ type: "text", text: "Original detail" }],
+    );
     assert.deepEqual((await buy(2, 1, key)).rows[0], order);
     assert.equal(
       (

@@ -2,12 +2,15 @@
 import { useEffect, useRef, useState } from "react";
 import { formatUsdt } from "@/lib/money";
 import "./shop.css";
+import { DetailContent } from "./product-content";
+import type { DetailBlock } from "@/lib/product-content";
 export const orderStatus: Record<string, string> = {
   paid: "결제 완료",
   cancellation_requested: "취소 승인 대기",
   cancelled: "취소·환불 완료",
 };
 type Order = {
+  product_detail_blocks: DetailBlock[];
   id: string;
   email: string;
   member_name: string;
@@ -181,7 +184,10 @@ export function OrderAdmin() {
             {formatUsdt(selected.unit_price, 6)}{" "}
             {selected.currency === "POINT" ? "P" : "USDT"}
           </p>
-          <div className="shop-description">{selected.product_description}</div>
+          <DetailContent
+            description={selected.product_description}
+            blocks={selected.product_detail_blocks}
+          />
           <p>
             취소 요청 사유: {selected.cancellation_reason || "관리자 직접 취소"}
           </p>

@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { parseUsdt } from "./money";
 import { HttpError } from "./http";
+import { detailBlocksSchema } from "./product-content";
 export const productInput = z.object({
   id: z.string().uuid().optional(),
   version: z.number().int().positive().optional(),
   name: z.string().trim().min(1).max(120),
   description: z.string().trim().max(20000),
+  detailBlocks: detailBlocksSchema.optional(),
   imageUrl: z.union([
     z.literal(""),
     z

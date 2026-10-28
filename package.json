@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "worker": "tsx workers/tron.ts",
     "db:apply": "tsx scripts/apply-schema.ts",
     "custody": "tsx --env-file=.env.custody services/custody.ts",
@@ -24,6 +24,7 @@
     "qrcode.react": "4.2.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sharp": "0.35.5",
     "tronweb": "6.5.1",
     "zod": "4.6.7"
   },

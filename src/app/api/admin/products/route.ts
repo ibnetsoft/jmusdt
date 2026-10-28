@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     if (!parsed.success)
       throw new HttpError(
         400,
-        "상품명·가격·이미지 HTTPS 주소·재고를 확인해 주세요.",
+        "상품명·가격·이미지 HTTPS 주소·재고·상세 블록 내용을 확인해 주세요.",
       );
     const p = parsed.data;
     const price = productPrice(p.price);
@@ -33,14 +33,15 @@ export async function POST(request: Request) {
         price,
         p.stock,
         p.active,
+        p.detailBlocks === undefined ? null : JSON.stringify(p.detailBlocks),
       ];
       const result = p.id
         ? await db.query(
-            "UPDATE shop_products SET name=$1,description=$2,image_url=$3,price=$4,stock=$5,active=$6,version=version+1,updated_at=now() WHERE id=$7 AND version=$8 RETURNING *",
+            "UPDATE shop_products SET name=$1,description=$2,image_url=$3,price=$4,stock=$5,active=$6,detail_blocks=COALESCE($7::jsonb,detail_blocks),version=version+1,updated_at=now() WHERE id=$8 AND version=$9 RETURNING *",
             [...values, p.id, p.version],
           )
         : await db.query(
-            "INSERT INTO shop_products(name,description,image_url,price,stock,active) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
+            "INSERT INTO shop_products(name,description,image_url,price,stock,active,detail_blocks) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7::jsonb,'[]'::jsonb)) RETURNING *",
             values,
           );
       if (!result.rows[0])

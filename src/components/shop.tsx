@@ -2,10 +2,14 @@
 import { useEffect, useRef, useState } from "react";
 import { formatUsdt, decimalUsdt } from "@/lib/money";
 import "./shop.css";
+import type { DetailBlock } from "@/lib/product-content";
+import { DetailContent } from "./product-content";
+import { DetailEditor, ImageUpload } from "./product-editor";
 type Product = {
   id: string;
   name: string;
   description: string;
+  detail_blocks: DetailBlock[];
   image_url: string;
   price: string;
   stock: number;
@@ -41,7 +45,11 @@ async function requestJson(url: string, body?: unknown) {
   if (!response.ok) throw new Error(data.error || "요청에 실패했습니다.");
   return data;
 }
-function ProductImage({ product }: { product: Product }) {
+function ProductImage({
+  product,
+}: {
+  product: Pick<Product, "image_url" | "name">;
+}) {
   return product.image_url ? (
     <img
       src={product.image_url}
@@ -184,9 +192,10 @@ export function Shop({ productId }: { productId?: string }) {
             </button>
           </div>
           <ProductImage product={selected} />
-          <div className="shop-description">
-            {selected.description || "등록된 상세 설명이 없습니다."}
-          </div>
+          <DetailContent
+            description={selected.description}
+            blocks={selected.detail_blocks}
+          />
           <p>
             단가 {formatUsdt(selected.price, 6)} 포인트 · 재고 {selected.stock}
             개
@@ -324,6 +333,7 @@ const empty = {
   price: "",
   stock: 0,
   active: false,
+  detailBlocks: [] as DetailBlock[],
 };
 export function ProductAdmin() {
   const [products, setProducts] = useState<Product[]>([]),
@@ -332,6 +342,7 @@ export function ProductAdmin() {
       version?: number;
       name: string;
       description: string;
+      detailBlocks: DetailBlock[];
       imageUrl: string;
       price: string;
       stock: number;
@@ -340,6 +351,8 @@ export function ProductAdmin() {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [uploading, setUploading] = useState(false),
+    [mobilePreview, setMobilePreview] = useState(true);
   async function load() {
     setProducts((await requestJson("/api/admin/products")).products);
   }
@@ -348,7 +361,7 @@ export function ProductAdmin() {
   }, []);
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || uploading) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -387,7 +400,7 @@ export function ProductAdmin() {
       <div className="shop-admin-grid">
         <form className="shop-editor" onSubmit={save}>
           <h2>{form.id ? "상품 수정" : "새 상품 등록"}</h2>
-          <fieldset disabled={busy}>
+          <fieldset disabled={busy || uploading}>
             <label>
               상품명
               <input
@@ -406,8 +419,31 @@ export function ProductAdmin() {
                 onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
               />
             </label>
+            <ImageUpload
+              label="대표 이미지 직접 업로드"
+              onBusy={setUploading}
+              onUploaded={(url) =>
+                setForm((current) => ({ ...current, imageUrl: url }))
+              }
+            />
+            {form.imageUrl && (
+              <>
+                <img
+                  className="product-editor-thumb"
+                  src={form.imageUrl}
+                  alt="대표 이미지 미리보기"
+                  referrerPolicy="no-referrer"
+                />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, imageUrl: "" })}
+                >
+                  대표 이미지 제거
+                </button>
+              </>
+            )}
             <label>
-              상세페이지 설명
+              상품 요약 설명
               <textarea
                 rows={10}
                 maxLength={20000}
@@ -420,6 +456,13 @@ export function ProductAdmin() {
             <small className="shop-muted">
               줄바꿈이 유지됩니다. HTML·스크립트는 실행되지 않습니다.
             </small>
+            <DetailEditor
+              blocks={form.detailBlocks}
+              onBusy={setUploading}
+              onChange={(detailBlocks) =>
+                setForm((current) => ({ ...current, detailBlocks }))
+              }
+            />
             <label>
               가격 (포인트)
               <input
@@ -461,6 +504,40 @@ export function ProductAdmin() {
           </fieldset>
         </form>
         <section>
+          <div className="shop-section-head">
+            <h2>저장 전 미리보기</h2>
+            <button
+              type="button"
+              onClick={() => setMobilePreview(!mobilePreview)}
+            >
+              {mobilePreview ? "넓게 보기" : "모바일 보기"}
+            </button>
+          </div>
+          <p className="shop-muted">
+            아래 미리보기는 편집 중인 내용입니다. 상품 저장 후 쇼핑몰에
+            반영됩니다.
+          </p>
+          <div
+            className={`product-preview ${mobilePreview ? "mobile-preview" : ""}`}
+            aria-label="상품 상세 미리보기"
+          >
+            <ProductImage
+              product={{
+                name: form.name || "상품명",
+                image_url: form.imageUrl,
+              }}
+            />
+            <h2>{form.name || "상품명을 입력하세요"}</h2>
+            <strong>{form.price || "0"} P</strong>
+            <p className="shop-muted">
+              {form.active ? "판매 중으로 저장" : "비공개로 저장"} · 재고{" "}
+              {form.stock}개
+            </p>
+            <DetailContent
+              description={form.description}
+              blocks={form.detailBlocks}
+            />
+          </div>
           <h2>등록 상품 ({products.length})</h2>
           {products.map((p) => (
             <article className="shop-order" key={p.id}>
@@ -474,13 +551,14 @@ export function ProductAdmin() {
                 </small>
               </div>
               <button
-                disabled={busy}
+                disabled={busy || uploading}
                 onClick={() => {
                   setForm({
                     id: p.id,
                     version: p.version,
                     name: p.name,
                     description: p.description,
+                    detailBlocks: p.detail_blocks || [],
                     imageUrl: p.image_url,
                     price: decimalUsdt(BigInt(p.price)),
                     stock: p.stock,
