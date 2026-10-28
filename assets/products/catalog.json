@@ -1,0 +1,31 @@
+{
+  "site": "https://jmusdt.com",
+  "products": [
+    {
+      "id": "94d0df30-036a-4dd4-b171-dd44c968a223",
+      "name": "복주머니 패키지",
+      "url": "https://jmusdt.com/shop/94d0df30-036a-4dd4-b171-dd44c968a223",
+      "price": "350000",
+      "daily": "1000",
+      "days": 369,
+      "image": "https://thxpejttykcdgvjjgwxv.supabase.co/storage/v1/object/public/product-images/catalog/lucky-package-6f1432c10183fd54.webp"
+    },
+    {
+      "id": "2c059891-9b58-48f6-9b74-0d15a0cd7d6f",
+      "name": "보물상자 패키지",
+      "url": "https://jmusdt.com/shop/2c059891-9b58-48f6-9b74-0d15a0cd7d6f",
+      "price": "3500000",
+      "daily": "10000",
+      "days": 369,
+      "image": "https://thxpejttykcdgvjjgwxv.supabase.co/storage/v1/object/public/product-images/catalog/treasure-package-5e1e906a476d6e07.webp"
+    }
+  ],
+  "dailyStart": "purchase next day at 00:00 Asia/Seoul",
+  "poolParticipationRetained": true,
+  "referral": 0,
+  "sponsor": 0,
+  "mom": 0,
+  "companyLuckyAccrual": 0,
+  "companyTreasureAccrual": 0,
+  "shipping": "none"
+}
