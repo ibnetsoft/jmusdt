@@ -121,6 +121,13 @@ export function WalletApp() {
         <nav aria-label="주 메뉴">
           <button
             onClick={() => {
+              location.href = "/organization";
+            }}
+          >
+            추천 · 후원 조직도
+          </button>
+          <button
+            onClick={() => {
               location.href = "/points";
             }}
           >
@@ -379,6 +386,14 @@ export function WalletApp() {
           </>
         ) : null}
         <nav className="bottom-nav" aria-label="모바일 메뉴">
+          <button
+            onClick={() => {
+              location.href = "/organization";
+            }}
+          >
+            <House size={20} />
+            <span>조직도</span>
+          </button>
           <button
             onClick={() => {
               location.href = "/shop";

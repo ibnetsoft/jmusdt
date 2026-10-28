@@ -1,0 +1,134 @@
+.org-controls,
+.org-board-toolbar,
+.org-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 22px 0;
+}
+.org-controls label {
+  margin: 0;
+}
+.org-controls select {
+  margin: 4px 0;
+}
+.org-controls [aria-pressed="true"] {
+  background: #ef3035;
+}
+.org-board {
+  border: 1px solid #333;
+  border-radius: 18px;
+  padding: 16px;
+  background: #141414;
+  margin-top: 20px;
+}
+.org-board-toolbar {
+  margin: 0;
+}
+.org-viewport {
+  position: relative;
+  height: 600px;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  border: 1px solid #333;
+  border-radius: 12px;
+  background-image: radial-gradient(#333 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.org-tree {
+  position: absolute;
+  transform-origin: 0 0;
+  width: max-content;
+  padding: 10px;
+}
+.org-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 150px;
+}
+.org-children {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding-top: 28px;
+}
+.org-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  border-top: 1px solid #555;
+  padding-top: 12px;
+  min-width: 150px;
+}
+.org-slot > span {
+  font-size: 12px;
+  color: #aaa;
+}
+.commerce .org-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+  max-width: 190px;
+  text-align: center;
+  background: #252525;
+  border: 1px solid #555;
+  overflow-wrap: anywhere;
+}
+.org-card span {
+  font-size: 11px;
+  color: #bbb;
+}
+.commerce .org-root {
+  border-color: #ef3035;
+}
+.commerce .org-vacant {
+  background: transparent;
+  border: 1px dashed #777;
+  max-width: 160px;
+  font-size: 12px;
+}
+.org-fullscreen {
+  position: fixed;
+  inset: 8px;
+  z-index: 1000;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.org-fullscreen .org-viewport {
+  flex: 1;
+  height: auto;
+}
+.org-breadcrumbs button {
+  padding: 8px;
+}
+.commerce dialog {
+  color: #eee;
+  background: #191919;
+  border: 1px solid #555;
+  border-radius: 20px;
+  max-width: 450px;
+  padding: 28px;
+}
+.commerce dialog::backdrop {
+  background: #000b;
+}
+@media (max-width: 600px) {
+  .org-viewport {
+    height: 480px;
+  }
+  .org-board {
+    padding: 10px;
+  }
+  .org-board-toolbar button {
+    padding: 9px;
+  }
+  .org-board > p {
+    font-size: 12px;
+  }
+}

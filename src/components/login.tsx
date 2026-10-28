@@ -5,16 +5,19 @@ import { Brand, Token } from "./shared";
 export function Login({
   demo,
   initialMessage = "",
+  initialReferralCode = "",
 }: {
   demo: boolean;
   initialMessage?: string;
+  initialReferralCode?: string;
 }) {
-  const [signup, setSignup] = useState(false),
+  const [signup, setSignup] = useState(Boolean(initialReferralCode)),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [name, setName] = useState(""),
     [message, setMessage] = useState(initialMessage),
     [busy, setBusy] = useState(false);
+  const [referralCode, setReferralCode] = useState(initialReferralCode);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -28,6 +31,7 @@ export function Login({
           email,
           password,
           name: name || undefined,
+          referralCode: signup ? referralCode.trim() || undefined : undefined,
         }),
       });
       const body = await response.json();
@@ -80,6 +84,18 @@ export function Login({
               />
             </label>
           ) : null}
+          {signup && (
+            <label className="field">
+              <span>추천 코드 (선택)</span>
+              <input
+                maxLength={12}
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                placeholder="추천받은 코드를 입력하세요"
+              />
+              <small>가입 후 추천 관계는 변경할 수 없습니다.</small>
+            </label>
+          )}
           <label className="field">
             <span>이메일</span>
             <input

@@ -52,13 +52,19 @@ export async function identity(admin = false, funds = false) {
   );
   if (result.rows[0].status !== "active")
     throw new HttpError(403, "이용이 제한된 계정입니다.");
+  await database().query(
+    "INSERT INTO member_network(user_id,activated_at) VALUES($1,now()) ON CONFLICT(user_id) DO UPDATE SET activated_at=coalesce(member_network.activated_at,now())",
+    [user.id],
+  );
   return { user, profile: result.rows[0] };
 }
 export function checkOrigin(request: Request) {
   const origin = request.headers.get("origin");
   const allowed = [
     process.env.APP_ORIGIN,
-    ...(process.env.APP_ALLOWED_ORIGINS || "").split(",").map((value) => value.trim()),
+    ...(process.env.APP_ALLOWED_ORIGINS || "")
+      .split(",")
+      .map((value) => value.trim()),
   ].filter(Boolean);
   if (!origin || !allowed.includes(origin))
     throw new HttpError(403, "요청 출처를 확인할 수 없습니다.");
