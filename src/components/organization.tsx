@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useEffect, useRef, useState } from "react";
 import { formatUsdt } from "@/lib/money";
 import "./shop.css";
@@ -26,6 +28,7 @@ type Data = {
   pendingTruncated: boolean;
 };
 export function Organization() {
+  const { tr, localeTag } = useI18n();
   const [data, setData] = useState<Data | null>(null),
     [mode, setMode] = useState<"referral" | "sponsor">("sponsor"),
     [depth, setDepth] = useState(3),
@@ -107,18 +110,17 @@ export function Organization() {
         <button
           className={`org-card ${top ? "org-root" : ""}`}
           onClick={() => enter(node)}
-          aria-label={`${node.name} 하위 조직 보기`}
+          aria-label={tr("{0} 하위 조직 보기", {"0": node.name})}
         >
           <strong>{node.name}</strong>
           <span>ID {node.code}</span>
-          <span>
-            가입 {new Date(node.created_at).toLocaleDateString("ko-KR")}
+          <span>{tr("가입 ")}{new Date(node.created_at).toLocaleDateString(localeTag, { timeZone: 'Asia/Seoul' })}
           </span>
-          <span>순구매 {formatUsdt(node.sales)} P</span>
-          {node.referral_ordinal && <span>정회원 등록 {node.referral_ordinal}번째 · {node.rollup_generation ? `${node.rollup_generation}대 롤업` : "직접 후원"}</span>}
-          {node.status !== "active" && <span>이용 제한</span>}
+          <span>{tr("순구매 ")}{formatUsdt(node.sales)} P</span>
+          {node.referral_ordinal && <span>{tr("정회원 등록 ")}{node.referral_ordinal}{tr("번째 · ")}{node.rollup_generation ? tr("{0}대 롤업", {"0": node.rollup_generation}) : tr("직접 후원")}</span>}
+          {node.status !== "active" && <span>{tr("이용 제한")}</span>}
           {node.has_children && !children.length && (
-            <span>하위 조직 보기 ↓</span>
+            <span>{tr("하위 조직 보기 ↓")}</span>
           )}
         </button>
         {children.length > 0 ? (
@@ -133,32 +135,27 @@ export function Organization() {
   return (
     <main className="commerce">
       <header>
-        <a href="/">← 내 지갑</a>
-        <a href="/shop">쇼핑몰</a>
+        <a href="/">{tr("← 내 지갑")}</a>
+        <a href="/shop">{tr("쇼핑몰")}</a>
       </header>
       <p className="shop-kicker">JMUSDT / ORGANIZATION</p>
-      <h1>함께 만드는 조직.</h1>
-      <p className="shop-muted">
-        정회원 등록 순서에 따라 후원 조직이 자동 배치됩니다. 3·6·9번째는 각각 1·2·3대 상위 추천인에게 연결됩니다.
-      </p>
-      {error && (
+      <h1>{tr("함께 만드는 조직.")}</h1>
+      <p className="shop-muted">{tr("정회원 등록 순서에 따라 후원 조직이 자동 배치됩니다. 3·6·9번째는 각각 1·2·3대 상위 추천인에게 연결됩니다.")}</p>
+      {tr(error) && (
         <p role="alert" className="shop-error">
-          {error}
+          {tr(error)}
         </p>
       )}
-      {notice && (
+      {tr(notice) && (
         <p role="status" className="shop-success">
-          {notice}
+          {tr(notice)}
         </p>
       )}
       {data && (
         <section className="shop-editor">
-          <p>
-            내 추천 코드 <strong>{data.code}</strong>
+          <p>{tr("내 추천 코드 ")}<strong>{data.code}</strong>
           </p>
-          <label>
-            추천 가입 링크
-            <input readOnly value={invite} />
+          <label>{tr("추천 가입 링크")}<input readOnly value={invite} />
           </label>
           <button
             onClick={async () => {
@@ -169,9 +166,7 @@ export function Organization() {
                 setNotice("위 추천 링크를 직접 복사해 주세요.");
               }
             }}
-          >
-            추천 링크 복사
-          </button>
+          >{tr("추천 링크 복사")}</button>
         </section>
       )}
       <div className="org-controls">
@@ -181,47 +176,37 @@ export function Organization() {
             setMode("referral");
             setPath([]);
           }}
-        >
-          추천 조직도
-        </button>
+        >{tr("추천 조직도")}</button>
         <button
           aria-pressed={mode === "sponsor"}
           onClick={() => {
             setMode("sponsor");
             setPath([]);
           }}
-        >
-          후원 조직도
-        </button>
-        <label>
-          표시 단계
-          <select
+        >{tr("후원 조직도")}</button>
+        <label>{tr("표시 단계")}<select
             value={depth}
             onChange={(e) => setDepth(Number(e.target.value))}
           >
             {[3, 5, 10, 15, 20, 0].map((n) => (
               <option value={n} key={n}>
-                {n ? n + "단계" : "전체 (최대 500명)"}
+                {n ? n + tr("단계") : tr("전체 (최대 500명)")}
               </option>
             ))}
           </select>
         </label>
-        <button onClick={() => setRevision((n) => n + 1)}>
-          새로고침
-        </button>
+        <button onClick={() => setRevision((n) => n + 1)}>{tr("새로고침")}</button>
       </div>
-      {data && !data.eligible && <p role="status">조직도와 수당은 정회원부터 이용할 수 있습니다. 누적 구매 50,000 P 또는 관리자 지정으로 등록됩니다.</p>}
+      {data && !data.eligible && <p role="status">{tr("조직도와 수당은 정회원부터 이용할 수 있습니다. 누적 구매 50,000 P 또는 관리자 지정으로 등록됩니다.")}</p>}
       {mode === "sponsor" && data && data.pending.length > 0 && (
         <section className="shop-editor">
-          <h2>자동 배치 대기 ({data.pending.length})</h2>
-          {data.pending.map(n => <p key={n.id}>{n.name} · {n.code} · {n.placement_reason}</p>)}
-          {data.pendingTruncated && <p>최대 500명까지 표시됩니다.</p>}
+          <h2>{tr("자동 배치 대기 (")}{data.pending.length})</h2>
+          {data.pending.map(n => <p key={n.id}>{n.name} · {n.code} · {tr(n.placement_reason)}</p>)}
+          {data.pendingTruncated && <p>{tr("최대 500명까지 표시됩니다.")}</p>}
         </section>
       )}
-      <nav className="org-breadcrumbs" aria-label="조직 경로">
-        <button onClick={() => setPath([])}>
-          내 조직
-        </button>
+      <nav className="org-breadcrumbs" aria-label={tr("조직 경로")}>
+        <button onClick={() => setPath([])}>{tr("내 조직")}</button>
         {path.map((p, i) => (
           <button
             key={`${p.id}-${i}`}
@@ -231,41 +216,34 @@ export function Organization() {
           </button>
         ))}
         {path.length > 0 && (
-          <button onClick={() => setPath((p) => p.slice(0, -1))}>← 이전</button>
+          <button onClick={() => setPath((p) => p.slice(0, -1))}>{tr("← 이전")}</button>
         )}
       </nav>
       <section className={`org-board ${full ? "org-fullscreen" : ""}`}>
         <div className="org-board-toolbar">
-          <button onClick={() => setZoom((z) => clamp(z - 0.1))}>축소</button>
+          <button onClick={() => setZoom((z) => clamp(z - 0.1))}>{tr("축소")}</button>
           <span>{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom((z) => clamp(z + 0.1))}>확대</button>
+          <button onClick={() => setZoom((z) => clamp(z + 0.1))}>{tr("확대")}</button>
           <button
             onClick={() => {
               setZoom(1);
               requestAnimationFrame(center);
             }}
-          >
-            중앙 정렬
-          </button>
+          >{tr("중앙 정렬")}</button>
           <button onClick={() => setFull(!full)}>
-            {full ? "전체화면 닫기" : "전체화면"}
+            {full ? tr("전체화면 닫기") : tr("전체화면")}
           </button>
         </div>
-        <p className="shop-muted">
-          드래그 이동 · 두 손가락 확대/축소 · 회원을 누르면 하위 조직으로 이동
-        </p>
-        {loading && <p role="status">조직도를 불러오는 중…</p>}
+        <p className="shop-muted">{tr("드래그 이동 · 두 손가락 확대/축소 · 회원을 누르면 하위 조직으로 이동")}</p>
+        {loading && <p role="status">{tr("조직도를 불러오는 중…")}</p>}
         {data?.truncated && (
-          <p role="status">
-            조회 한도 500명까지 표시했습니다. 회원을 눌러 하위 조직을
-            확인하세요.
-          </p>
+          <p role="status">{tr("조회 한도 500명까지 표시했습니다. 회원을 눌러 하위 조직을 확인하세요.")}</p>
         )}
         <div
           className="org-viewport"
           ref={viewport}
           tabIndex={0}
-          aria-label="조직도 이동 영역"
+          aria-label={tr("조직도 이동 영역")}
           onKeyDown={(e) => {
             const delta: Record<string, [number, number]> = {
               ArrowLeft: [40, 0],

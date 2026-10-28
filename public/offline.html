@@ -1,1 +1,16 @@
-<!doctype html><html lang="ko"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JMUSDT · 오프라인</title><style>body{margin:0;background:#101010;color:#fff;font-family:system-ui;display:grid;place-items:center;min-height:100vh}main{padding:32px;max-width:360px}h1{font-size:36px;letter-spacing:-2px}p{color:#aaa;line-height:1.8}a{display:block;text-align:center;background:#e83434;color:white;padding:16px;border-radius:28px;text-decoration:none}</style><main><b>JMUSDT</b><h1>잠시 연결이<br>끊어졌어요.</h1><p>인터넷에 연결한 후 다시 시도해 주세요.<br>잔액과 거래는 연결 상태에서 확인할 수 있습니다.</p><a href="/">다시 연결하기</a></main></html>
+<!doctype html>
+<html lang="ko">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JMUSDT · 오프라인</title>
+<style>body{margin:0;background:#101010;color:#fff;font-family:system-ui;display:grid;place-items:center;min-height:100vh}main{padding:32px;max-width:360px}h1{font-size:36px;letter-spacing:-1px;white-space:pre-line}p{color:#aaa;line-height:1.8}a{display:block;text-align:center;background:#e83434;color:white;padding:16px;border-radius:28px;text-decoration:none}</style>
+<main><b>JMUSDT</b><h1>잠시 연결이
+끊어졌어요.</h1><p>인터넷에 연결한 후 다시 시도해 주세요. 잔액과 거래는 연결 상태에서 확인할 수 있습니다.</p><a href="/">다시 연결하기</a></main>
+<script>
+  const language = document.cookie.split('; ').find(value => value.startsWith('jmusdt-locale='))?.split('=')[1];
+  const copy = {
+    en: ['Offline', 'You are offline.', 'Reconnect to the internet and try again. Balances and transactions are available while connected.', 'Reconnect'],
+    ja: ['オフライン', '接続が切れています。', 'インターネットに接続してから再度お試しください。残高と取引は接続中に確認できます。', '再接続'],
+  }[language];
+  if ((language === 'en' || language === 'ja') && copy) { document.documentElement.lang = language; document.title = 'JMUSDT · ' + copy[0]; document.querySelector('h1').textContent = copy[1]; document.querySelector('p').textContent = copy[2]; document.querySelector('a').textContent = copy[3]; }
+</script>
+</html>

@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useEffect, useRef, useState } from "react";
 import { formatUsdt, decimalUsdt } from "@/lib/money";
 import "./shop.css";
@@ -56,10 +58,11 @@ function ProductImage({
 }: {
   product: Pick<Product, "image_url" | "name">;
 }) {
+  const { tr } = useI18n();
   return product.image_url ? (
     <img
       src={product.image_url}
-      alt={product.name}
+      alt={tr(product.name)}
       loading="lazy"
       referrerPolicy="no-referrer"
     />
@@ -70,15 +73,17 @@ function ProductImage({
   );
 }
 function ProductPrice({ product }: { product: Pick<Product, "price" | "retail_price"> }) {
+  const { tr } = useI18n();
   const display = (value: string) => formatUsdt(value, BigInt(value) % 1_000_000n === 0n ? 0 : 6);
   return (
     <div className="shop-prices">
-      {product.retail_price && <span className="shop-muted">소비자가 <s>{display(product.retail_price)} P</s></span>}
-      <strong>{product.retail_price ? "회원가 " : ""}{display(product.price)} P</strong>
+      {product.retail_price && <span className="shop-muted">{tr("소비자가 ")}<s>{display(product.retail_price)} P</s></span>}
+      <strong>{product.retail_price ? tr("회원가 ") : ""}{display(product.price)} P</strong>
     </div>
   );
 }
 export function Shop({ productId }: { productId?: string }) {
+  const { tr, localeTag } = useI18n();
   const [products, setProducts] = useState<Product[]>([]),
     [orders, setOrders] = useState<Order[]>([]),
     [available, setAvailable] = useState("0");
@@ -151,71 +156,60 @@ export function Shop({ productId }: { productId?: string }) {
   return (
     <main className="commerce">
       <header>
-        <a href="/">← 내 지갑</a>
-        <a href="/points">USDT ↔ 포인트 전환</a>
+        <a href="/">{tr("← 내 지갑")}</a>
+        <a href="/points">{tr("USDT ↔ 포인트 전환")}</a>
       </header>
       <p className="shop-kicker">JMUSDT / EVERYDAY SHOP</p>
-      <h1>
-        지갑에서 만나는
-        <br />
-        새로운 일상.
-      </h1>
-      <p className="shop-muted">내 포인트로 간편하게 구매하세요.</p>
-      <div className="shop-balance">
-        사용 가능한 잔액 <strong>{formatUsdt(available, 6)} 포인트</strong>
+      <h1>{tr("지갑에서 만나는")}<br />{tr("새로운 일상.")}</h1>
+      <p className="shop-muted">{tr("내 포인트로 간편하게 구매하세요.")}</p>
+      <div className="shop-balance">{tr("사용 가능한 잔액 ")}<strong>{formatUsdt(available, 6)}{tr(" 포인트")}</strong>
       </div>
-      {error && (
+      {tr(error) && (
         <p className="shop-error" role="alert">
-          {error}{" "}
+          {tr(error)}{" "}
           <button
             onClick={() => {
               setError("");
               load(true).catch((e) => setError(e.message));
             }}
-          >
-            새로고침
-          </button>
+          >{tr("새로고침")}</button>
         </p>
       )}
-      {notice && (
+      {tr(notice) && (
         <p className="shop-success" role="status">
-          {notice}
+          {tr(notice)}
         </p>
       )}
       {loading ? (
-        <p>상품을 불러오는 중…</p>
+        <p>{tr("상품을 불러오는 중…")}</p>
       ) : (
-        <section className="shop-grid" aria-label="상품 목록">
+        <section className="shop-grid" aria-label={tr("상품 목록")}>
           {products
             .filter(() => !productId)
             .map((p) => (
               <article className="shop-card" key={p.id}>
                 <ProductImage product={p} />
                 <div>
-                  <h2>{p.name}</h2>
-                  <p className="shop-muted">재고 {p.stock}개</p>
+                  <h2>{tr(p.name)}</h2>
+                  <p className="shop-muted">{tr("재고 ")}{p.stock}{tr("개")}</p>
                   <ProductPrice product={p} />
-                  <a className="shop-primary" href={`/shop/${p.id}`}>
-                    상품 상세 보기
-                  </a>
+                  <a className="shop-primary" href={`/shop/${p.id}`}>{tr("상품 상세 보기")}</a>
                 </div>
               </article>
             ))}
-          {!products.length && <p>판매 중인 상품이 없습니다.</p>}
+          {!products.length && <p>{tr("판매 중인 상품이 없습니다.")}</p>}
         </section>
       )}
       {selected && (
-        <section className="shop-detail" aria-label="상품 상세 및 구매 확인">
+        <section className="shop-detail" aria-label={tr("상품 상세 및 구매 확인")}>
           <div className="shop-section-head">
-            <h2>{selected.name}</h2>
+            <h2>{tr(selected.name)}</h2>
             <button
               disabled={busy}
               onClick={() => {
                 location.href = "/shop";
               }}
-            >
-              닫기
-            </button>
+            >{tr("닫기")}</button>
           </div>
           <ProductImage product={selected} />
           <DetailContent
@@ -223,31 +217,20 @@ export function Shop({ productId }: { productId?: string }) {
             blocks={selected.detail_blocks}
           />
           <ProductPrice product={selected} />
-          <p className="shop-muted">재고 {selected.stock}개</p>
+          <p className="shop-muted">{tr("재고 ")}{selected.stock}{tr("개")}</p>
           {!marketing.enabled && (
-            <p className="shop-error">
-              현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는
-              추천·후원·맘 리워드와 데일리가 발생하지 않습니다. 일일 분배 적립금은 상품별로 적립됩니다.
-            </p>
+            <p className="shop-error">{tr("현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는 추천·후원·맘 리워드와 데일리가 발생하지 않습니다. 일일 분배 적립금은 상품별로 적립됩니다.")}</p>
           )}
           {marketing.enabled && marketing.daily_paused && (
-            <p className="shop-muted">
-              데일리 지급이 일시정지 중입니다. 구매 권리는 생성되며 재개 후
-              기한이 지난 회차가 지급됩니다.
-            </p>
+            <p className="shop-muted">{tr("데일리 지급이 일시정지 중입니다. 구매 권리는 생성되며 재개 후 기한이 지난 회차가 지급됩니다.")}</p>
           )}
           {marketing.enabled && selected.reward_plan && selected.reward_plan.days > 0 && (
-            <p className="shop-muted">
-              상품 1개당 데일리{" "}
+            <p className="shop-muted">{tr("상품 1개당 데일리")}{" "}
               {formatUsdt(selected.reward_plan.daily, 6)} P ×{" "}
-              {selected.reward_plan.days}일. 보상 운영이 켜진 구매에 적용되며
-              데일리는 구매 다음 날부터입니다.
-            </p>
+              {selected.reward_plan.days}{tr("일. 보상 운영이 켜진 구매에 적용되며 데일리는 구매 다음 날부터입니다.")}</p>
           )}
-          {selected.reward_plan && <p className="shop-muted">상품 1개당 회사 적립: 복주머니P {selected.reward_plan.lucky} P · 보물상자P {selected.reward_plan.treasure} P</p>}
-          <label>
-            수량
-            <select
+          {selected.reward_plan && <p className="shop-muted">{tr("상품 1개당 회사 적립: 복주머니P ")}{selected.reward_plan.lucky}{tr(" P · 보물상자P ")}{selected.reward_plan.treasure} P</p>}
+          <label>{tr("수량")}<select aria-label={tr("수량")}
               disabled={busy}
               value={quantity}
               onChange={(e) => {
@@ -260,17 +243,13 @@ export function Shop({ productId }: { productId?: string }) {
               ))}
             </select>
           </label>
-          <div className="shop-total">
-            결제금액 <strong>{formatUsdt(total, 6)} 포인트</strong>
+          <div className="shop-total">{tr("결제금액 ")}<strong>{formatUsdt(total, 6)}{tr(" 포인트")}</strong>
           </div>
           {selected.shipping_type === "physical" ? <div className="shop-editor">
-            <h3>배송 정보</h3>
-            {([['recipient','받는 분',100],['phone','연락처',40],['address','배송 주소',500],['note','배송 요청사항 (선택)',500]] as const).map(([field,label,max]) => <label key={field}>{label}<input maxLength={max} value={shipping[field]} disabled={busy} onChange={(e) => { setShipping({...shipping,[field]:e.target.value}); key.current = crypto.randomUUID(); }} /></label>)}
-          </div> : <p>배송이 필요 없는 상품입니다.</p>}
-          <p className="shop-muted">
-            결제 확정 시 지갑 잔액에서 차감됩니다. 상품·가격이 변경되면 결제가
-            중단됩니다.
-          </p>
+            <h3>{tr("배송 정보")}</h3>
+            {([['recipient','받는 분',100],['phone','연락처',40],['address','배송 주소',500],['note','배송 요청사항 (선택)',500]] as const).map(([field,label,max]) => <label key={field}>{tr(label)}<input maxLength={max} value={shipping[field]} disabled={busy} onChange={(e) => { setShipping({...shipping,[field]:e.target.value}); key.current = crypto.randomUUID(); }} /></label>)}
+          </div> : <p>{tr("배송이 필요 없는 상품입니다.")}</p>}
+          <p className="shop-muted">{tr("결제 확정 시 지갑 잔액에서 차감됩니다. 상품·가격이 변경되면 결제가 중단됩니다.")}</p>
           <button
             className="shop-primary"
             disabled={
@@ -279,34 +258,34 @@ export function Shop({ productId }: { productId?: string }) {
             onClick={purchase}
           >
             {busy
-              ? "결제 확인 중…"
+              ? tr("결제 확인 중…")
               : selected.stock === 0
-                ? "품절"
+                ? tr("품절")
                 : BigInt(available) < total
-                  ? "포인트 잔액 부족"
-                  : `${formatUsdt(total, 6)} 포인트 결제 확정`}
+                  ? tr("포인트 잔액 부족")
+                  : tr("{0} 포인트 결제 확정", {"0": formatUsdt(total, 6)})}
           </button>
         </section>
       )}
       <section id="orders">
-        <h2>구매 내역</h2>
+        <h2>{tr("구매 내역")}</h2>
         {orders.map((o) => (
           <article className="shop-order" key={o.id}>
             <div>
               <strong>
-                {o.product_name} × {o.quantity}
+                {tr(o.product_name)} × {o.quantity}
               </strong>
               <p className="shop-muted">
-                {new Date(o.created_at).toLocaleString("ko-KR")} ·{" "}
+                {new Date(o.created_at).toLocaleString(localeTag, { timeZone: 'Asia/Seoul' })} ·{" "}
                 {o.status === "cancelled"
-                  ? "취소·환불 완료"
+                  ? tr("취소·환불 완료")
                   : o.status === "cancellation_requested"
-                    ? "취소 승인 대기"
-                    : "결제 완료"}
+                    ? tr("취소 승인 대기")
+                    : tr("결제 완료")}
               </p>
-              <small>주문번호 {o.id}</small>
-              {o.shipping && <div><p>배송: {({preparing: "배송 준비", shipped: "배송 중", delivered: "배송 완료"} as Record<string,string>)[o.shipping.status]}</p><p>받는 분: {o.shipping.recipient} · {o.shipping.phone}</p><p>주소: {o.shipping.address}</p>{o.shipping.note && <p>요청사항: {o.shipping.note}</p>}{o.shipping.tracking_number && <p>{o.shipping.carrier} · {o.shipping.tracking_number}</p>}</div>}
-              {o.status === "cancelled" && <p>환불 사유: {o.refund_reason}</p>}
+              <small>{tr("주문번호 ")}{o.id}</small>
+              {o.shipping && <div><p>{tr("배송: ")}{tr(({preparing: "배송 준비", shipped: "배송 중", delivered: "배송 완료"} as Record<string,string>)[o.shipping.status])}</p><p>{tr("받는 분: ")}{o.shipping.recipient} · {o.shipping.phone}</p><p>{tr("주소: ")}{o.shipping.address}</p>{o.shipping.note && <p>{tr("요청사항: ")}{o.shipping.note}</p>}{o.shipping.tracking_number && <p>{o.shipping.carrier} · {o.shipping.tracking_number}</p>}</div>}
+              {o.status === "cancelled" && <p>{tr("환불 사유: ")}{o.refund_reason}</p>}
               {o.status === "paid" && (
                 <CancelOrder orderId={o.id} onDone={load} />
               )}
@@ -317,7 +296,7 @@ export function Shop({ productId }: { productId?: string }) {
           </article>
         ))}
         {!orders.length && (
-          <p className="shop-muted">아직 구매 내역이 없습니다.</p>
+          <p className="shop-muted">{tr("아직 구매 내역이 없습니다.")}</p>
         )}
       </section>
     </main>
@@ -330,6 +309,7 @@ function CancelOrder({
   orderId: string;
   onDone: () => Promise<void>;
 }) {
+  const { tr } = useI18n();
   const [open, setOpen] = useState(false),
     [reason, setReason] = useState(""),
     [busy, setBusy] = useState(false),
@@ -351,9 +331,7 @@ function CancelOrder({
         }
       }}
     >
-      <label>
-        취소 요청 사유
-        <input
+      <label>{tr("취소 요청 사유")}<input
           required
           maxLength={500}
           disabled={busy}
@@ -361,19 +339,15 @@ function CancelOrder({
           onChange={(e) => setReason(e.target.value)}
         />
       </label>
-      <p className="shop-muted">
-        관리자 승인 후 결제 자산으로 전액 환불됩니다.
-      </p>
-      {error && <p role="alert">{error}</p>}
+      <p className="shop-muted">{tr("관리자 승인 후 결제 자산으로 전액 환불됩니다.")}</p>
+      {tr(error) && <p role="alert">{tr(error)}</p>}
       <button disabled={busy || !reason.trim()}>
-        {busy ? "요청 중…" : "취소 요청 제출"}
+        {busy ? tr("요청 중…") : tr("취소 요청 제출")}
       </button>
-      <button type="button" disabled={busy} onClick={() => setOpen(false)}>
-        닫기
-      </button>
+      <button type="button" disabled={busy} onClick={() => setOpen(false)}>{tr("닫기")}</button>
     </form>
   ) : (
-    <button onClick={() => setOpen(true)}>취소 요청</button>
+    <button onClick={() => setOpen(true)}>{tr("취소 요청")}</button>
   );
 }
 const empty = {
@@ -390,6 +364,7 @@ const empty = {
   rewardPlan: zeroPlan,
 };
 export function ProductAdmin() {
+  const { tr } = useI18n();
   const [products, setProducts] = useState<Product[]>([]),
     [form, setForm] = useState<{
       id?: string;
@@ -437,41 +412,35 @@ export function ProductAdmin() {
   return (
     <main className="commerce">
       <header>
-        <a href="/admin">← 관리자 콘솔</a>
-        <a href="/shop">쇼핑몰 보기 ↗</a>
-        <a href="/admin/marketing">마케팅 관리</a>
+        <a href="/admin">{tr("← 관리자 콘솔")}</a>
+        <a href="/shop">{tr("쇼핑몰 보기 ↗")}</a>
+        <a href="/admin/marketing">{tr("마케팅 관리")}</a>
       </header>
       <p className="shop-kicker">ADMIN / COMMERCE</p>
-      <h1>상품 관리</h1>
-      <p className="shop-muted">
-        상품과 상세 설명을 등록하고 포인트 가격으로 판매하세요.
-      </p>
-      {error && (
+      <h1>{tr("상품 관리")}</h1>
+      <p className="shop-muted">{tr("상품과 상세 설명을 등록하고 포인트 가격으로 판매하세요.")}</p>
+      {tr(error) && (
         <p className="shop-error" role="alert">
-          {error}
+          {tr(error)}
         </p>
       )}
-      {notice && (
+      {tr(notice) && (
         <p className="shop-success" role="status">
-          {notice}
+          {tr(notice)}
         </p>
       )}
       <div className="shop-admin-grid">
         <form className="shop-editor" onSubmit={save}>
-          <h2>{form.id ? "상품 수정" : "새 상품 등록"}</h2>
+          <h2>{form.id ? tr("상품 수정") : tr("새 상품 등록")}</h2>
           <fieldset disabled={busy || uploading}>
-            <label>
-              상품명
-              <input
+            <label>{tr("상품명")}<input
                 required
                 maxLength={120}
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </label>
-            <label>
-              대표 이미지 HTTPS 주소
-              <input
+            <label>{tr("대표 이미지 HTTPS 주소")}<input
                 type="url"
                 placeholder="https://…"
                 value={form.imageUrl}
@@ -490,20 +459,16 @@ export function ProductAdmin() {
                 <img
                   className="product-editor-thumb"
                   src={form.imageUrl}
-                  alt="대표 이미지 미리보기"
+                  alt={tr("대표 이미지 미리보기")}
                   referrerPolicy="no-referrer"
                 />
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, imageUrl: "" })}
-                >
-                  대표 이미지 제거
-                </button>
+                >{tr("대표 이미지 제거")}</button>
               </>
             )}
-            <label>
-              상품 요약 설명
-              <textarea
+            <label>{tr("상품 요약 설명")}<textarea
                 rows={10}
                 maxLength={20000}
                 value={form.description}
@@ -512,9 +477,7 @@ export function ProductAdmin() {
                 }
               />
             </label>
-            <small className="shop-muted">
-              줄바꿈이 유지됩니다. HTML·스크립트는 실행되지 않습니다.
-            </small>
+            <small className="shop-muted">{tr("줄바꿈이 유지됩니다. HTML·스크립트는 실행되지 않습니다.")}</small>
             <DetailEditor
               blocks={form.detailBlocks}
               onBusy={setUploading}
@@ -522,9 +485,7 @@ export function ProductAdmin() {
                 setForm((current) => ({ ...current, detailBlocks }))
               }
             />
-            <label>
-              회원가 (실제 결제가 · P)
-              <input
+            <label>{tr("회원가 (실제 결제가 · P)")}<input
                 required
                 inputMode="decimal"
                 placeholder="10.000000"
@@ -532,18 +493,14 @@ export function ProductAdmin() {
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
               />
             </label>
-            <label>
-              소비자가 (비교 표시 · P · 선택)
-              <input
+            <label>{tr("소비자가 (비교 표시 · P · 선택)")}<input
                 inputMode="decimal"
-                placeholder="회원가 이상, 비우면 표시하지 않음"
+                placeholder={tr("회원가 이상, 비우면 표시하지 않음")}
                 value={form.retailPrice}
                 onChange={(e) => setForm({ ...form, retailPrice: e.target.value })}
               />
             </label>
-            <label>
-              재고 수량
-              <input
+            <label>{tr("재고 수량")}<input
                 required
                 type="number"
                 min={0}
@@ -555,32 +512,24 @@ export function ProductAdmin() {
                 }
               />
             </label>
-            <label>배송 유형
-              <select required value={form.shippingType} onChange={(e) => setForm({...form, shippingType:e.target.value as typeof form.shippingType})}>
-                <option value="">유형을 선택하세요</option>
-                <option value="physical">실물 배송</option>
-                <option value="none">배송 불필요</option>
+            <label>{tr("배송 유형")}<select required value={form.shippingType} onChange={(e) => setForm({...form, shippingType:e.target.value as typeof form.shippingType})}>
+                <option value="">{tr("유형을 선택하세요")}</option>
+                <option value="physical">{tr("실물 배송")}</option>
+                <option value="none">{tr("배송 불필요")}</option>
               </select>
             </label>
-            <label>일일 분배 패키지
-              <select value={form.packageType} onChange={(e) => setForm({...form,packageType:e.target.value as typeof form.packageType})}>
-                <option value="none">일반 상품</option>
-                <option value="lucky">복주머니패키지 · 350,000 P</option>
-                <option value="treasure">보물상자패키지 · 3,500,000 P</option>
+            <label>{tr("일일 분배 패키지")}<select value={form.packageType} onChange={(e) => setForm({...form,packageType:e.target.value as typeof form.packageType})}>
+                <option value="none">{tr("일반 상품")}</option>
+                <option value="lucky">{tr("복주머니패키지 · 350,000 P")}</option>
+                <option value="treasure">{tr("보물상자패키지 · 3,500,000 P")}</option>
               </select>
             </label>
-            <section className="shop-editor" aria-label="상품별 마케팅 보상">
-              <h3>상품 1개당 마케팅 보상</h3>
-              <p className="shop-muted">
-                고정 포인트를 입력하세요. 0은 미지급입니다.
-                추천인·후원인·후원인의 추천인에게 지급하며, 맘은 후원리워드가
-                지급될 때만 발생합니다. 보상 총액은 상품 가격 이하여야 합니다.
-                복주머니 1,000 P·보물상자 10,000 P × 369일 데일리 전용 플랜은 예외입니다.
-                이 경우 다른 리워드·회사 적립은 모두 0이어야 합니다. 변경은 이후 구매에만 적용됩니다.
-              </p>
+            <section className="shop-editor" aria-label={tr("상품별 마케팅 보상")}>
+              <h3>{tr("상품 1개당 마케팅 보상")}</h3>
+              <p className="shop-muted">{tr("고정 포인트를 입력하세요. 0은 미지급입니다. 추천인·후원인·후원인의 추천인에게 지급하며, 맘은 후원리워드가 지급될 때만 발생합니다. 보상 총액은 상품 가격 이하여야 합니다. 복주머니 1,000 P·보물상자 10,000 P × 369일 데일리 전용 플랜은 예외입니다. 이 경우 다른 리워드·회사 적립은 모두 0이어야 합니다. 변경은 이후 구매에만 적용됩니다.")}</p>
               {(["referral", "sponsor", "mom", "daily"] as const).map((key) => (
                 <label key={key}>
-                  {rewardLabels[key]} ({key === "daily" ? "하루 P" : "P"})
+                  {tr(rewardLabels[key])} ({key === "daily" ? tr("하루 P") : "P"})
                   <input
                     required
                     inputMode="decimal"
@@ -597,9 +546,7 @@ export function ProductAdmin() {
                   />
                 </label>
               ))}
-              <label>
-                데일리 지급 일수 (최대 369일)
-                <input
+              <label>{tr("데일리 지급 일수 (최대 369일)")}<input
                   required
                   type="number"
                   min={0}
@@ -617,9 +564,7 @@ export function ProductAdmin() {
                 />
               </label>
               {(["lucky", "treasure"] as const).map((key) => (
-                <label key={key}>
-                  회사 {rewardLabels[key]} 적립 (정수 P)
-                  <input
+                <label key={key}>{tr("회사 ")}{tr(rewardLabels[key])}{tr(" 적립 (정수 P)")}<input
                     required
                     type="number"
                     min={0}
@@ -637,43 +582,34 @@ export function ProductAdmin() {
                   />
                 </label>
               ))}
-              <small>
-                판매 시 회사에 적립하고 일일 마감 후 해당 패키지 보유 수량에 따라 일반 포인트로 분배합니다.
-              </small>
+              <small>{tr("판매 시 회사에 적립하고 일일 마감 후 해당 패키지 보유 수량에 따라 일반 포인트로 분배합니다.")}</small>
             </section>
             <label className="shop-check">
               <input
                 type="checkbox"
                 checked={form.active}
                 onChange={(e) => setForm({ ...form, active: e.target.checked })}
-              />
-              판매 중 (해제하면 비공개)
-            </label>
+              />{tr("판매 중 (해제하면 비공개)")}</label>
             <button className="shop-primary" type="submit">
-              {busy ? "저장 중…" : "상품 저장"}
+              {busy ? tr("저장 중…") : tr("상품 저장")}
             </button>
-            <button type="button" onClick={() => setForm(empty)}>
-              새 상품 작성
-            </button>
+            <button type="button" onClick={() => setForm(empty)}>{tr("새 상품 작성")}</button>
           </fieldset>
         </form>
         <section>
           <div className="shop-section-head">
-            <h2>저장 전 미리보기</h2>
+            <h2>{tr("저장 전 미리보기")}</h2>
             <button
               type="button"
               onClick={() => setMobilePreview(!mobilePreview)}
             >
-              {mobilePreview ? "넓게 보기" : "모바일 보기"}
+              {mobilePreview ? tr("넓게 보기") : tr("모바일 보기")}
             </button>
           </div>
-          <p className="shop-muted">
-            아래 미리보기는 편집 중인 내용입니다. 상품 저장 후 쇼핑몰에
-            반영됩니다.
-          </p>
+          <p className="shop-muted">{tr("아래 미리보기는 편집 중인 내용입니다. 상품 저장 후 쇼핑몰에 반영됩니다.")}</p>
           <div
             className={`product-preview ${mobilePreview ? "mobile-preview" : ""}`}
-            aria-label="상품 상세 미리보기"
+            aria-label={tr("상품 상세 미리보기")}
           >
             <ProductImage
               product={{
@@ -681,30 +617,29 @@ export function ProductAdmin() {
                 image_url: form.imageUrl,
               }}
             />
-            <h2>{form.name || "상품명을 입력하세요"}</h2>
+            <h2>{form.name || tr("상품명을 입력하세요")}</h2>
             <div className="shop-prices">
-              {form.retailPrice && <span className="shop-muted">소비자가 <s>{form.retailPrice} P</s></span>}
-              <strong>{form.retailPrice ? "회원가 " : ""}{form.price || "0"} P</strong>
+              {form.retailPrice && <span className="shop-muted">{tr("소비자가 ")}<s>{form.retailPrice} P</s></span>}
+              <strong>{form.retailPrice ? tr("회원가 ") : ""}{form.price || "0"} P</strong>
             </div>
             <p className="shop-muted">
-              {form.active ? "판매 중으로 저장" : "비공개로 저장"} · 재고{" "}
-              {form.stock}개
-            </p>
+              {form.active ? tr("판매 중으로 저장") : tr("비공개로 저장")}{tr(" · 재고")}{" "}
+              {form.stock}{tr("개")}</p>
             <DetailContent
               description={form.description}
               blocks={form.detailBlocks}
             />
           </div>
-          <h2>등록 상품 ({products.length})</h2>
+          <h2>{tr("등록 상품 (")}{products.length})</h2>
           {products.map((p) => (
             <article className="shop-order" key={p.id}>
               <div>
-                <strong>{p.name}</strong>
+                <strong>{tr(p.name)}</strong>
                 <ProductPrice product={p} />
-                <p>재고 {p.stock}개</p>
+                <p>{tr("재고 ")}{p.stock}{tr("개")}</p>
                 <small>
-                  {p.active ? "판매 중" : "비공개"} · 버전 {p.version}
-                  {" · "}{p.shipping_type === "physical" ? "실물 배송" : p.shipping_type === "none" ? "배송 불필요" : "배송 유형 확인 필요 — 판매 목록에서 제외"}
+                  {p.active ? tr("판매 중") : tr("비공개")}{tr(" · 버전 ")}{p.version}
+                  {" · "}{p.shipping_type === "physical" ? tr("실물 배송") : p.shipping_type === "none" ? tr("배송 불필요") : tr("배송 유형 확인 필요 — 판매 목록에서 제외")}
                 </small>
               </div>
               <button
@@ -737,13 +672,11 @@ export function ProductAdmin() {
                   });
                   setNotice("");
                 }}
-              >
-                수정
-              </button>
+              >{tr("수정")}</button>
             </article>
           ))}
           {!products.length && (
-            <p className="shop-muted">첫 상품을 등록해 주세요.</p>
+            <p className="shop-muted">{tr("첫 상품을 등록해 주세요.")}</p>
           )}
         </section>
       </div>

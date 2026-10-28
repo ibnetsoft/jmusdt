@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useRef, useState } from "react";
 import type { DetailBlock } from "@/lib/product-content";
 export function ImageUpload({
@@ -10,13 +12,14 @@ export function ImageUpload({
   onBusy: (busy: boolean) => void;
   label: string;
 }) {
+  const { tr } = useI18n();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const input = useRef<HTMLInputElement>(null);
   return (
     <div className="image-uploader">
       <label>
-        {label}
+        {tr(label)}
         <input
           ref={input}
           type="file"
@@ -54,13 +57,11 @@ export function ImageUpload({
           }}
         />
       </label>
-      <small className="shop-muted">
-        JPG·PNG·WebP, 최대 3MB. 업로드한 상품 이미지는 공개됩니다.
-      </small>
-      {busy && <p role="status">이미지 업로드 중…</p>}
-      {error && (
+      <small className="shop-muted">{tr("JPG·PNG·WebP, 최대 3MB. 업로드한 상품 이미지는 공개됩니다.")}</small>
+      {busy && <p role="status">{tr("이미지 업로드 중…")}</p>}
+      {tr(error) && (
         <p role="alert" className="shop-error">
-          {error}
+          {tr(error)}
         </p>
       )}
     </div>
@@ -75,6 +76,7 @@ export function DetailEditor({
   onChange: (blocks: DetailBlock[]) => void;
   onBusy: (busy: boolean) => void;
 }) {
+  const { tr } = useI18n();
   function change(index: number, block: DetailBlock) {
     onChange(blocks.map((b, i) => (i === index ? block : b)));
   }
@@ -84,25 +86,25 @@ export function DetailEditor({
     onChange(next);
   }
   return (
-    <section aria-label="상세페이지 편집">
-      <h3>상세페이지 구성 ({blocks.length}/30)</h3>
-      <p className="shop-muted">제목·본문·이미지를 순서대로 추가하세요.</p>
+    <section aria-label={tr("상세페이지 편집")}>
+      <h3>{tr("상세페이지 구성 (")}{blocks.length}/30)</h3>
+      <p className="shop-muted">{tr("제목·본문·이미지를 순서대로 추가하세요.")}</p>
       {blocks.map((block, index) => (
         <div className="detail-block-editor" key={index}>
           <div className="shop-section-head">
             <strong>
               {index + 1}.{" "}
               {block.type === "heading"
-                ? "제목"
+                ? tr("제목")
                 : block.type === "text"
-                  ? "본문"
-                  : "이미지"}
+                  ? tr("본문")
+                  : tr("이미지")}
             </strong>
             <div>
               <button
                 type="button"
                 disabled={index === 0}
-                aria-label={`${index + 1}번 블록 위로`}
+                aria-label={tr("{0}번 블록 위로", {"0": index + 1})}
                 onClick={() => move(index, -1)}
               >
                 ↑
@@ -110,7 +112,7 @@ export function DetailEditor({
               <button
                 type="button"
                 disabled={index === blocks.length - 1}
-                aria-label={`${index + 1}번 블록 아래로`}
+                aria-label={tr("{0}번 블록 아래로", {"0": index + 1})}
                 onClick={() => move(index, 1)}
               >
                 ↓
@@ -118,15 +120,11 @@ export function DetailEditor({
               <button
                 type="button"
                 onClick={() => onChange(blocks.filter((_, i) => i !== index))}
-              >
-                삭제
-              </button>
+              >{tr("삭제")}</button>
             </div>
           </div>
           {block.type === "heading" ? (
-            <label>
-              제목
-              <input
+            <label>{tr("제목")}<input
                 required
                 maxLength={200}
                 value={block.text}
@@ -136,9 +134,7 @@ export function DetailEditor({
               />
             </label>
           ) : block.type === "text" ? (
-            <label>
-              본문
-              <textarea
+            <label>{tr("본문")}<textarea
                 required
                 rows={5}
                 maxLength={5000}
@@ -155,9 +151,7 @@ export function DetailEditor({
                 alt={block.alt}
                 referrerPolicy="no-referrer"
               />
-              <label>
-                이미지 대체 설명
-                <input
+              <label>{tr("이미지 대체 설명")}<input
                   maxLength={200}
                   value={block.alt}
                   onChange={(e) =>
@@ -165,9 +159,7 @@ export function DetailEditor({
                   }
                 />
               </label>
-              <label>
-                이미지 캡션
-                <input
+              <label>{tr("이미지 캡션")}<input
                   maxLength={500}
                   value={block.caption}
                   onChange={(e) =>
@@ -184,16 +176,12 @@ export function DetailEditor({
           type="button"
           disabled={blocks.length >= 30}
           onClick={() => onChange([...blocks, { type: "heading", text: "" }])}
-        >
-          + 제목
-        </button>
+        >{tr("+ 제목")}</button>
         <button
           type="button"
           disabled={blocks.length >= 30}
           onClick={() => onChange([...blocks, { type: "text", text: "" }])}
-        >
-          + 본문
-        </button>
+        >{tr("+ 본문")}</button>
       </div>
       {blocks.length < 30 && (
         <ImageUpload

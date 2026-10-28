@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useState, useRef } from "react";
 import { ArrowRight, ArrowUpRight, ShieldCheck } from "lucide-react";
 import { Brand, Token } from "./shared";
@@ -11,6 +13,7 @@ export function Login({
   initialMessage?: string;
   initialReferralCode?: string;
 }) {
+  const { tr } = useI18n();
   const [signup, setSignup] = useState(Boolean(initialReferralCode)),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -89,10 +92,7 @@ export function Login({
             <br />
             Your everyday.
           </h1>
-          <p>
-            당신의 일상을 위한
-            <br />더 간편한 USDT 지갑.
-          </p>
+          <p>{tr("당신의 일상을 위한")}<br />{tr("더 간편한 USDT 지갑.")}</p>
         </div>
         <span>JMUSDT / TRON NETWORK</span>
       </section>
@@ -100,22 +100,22 @@ export function Login({
         <p className="eyebrow">WELCOME TO JMUSDT</p>
         <h2>
           {forgot
-            ? "비밀번호 찾기."
+            ? tr("비밀번호 찾기.")
             : signup
-              ? "새로운 시작."
-              : "다시 만나 반가워요."}
+              ? tr("새로운 시작.")
+              : tr("다시 만나 반가워요.")}
         </h2>
         <p>
           {forgot
-            ? "가입한 이메일로 비밀번호 재설정 링크를 보내드립니다."
+            ? tr("가입한 이메일로 비밀번호 재설정 링크를 보내드립니다.")
             : signup
-              ? "나만의 지갑을 만들어 보세요."
-              : "로그인하고 내 지갑을 확인하세요."}
+              ? tr("나만의 지갑을 만들어 보세요.")
+              : tr("로그인하고 내 지갑을 확인하세요.")}
         </p>
         <form onSubmit={submit}>
           {signup && !forgot ? (
             <label className="field">
-              <span>이름</span>
+              <span>{tr("이름")}</span>
               <input
                 required
                 maxLength={60}
@@ -127,18 +127,18 @@ export function Login({
           ) : null}
           {signup && !forgot && (
             <label className="field">
-              <span>추천 코드 (선택)</span>
+              <span>{tr("추천 코드 (선택)")}</span>
               <input
                 maxLength={12}
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                placeholder="추천받은 코드를 입력하세요"
+                placeholder={tr("추천받은 코드를 입력하세요")}
               />
-              <small>가입 후 추천 관계는 변경할 수 없습니다.</small>
+              <small>{tr("가입 후 추천 관계는 변경할 수 없습니다.")}</small>
             </label>
           )}
           <label className="field">
-            <span>이메일</span>
+            <span>{tr("이메일")}</span>
             <input
               type="email"
               required
@@ -151,7 +151,7 @@ export function Login({
           </label>
           {!forgot && (
             <label className="field">
-              <span>비밀번호</span>
+              <span>{tr("비밀번호")}</span>
               <input
                 type="password"
                 required
@@ -160,23 +160,23 @@ export function Login({
                 autoComplete={signup ? "new-password" : "current-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="12자 이상 입력"
+                placeholder={tr("12자 이상 입력")}
               />
             </label>
           )}
           {message ? (
             <p className="form-error" role="status">
-              {message}
+              {tr(message)}
             </p>
           ) : null}
           <button className="primary" disabled={busy}>
             {busy
-              ? "처리 중…"
+              ? tr("처리 중…")
               : forgot
-                ? "재설정 메일 보내기"
+                ? tr("재설정 메일 보내기")
                 : signup
-                  ? "회원가입"
-                  : "로그인"}
+                  ? tr("회원가입")
+                  : tr("로그인")}
             <ArrowRight size={18} />
           </button>
         </form>
@@ -191,10 +191,10 @@ export function Login({
           }}
         >
           {forgot
-            ? "로그인으로 돌아가기"
+            ? tr("로그인으로 돌아가기")
             : signup
-              ? "이미 계정이 있나요? 로그인"
-              : "계정이 없나요? 회원가입"}
+              ? tr("이미 계정이 있나요? 로그인")
+              : tr("계정이 없나요? 회원가입")}
         </button>
         {!forgot && (
           <button
@@ -207,9 +207,7 @@ export function Login({
               setPassword("");
               setMessage("");
             }}
-          >
-            비밀번호를 잊으셨나요?
-          </button>
+          >{tr("비밀번호를 잊으셨나요?")}</button>
         )}
         {!forgot && (
           <button
@@ -217,18 +215,15 @@ export function Login({
             disabled={busy || !email.trim()}
             onClick={() => void sendEmail("resend")}
           >
-            {pending ? "인증 메일 다시 보내기" : "회원가입 인증 메일 재발송"}
+            {pending ? tr("인증 메일 다시 보내기") : tr("회원가입 인증 메일 재발송")}
           </button>
         )}
         {demo ? (
-          <a href="/" className="demo-link">
-            데모 지갑 둘러보기 <ArrowUpRight size={17} />
+          <a href="/" className="demo-link">{tr("데모 지갑 둘러보기 ")}<ArrowUpRight size={17} />
           </a>
         ) : null}
         <p className="login-secure">
-          <ShieldCheck size={16} />
-          TRON · TRC20 USDT 전용
-        </p>
+          <ShieldCheck size={16} />{tr("TRON · TRC20 USDT 전용")}</p>
       </section>
     </main>
   );

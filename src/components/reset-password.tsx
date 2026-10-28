@@ -1,8 +1,11 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useEffect, useRef, useState } from "react";
 import { Brand } from "./shared";
 import { SecuritySettings } from "./security";
 export function ResetPassword() {
+  const { tr } = useI18n();
   const [password, setPassword] = useState(""),
     [confirmation, setConfirmation] = useState(""),
     [ready, setReady] = useState(false),
@@ -63,23 +66,16 @@ export function ResetPassword() {
       <section className="login-art">
         <Brand />
         <div>
-          <h1>
-            새로운 비밀번호.
-            <br />
-            안전한 내 지갑.
-          </h1>
+          <h1>{tr("새로운 비밀번호.")}<br />{tr("안전한 내 지갑.")}</h1>
         </div>
         <span>JMUSDT / ACCOUNT SECURITY</span>
       </section>
       <section className="login-form">
         <p className="eyebrow">JMUSDT / PASSWORD RESET</p>
-        <h2>비밀번호 재설정</h2>
-        <p>
-          12자 이상의 새 비밀번호를 입력하세요. 변경 후 모든 기기에서 다시
-          로그인해야 합니다.
-        </p>
+        <h2>{tr("비밀번호 재설정")}</h2>
+        <p>{tr("12자 이상의 새 비밀번호를 입력하세요. 변경 후 모든 기기에서 다시 로그인해야 합니다.")}</p>
         {loading ? (
-          <p role="status">재설정 링크를 확인하는 중…</p>
+          <p role="status">{tr("재설정 링크를 확인하는 중…")}</p>
         ) : (
           ready && (
             <form onSubmit={submit}>
@@ -88,7 +84,7 @@ export function ResetPassword() {
                 style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
               >
                 <label className="field">
-                  <span>새 비밀번호</span>
+                  <span>{tr("새 비밀번호")}</span>
                   <input
                     required
                     type="password"
@@ -100,7 +96,7 @@ export function ResetPassword() {
                   />
                 </label>
                 <label className="field">
-                  <span>새 비밀번호 확인</span>
+                  <span>{tr("새 비밀번호 확인")}</span>
                   <input
                     required
                     type="password"
@@ -112,21 +108,19 @@ export function ResetPassword() {
                   />
                 </label>
                 <button type="submit" className="primary">
-                  {busy ? "변경 중…" : "비밀번호 변경"}
+                  {busy ? tr("변경 중…") : tr("비밀번호 변경")}
                 </button>
               </fieldset>
             </form>
           )
         )}
-        {message && (
+        {tr(message) && (
           <p role="status" className="form-error">
-            {message}
+            {tr(message)}
           </p>
         )}
         {mfa && <SecuritySettings />}
-        <a href="/login" className="text-button">
-          로그인 / 재설정 메일 다시 요청
-        </a>
+        <a href="/login" className="text-button">{tr("로그인 / 재설정 메일 다시 요청")}</a>
       </section>
     </main>
   );

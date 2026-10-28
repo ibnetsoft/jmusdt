@@ -1,0 +1,106 @@
+import { test, expect } from "@playwright/test";
+
+test.use({ locale: "en-US" });
+
+test("Korean is default, language changes preserve inputs and survive navigation and SSR reload", async ({ page, context }) => {
+  const errors: string[] = [];
+  page.on("pageerror", e => errors.push(e.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login");
+  await expect(page.locator("html")).toHaveAttribute("lang", "ko");
+  await expect(page.getByRole("button", { name: "로그인", exact: true })).toBeVisible();
+  await page.getByLabel("이메일", { exact: true }).fill("locale@example.com");
+  await page.getByLabel("비밀번호", { exact: true }).fill("Keep-this-value123!");
+  await page.locator(".site-controls select").selectOption("en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("heading", { name: "Welcome back.", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Email", { exact: true })).toHaveValue("locale@example.com");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue("Keep-this-value123!");
+  await page.getByRole("button", { name: "Forgot your password?", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Send reset email", exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".site-controls select")).toHaveValue("en");
+  const html = await (await page.request.get("/login")).text();
+  expect(html).toContain('lang="en"');
+  expect(html).toContain("Welcome back.");
+  await page.locator(".site-controls select").selectOption("ja");
+  await expect(page.getByLabel("メールアドレス", { exact: true })).toBeVisible();
+  await page.goto("/mypage");
+  await expect(page.getByRole("heading", { name: "マイページ", exact: true })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+  expect((await context.cookies()).find(c => c.name === "jmusdt-locale")?.value).toBe("ja");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await page.screenshot({ path: "artifacts/i18n/mypage-ja-mobile.png", fullPage: true });
+  expect(errors).toEqual([]);
+});
+
+test("translated purchase flow preserves the price and original shipping payload when language changes", async ({ page }) => {
+  const product = { id: "3140db21-c190-442b-a12e-84f11b3d9734", name: "척척보감", description: "로그인한 모든 회원에게 회원가가 적용되는 실물 배송 상품입니다.", detail_blocks: [], image_url: "", price: "88000000000", retail_price: "98000000000", stock: 10000, active: true, version: 1, shipping_type: "physical", package_type: "none", reward_plan: { referral: "9000000000", sponsor: "4500000000", mom: "4500000000", daily: "0", days: 0, lucky: 3000, treasure: 3000 } };
+  let payload: Record<string, any> | undefined;
+  await page.route("**/api/shop", async route => {
+    if (route.request().method() === "POST") {
+      payload = route.request().postDataJSON();
+      await route.fulfill({ status: 409, json: { error: "재고가 부족합니다." } });
+    } else await route.fulfill({ json: { products: [product], orders: [], available: "100000000000", marketing: { enabled: true, daily_paused: false, version: 1 } } });
+  });
+  await page.goto("/shop/" + product.id);
+  await page.locator(".site-controls select").selectOption("en");
+  await expect(page.getByRole("heading", { name: "Cheokcheok Bogam", exact: true })).toBeVisible();
+  await expect(page.getByText("Member price 88,000 P", { exact: true })).toBeVisible();
+  await expect(page.getByText("Retail price 98,000 P", { exact: true })).toBeVisible();
+  const confirm = page.getByRole("button", { name: "Confirm 88,000.000000 points payment", exact: true });
+  await expect(confirm).toBeDisabled();
+  await page.getByLabel("Recipient", { exact: true }).fill("山田 太郎");
+  await page.getByLabel("Phone number", { exact: true }).fill("090-0000-0000");
+  await page.getByLabel("Shipping address", { exact: true }).fill("東京都 테스트 주소 123");
+  await expect(confirm).toBeEnabled();
+  await page.locator(".site-controls select").selectOption("ja");
+  await expect(page.getByRole("heading", { name: "チョクチョクボガム", exact: true })).toBeVisible();
+  await expect(page.getByLabel("受取人", { exact: true })).toHaveValue("山田 太郎");
+  await expect(page.getByLabel("配送先住所", { exact: true })).toHaveValue("東京都 테스트 주소 123");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await page.screenshot({ path: "artifacts/i18n/shop-ja-mobile.png", fullPage: true });
+  await page.getByRole("button", { name: "88,000.000000ポイントの支払いを確定", exact: true }).click();
+  await expect(page.locator(".shop-error[role=alert]")).toContainText("在庫が不足しています。");
+  expect(payload?.productId).toBe(product.id);
+  expect(payload?.quantity).toBe(1);
+  expect(payload?.shipping).toEqual({ recipient: "山田 太郎", phone: "090-0000-0000", address: "東京都 테스트 주소 123", note: "" });
+  expect(payload).not.toHaveProperty("price");
+});
+
+test("wallet, admin, confirmation gate and manifest honor locale without changing authentication", async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: "jmusdt-locale", value: "en", url: baseURL! }]);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Send", exact: true }).first().click();
+  await page.getByPlaceholder("name@example.com").fill("min@example.com");
+  await page.getByLabel("Transfer amount", { exact: true }).fill("20");
+  await page.locator(".site-controls select").selectOption("ja");
+  await expect(page.getByLabel("送金金額", { exact: true })).toHaveValue("20");
+  await expect(page.getByPlaceholder("name@example.com")).toHaveValue("min@example.com");
+  await page.getByRole("button", { name: "送金情報を確認", exact: true }).click();
+  await expect(page.getByRole("button", { name: "送金する", exact: true }).first()).toBeVisible();
+  await page.goto("/admin");
+  await expect(page.getByRole("heading", { name: "ダッシュボード", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "出金管理", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "出金管理", exact: true })).toBeVisible();
+  await page.locator(".site-controls select").selectOption("en");
+  await expect(page.getByRole("heading", { name: "Withdrawals", exact: true })).toBeVisible();
+  await expect(page.locator(".table-wrap th").filter({ hasText: "Recipient address" })).toBeVisible();
+  await page.screenshot({ path: "artifacts/i18n/admin-en-desktop.png", fullPage: true });
+  const manifest = await (await page.request.get("/manifest.webmanifest")).json();
+  expect(manifest.lang).toBe("en");
+  const gate = await page.request.get("/auth/confirm?type=recovery&token_hash=" + "a".repeat(64));
+  expect(gate.status()).toBe(200);
+  const body = await gate.text();
+  expect(body).toContain('lang="en"');
+  expect(body).toContain("Continue password reset");
+  expect(body).toContain('method="post"');
+  await context.addCookies([{ name: "jmusdt-locale", value: "unsupported", url: baseURL! }]);
+  await page.goto("/login");
+  await expect(page.locator("html")).toHaveAttribute("lang", "ko");
+  await context.addCookies([{ name: "jmusdt-locale", value: "ja", url: baseURL! }]);
+  await page.goto("/offline.html");
+  await expect(page.getByRole("heading", { name: "接続が切れています。", exact: true })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+});

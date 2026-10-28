@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useEffect, useState, useRef } from "react";
 import { rewardLabels } from "@/lib/marketing-plan";
 import { formatUsdt } from "@/lib/money";
@@ -48,6 +50,7 @@ function amount(units: string) {
   return `${formatUsdt(units, 6)} P`;
 }
 export function Rewards({ admin = false }: { admin?: boolean }) {
+  const { tr, localeTag } = useI18n();
   const [data, setData] = useState<Data | null>(null),
     [settings, setSettings] = useState<Settings | null>(null),
     [reason, setReason] = useState(""),
@@ -124,35 +127,31 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
     <main className="commerce marketing-rewards">
       <header>
         <a href={admin ? "/admin" : "/"}>
-          ← {admin ? "관리자 콘솔" : "내 지갑"}
+          ← {admin ? tr("관리자 콘솔") : tr("내 지갑")}
         </a>
         <a href={admin ? "/admin/shop" : "/shop"}>
-          {admin ? "상품별 보상 설정" : "쇼핑몰"}
+          {admin ? tr("상품별 보상 설정") : tr("쇼핑몰")}
         </a>
-        {!admin && <a href="/organization">조직도</a>}
+        {!admin && <a href="/organization">{tr("조직도")}</a>}
       </header>
       <p className="shop-kicker">JMUSDT / MARKETING</p>
-      <h1>{admin ? "마케팅 관리" : "나의 리워드"}</h1>
-      <p className="shop-muted">
-        추천·후원·맘리워드는 실시간으로 지급됩니다. 데일리·복주머니·보물상자는 매일 한국시간 자정에 포인트로 배당됩니다. 데일리는 구매 다음 날부터, 복주머니·보물상자는 보유 패키지 수량에 비례해 지급됩니다.
-      </p>
-      {error && (
+      <h1>{admin ? tr("마케팅 관리") : tr("나의 리워드")}</h1>
+      <p className="shop-muted">{tr("추천·후원·맘리워드는 실시간으로 지급됩니다. 데일리·복주머니·보물상자는 매일 한국시간 자정에 포인트로 배당됩니다. 데일리는 구매 다음 날부터, 복주머니·보물상자는 보유 패키지 수량에 비례해 지급됩니다.")}</p>
+      {tr(error) && (
         <p role="alert" className="shop-error">
-          {error}
+          {tr(error)}
         </p>
       )}
-      {notice && (
+      {tr(notice) && (
         <p role="status" className="shop-success">
-          {notice}
+          {tr(notice)}
         </p>
       )}
-      {admin ? <section className="shop-editor"><h2>회사 일일 적립 및 마감</h2>{data?.poolBalances?.map(p=><p key={p.kind+p.cutoff}>{p.kind==='lucky'?'복주머니P':'보물상자P'} · {new Date(p.cutoff).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 마감 · {formatUsdt(p.amount,6)} P</p>)}{data?.poolRuns?.map(r=><p key={r.kind+r.cutoff}>{r.kind==='lucky'?'복주머니P':'보물상자P'} · {new Date(r.cutoff).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} · 적립 {formatUsdt(r.total,6)} P · 지급 {formatUsdt(r.distributed,6)} P · 회사 잔여 {formatUsdt(r.retained,6)} P · 패키지 {r.package_count}개</p>)}</section> : <section className="shop-editor"><h2>일일 패키지와 분배</h2><p>복주머니패키지 {data?.packages?.find(p=>p.package_type==='lucky')?.quantity || '0'}개 · 보물상자패키지 {data?.packages?.find(p=>p.package_type==='treasure')?.quantity || '0'}개</p>{data?.pools?.map(w=><p key={w.kind+w.cutoff}>{w.kind==='lucky'?'복주머니P':'보물상자P'} · {new Date(w.cutoff).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} · {w.quantity}개 기준 · {formatUsdt(w.amount,6)} P 지급</p>)}</section>}
+      {admin ? <section className="shop-editor"><h2>{tr("회사 일일 적립 및 마감")}</h2>{data?.poolBalances?.map(p=><p key={p.kind+p.cutoff}>{p.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(p.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})}{tr(" 마감 · ")}{formatUsdt(p.amount,6)} P</p>)}{data?.poolRuns?.map(r=><p key={r.kind+r.cutoff}>{r.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(r.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})}{tr(" · 적립 ")}{formatUsdt(r.total,6)}{tr(" P · 지급 ")}{formatUsdt(r.distributed,6)}{tr(" P · 회사 잔여 ")}{formatUsdt(r.retained,6)}{tr(" P · 패키지 ")}{r.package_count}{tr("개")}</p>)}</section> : <section className="shop-editor"><h2>{tr("일일 패키지와 분배")}</h2><p>{tr("복주머니패키지 ")}{data?.packages?.find(p=>p.package_type==='lucky')?.quantity || '0'}{tr("개 · 보물상자패키지 ")}{data?.packages?.find(p=>p.package_type==='treasure')?.quantity || '0'}{tr("개")}</p>{data?.pools?.map(w=><p key={w.kind+w.cutoff}>{w.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(w.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})} · {w.quantity}{tr("개 기준 · ")}{formatUsdt(w.amount,6)}{tr(" P 지급")}</p>)}</section>}
       <button
         disabled={busy || loading}
         onClick={() => setRevision((n) => n + 1)}
-      >
-        새로고침
-      </button>
+      >{tr("새로고침")}</button>
       {admin && settings && (
         <form
           className="shop-editor"
@@ -167,7 +166,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
             });
           }}
         >
-          <h2>운영 설정</h2>
+          <h2>{tr("운영 설정")}</h2>
           <fieldset disabled={busy || loading}>
             <label className="shop-check">
               <input
@@ -176,9 +175,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
                 onChange={(e) =>
                   setSettings({ ...settings, enabled: e.target.checked })
                 }
-              />
-              신규 구매 추천·후원·맘·데일리 적용
-            </label>
+              />{tr("신규 구매 추천·후원·맘·데일리 적용")}</label>
             <label className="shop-check">
               <input
                 type="checkbox"
@@ -186,63 +183,48 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
                 onChange={(e) =>
                   setSettings({ ...settings, daily_paused: e.target.checked })
                 }
-              />
-              데일리 지급 일시정지
-            </label>
-            <p className="shop-muted">
-              회사 복주머니P·보물상자P는 모든 상품 매출에서 적립됩니다. 신규 구매 적용을 꺼도 기존 주문의 권리는 유지됩니다. 일시정지 중
-              밀린 데일리는 재개 후 지급됩니다. 취소 요청 중인 주문은 지급이
-              보류됩니다. 금액과 수량은 상품 관리에서 입력합니다.
-            </p>
-            <label>
-              변경 사유
-              <input
+              />{tr("데일리 지급 일시정지")}</label>
+            <p className="shop-muted">{tr("회사 복주머니P·보물상자P는 모든 상품 매출에서 적립됩니다. 신규 구매 적용을 꺼도 기존 주문의 권리는 유지됩니다. 일시정지 중 밀린 데일리는 재개 후 지급됩니다. 취소 요청 중인 주문은 지급이 보류됩니다. 금액과 수량은 상품 관리에서 입력합니다.")}</p>
+            <label>{tr("변경 사유")}<input
                 required
                 maxLength={500}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
               />
             </label>
-            <button type="submit" className="shop-primary">
-              설정 저장
-            </button>
+            <button type="submit" className="shop-primary">{tr("설정 저장")}</button>
             <button
               type="button"
               disabled={settings.daily_paused}
               onClick={() => void action({ action: "daily" })}
-            >
-              기한 도래 데일리 지급 / 누락 재처리
-            </button>
-            <button type="button" disabled={!reason.trim()} onClick={()=>void action({action:"pools",reason})}>기한 도래 일일 마감 재처리</button>
+            >{tr("기한 도래 데일리 지급 / 누락 재처리")}</button>
+            <button type="button" disabled={!reason.trim()} onClick={()=>void action({action:"pools",reason})}>{tr("기한 도래 일일 마감 재처리")}</button>
           </fieldset>
         </form>
       )}
-      <section className="shop-grid" aria-label="보상 합계">
+      <section className="shop-grid" aria-label={tr("보상 합계")}>
         {directKinds.map((k) => (
           <article className="shop-editor" key={k}>
-            <h2>{rewardLabels[k]}</h2>
+            <h2>{tr(rewardLabels[k])}</h2>
             {["paid", "scheduled", "reversed", "skipped", "void"].map((s) => {
               const t = totals.find((t) => t.type === k && t.status === s);
               return t ? (
                 <p key={s}>
-                  {statuses[s]}{" "}
+                  {tr(statuses[s])}{" "}
                   <strong>{amount(t.amount)}</strong>
                 </p>
               ) : null;
             })}
-            {!totals.some((t) => t.type === k) && <p>내역이 없습니다.</p>}
+            {!totals.some((t) => t.type === k) && <p>{tr("내역이 없습니다.")}</p>}
           </article>
         ))}
       </section>
       {!admin && BigInt(data?.debt || "0") > 0n && (
-        <p className="shop-error">
-          취소 보상 미수금 {formatUsdt(data!.debt!, 6)} P. 이후 포인트 유입에서
-          자동 상계됩니다. 전환·환불 시 사용 가능 잔액에 반영됩니다.
-        </p>
+        <p className="shop-error">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt!, 6)}{tr(" P. 이후 포인트 유입에서 자동 상계됩니다. 전환·환불 시 사용 가능 잔액에 반영됩니다.")}</p>
       )}
       {admin && !!data?.debts?.length && (
         <section className="shop-editor">
-          <h2>회수 미수금 (상위 100명)</h2>
+          <h2>{tr("회수 미수금 (상위 100명)")}</h2>
           {data.debts.map((d) => (
             <p key={d.user_id}>
               {d.name} · {d.email} — {formatUsdt(d.amount, 6)} P
@@ -260,76 +242,70 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
             setRevision((n) => n + 1);
           }}
         >
-          <label>
-            종류
-            <select
+          <label>{tr("종류")}<select
               value={type}
               onChange={(e) => {
                 setType(e.target.value);
                 setPage(1);
               }}
             >
-              <option value="all">전체</option>
+              <option value="all">{tr("전체")}</option>
               {directKinds.map((v) => (
                 <option key={v} value={v}>
-                  {rewardLabels[v]}
+                  {tr(rewardLabels[v])}
                 </option>
               ))}
             </select>
           </label>
-          <label>
-            상태
-            <select
+          <label>{tr("상태")}<select
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
             >
-              <option value="all">전체</option>
+              <option value="all">{tr("전체")}</option>
               {Object.entries(statuses).map(([v, l]) => (
                 <option key={v} value={v}>
-                  {l}
+                  {tr(l)}
                 </option>
               ))}
             </select>
           </label>
-          <label>
-            회원·주문 검색
-            <input
+          <label>{tr("회원·주문 검색")}<input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               maxLength={150}
             />
           </label>
-          <button type="submit">검색</button>
+          <button type="submit">{tr("검색")}</button>
         </form>
       )}
-      <h2>보상 내역 {admin && data ? `(${data.count}건)` : "(최근 200건)"}</h2>
+      <h2>{tr("보상 내역 ")}{admin && data ? tr("({0}건)", {"0": data.count}) : tr("(최근 200건)")}</h2>
       {loading ? (
-        <p role="status">불러오는 중…</p>
+        <p role="status">{tr("불러오는 중…")}</p>
       ) : (
         data?.rewards.map((r) => (
           <article key={r.id} className="shop-order">
             <div>
               <strong>
-                {rewardLabels[r.type]} · {amount(r.amount)}
+                {tr(rewardLabels[r.type])} · {amount(r.amount)}
               </strong>
               <p>
-                {r.product_name} · {statuses[r.status]}
+                {tr(r.product_name)} · {tr(statuses[r.status])}
                 {r.installment > 0
-                  ? ` · ${r.installment}회차 / ${r.due_date.slice(0, 10)}`
+                  ? tr(" · {0}회차 / {1}", {"0": r.installment, "1": r.due_date.slice(0, 10)})
                   : ""}
               </p>
               {admin && (
                 <p>
-                  {r.name || "수령인 없음"} {r.email}
+                  {r.name || tr("수령인 없음")} {r.email}
                 </p>
               )}
-              <small>주문 {r.order_id}</small>
+              <small>{tr("주문 ")}{r.order_id}</small>
               {r.transaction_id && (
                 <p>
-                  <small>거래 {r.transaction_id}</small>
+                  <small>{tr("거래 ")}{r.transaction_id}</small>
                 </p>
               )}
               {r.reason && <p className="shop-muted">{r.reason}</p>}
@@ -337,22 +313,18 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
           </article>
         ))
       )}
-      {!loading && !data?.rewards.length && <p>보상 내역이 없습니다.</p>}
+      {!loading && !data?.rewards.length && <p>{tr("보상 내역이 없습니다.")}</p>}
       {admin && (
         <div className="shop-section-head">
           <button
             disabled={page === 1 || loading}
             onClick={() => setPage((p) => p - 1)}
-          >
-            이전
-          </button>
-          <span>{page} 페이지</span>
+          >{tr("이전")}</button>
+          <span>{page}{tr(" 페이지")}</span>
           <button
             disabled={loading || page * 100 >= (data?.count || 0)}
             onClick={() => setPage((p) => p + 1)}
-          >
-            다음
-          </button>
+          >{tr("다음")}</button>
         </div>
       )}
     </main>

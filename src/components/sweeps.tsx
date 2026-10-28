@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { formatUsdt, decimalUsdt } from "@/lib/money";
 import "./shop.css";
@@ -104,6 +106,8 @@ function txLink(id: string | null, network: string) {
   );
 }
 export function Sweeps() {
+  const { tr, localeTag } = useI18n();
+  const displayAmount = (value: string | null | undefined, unit: string) => tr(fmt(value, unit));
   const [data, setData] = useState<Data | null>(null),
     [settings, setSettings] = useState<{
       enabled: boolean;
@@ -246,64 +250,52 @@ export function Sweeps() {
   return (
     <main className="commerce sweep-page">
       <header>
-        <a href="/admin">← 관리자 콘솔</a>
-        <a href="/admin#operations">자금 운영</a>
-        <a href="/admin">관리자 2단계 인증 설정</a>
+        <a href="/admin">{tr("← 관리자 콘솔")}</a>
+        <a href="/admin#operations">{tr("자금 운영")}</a>
+        <a href="/admin">{tr("관리자 2단계 인증 설정")}</a>
       </header>
       <p className="shop-kicker">ADMIN / TRC20 COLLECTION</p>
-      <h1>USDT 모으기</h1>
-      <p className="shop-muted">
-        회원 주소에 보관된 실제 USDT를 회사 지갑으로 이동합니다. 회원의 앱
-        USDT·포인트 잔액은 변경하지 않습니다. 조회·검토만으로 전송되지 않습니다.
-      </p>
-      {error && (
+      <h1>{tr("USDT 모으기")}</h1>
+      <p className="shop-muted">{tr("회원 주소에 보관된 실제 USDT를 회사 지갑으로 이동합니다. 회원의 앱 USDT·포인트 잔액은 변경하지 않습니다. 조회·검토만으로 전송되지 않습니다.")}</p>
+      {tr(error) && (
         <p role="alert" className="shop-error">
-          {error}
+          {tr(error)}
         </p>
       )}
-      {notice && (
+      {tr(notice) && (
         <p role="status" className="shop-success">
-          {notice}
+          {tr(notice)}
         </p>
       )}
       {data && (
         <>
           <section className="shop-editor">
-            <h2>네트워크·실행 상태</h2>
+            <h2>{tr("네트워크·실행 상태")}</h2>
             <p>
-              {data.config.network.toUpperCase()} · 토큰{" "}
-              {data.config.contract || "미설정"}
+              {data.config.network.toUpperCase()}{tr(" · 토큰")}{" "}
+              {data.config.contract || tr("미설정")}
             </p>
-            <p>
-              회사 지갑 <strong>{data.config.company || "미설정"}</strong>
+            <p>{tr("회사 지갑 ")}<strong>{data.config.company || tr("미설정")}</strong>
             </p>
-            <p>
-              회사 TRX {fmt(data.companyTrx, "TRX")} {data.companyError}
+            <p>{tr("회사 TRX ")}{displayAmount(data.companyTrx, "TRX")} {tr(data.companyError)}
             </p>
-            <p>
-              회수 {data.settings.enabled ? "활성" : "중단"} · 워커{" "}
-              {offline ? "연결 확인 필요" : "연결됨"}
+            <p>{tr("회수 ")}{data.settings.enabled ? tr("활성") : tr("중단")}{tr(" · 워커")}{" "}
+              {offline ? tr("연결 확인 필요") : tr("연결됨")}
               {data.health
-                ? ` · 마지막 응답 ${new Date(data.health.last_seen).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`
+                ? tr(" · 마지막 응답 {0}", {"0": new Date(data.health.last_seen).toLocaleString(localeTag, { timeZone: "Asia/Seoul" })})
                 : ""}
             </p>
-            {data.health?.last_error && <p>{data.health.last_error}</p>}
+            {data.health?.last_error && <p>{tr(data.health.last_error)}</p>}
             {data.config.issues.map((i) => (
               <p className="shop-muted" key={i}>
                 • {i}
               </p>
             ))}
             {offline && (
-              <p className="shop-muted">
-                승인 후 처리는 별도 회수 워커가 수행합니다. 서버의 worker:sweep
-                실행 상태를 확인하세요.
-              </p>
+              <p className="shop-muted">{tr("승인 후 처리는 별도 회수 워커가 수행합니다. 서버의 worker:sweep 실행 상태를 확인하세요.")}</p>
             )}
             {!data.canExecute && (
-              <p className="shop-muted">
-                조회는 가능하며 설정·승인은 최고관리자와 2단계 인증이
-                필요합니다.
-              </p>
+              <p className="shop-muted">{tr("조회는 가능하며 설정·승인은 최고관리자와 2단계 인증이 필요합니다.")}</p>
             )}
           </section>
           {settings && (
@@ -324,7 +316,7 @@ export function Sweeps() {
                 }
               }}
             >
-              <h2>회수 운영 설정</h2>
+              <h2>{tr("회수 운영 설정")}</h2>
               <fieldset disabled={busy || scanning || !data.canExecute}>
                 <label className="shop-check">
                   <input
@@ -333,12 +325,8 @@ export function Sweeps() {
                     onChange={(e) =>
                       setSettings({ ...settings, enabled: e.target.checked })
                     }
-                  />
-                  승인된 회수 처리 활성화
-                </label>
-                <label>
-                  건당 TRX 보충 상한 (0~100 TRX)
-                  <input
+                  />{tr("승인된 회수 처리 활성화")}</label>
+                <label>{tr("건당 TRX 보충 상한 (0~100 TRX)")}<input
                     required
                     inputMode="decimal"
                     value={settings.maxTopup}
@@ -347,9 +335,7 @@ export function Sweeps() {
                     }
                   />
                 </label>
-                <label>
-                  회사 최소 TRX 보유량
-                  <input
+                <label>{tr("회사 최소 TRX 보유량")}<input
                     required
                     inputMode="decimal"
                     value={settings.reserve}
@@ -358,9 +344,7 @@ export function Sweeps() {
                     }
                   />
                 </label>
-                <label>
-                  설정 변경 사유
-                  <input
+                <label>{tr("설정 변경 사유")}<input
                     required
                     minLength={3}
                     maxLength={500}
@@ -368,12 +352,8 @@ export function Sweeps() {
                     onChange={(e) => setSettingsReason(e.target.value)}
                   />
                 </label>
-                <button type="submit">설정 저장</button>
-                <p className="shop-muted">
-                  회수를 중단하면 새 서명·전송을 멈춥니다. 기존 TX와 요청은
-                  보존되며 재개 후 같은 TX의 확정을 확인합니다. 회사
-                  주소·네트워크·서명키는 서버 설정으로 관리합니다.
-                </p>
+                <button type="submit">{tr("설정 저장")}</button>
+                <p className="shop-muted">{tr("회수를 중단하면 새 서명·전송을 멈춥니다. 기존 TX와 요청은 보존되며 재개 후 같은 TX의 확정을 확인합니다. 회사 주소·네트워크·서명키는 서버 설정으로 관리합니다.")}</p>
               </fieldset>
             </form>
           )}
@@ -386,17 +366,13 @@ export function Sweeps() {
               setError("");
             }}
           >
-            <label>
-              회원·주소 검색
-              <input
+            <label>{tr("회원·주소 검색")}<input
                 value={q}
                 maxLength={150}
                 onChange={(e) => setQ(e.target.value)}
               />
             </label>
-            <button disabled={busy || scanning} type="submit">
-              검색
-            </button>
+            <button disabled={busy || scanning} type="submit">{tr("검색")}</button>
             <button
               type="button"
               disabled={busy || scanning || loading}
@@ -404,26 +380,23 @@ export function Sweeps() {
                 setError("");
                 load(true).catch((e) => setError(e.message));
               }}
-            >
-              이 페이지 온체인 잔액 조회
-            </button>
+            >{tr("이 페이지 온체인 잔액 조회")}</button>
           </form>
-          <p>
-            등록 주소 {data.count}개 · 이 페이지 확인된 USDT{" "}
+          <p>{tr("등록 주소 ")}{data.count}{tr("개 · 이 페이지 확인된 USDT")}{" "}
             {formatUsdt(total, 6)} ·{" "}
             {scanning
-              ? "조회 중…"
-              : `${data.wallets.filter((w) => w.usdt === null).length}개 잔액 미확인`}
+              ? tr("조회 중…")
+              : tr("{0}개 잔액 미확인", {"0": data.wallets.filter((w) => w.usdt === null).length})}
           </p>
           <div className="sweep-table">
             <table>
               <thead>
                 <tr>
-                  <th>선택</th>
-                  <th>회원 / 주소</th>
-                  <th>확정 USDT</th>
-                  <th>현재 TRX</th>
-                  <th>조회 상태</th>
+                  <th>{tr("선택")}</th>
+                  <th>{tr("회원 / 주소")}</th>
+                  <th>{tr("확정 USDT")}</th>
+                  <th>{tr("현재 TRX")}</th>
+                  <th>{tr("조회 상태")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -431,7 +404,7 @@ export function Sweeps() {
                   <tr key={w.user_id}>
                     <td>
                       <input
-                        aria-label={`${w.email} 선택`}
+                        aria-label={tr("{0} 선택", {"0": w.email})}
                         type="checkbox"
                         disabled={
                           busy ||
@@ -453,32 +426,28 @@ export function Sweeps() {
                       {w.name} · {w.email}
                       <small>{w.address}</small>
                       {w.status !== "active" && (
-                        <small>앱 이용 제한 회원</small>
+                        <small>{tr("앱 이용 제한 회원")}</small>
                       )}
                     </td>
-                    <td>{fmt(w.usdt, "USDT")}</td>
-                    <td>{fmt(w.trx, "TRX")}</td>
-                    <td>{w.error || "조회 완료"}</td>
+                    <td>{displayAmount(w.usdt, "USDT")}</td>
+                    <td>{displayAmount(w.trx, "TRX")}</td>
+                    <td>{tr(w.error) || tr("조회 완료")}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {!data.wallets.length && <p>등록된 회원 입금 주소가 없습니다.</p>}
+          {!data.wallets.length && <p>{tr("등록된 회원 입금 주소가 없습니다.")}</p>}
           <div className="shop-section-head">
             <button
               disabled={busy || scanning || page === 1}
               onClick={() => setPage((p) => p - 1)}
-            >
-              이전
-            </button>
-            <span>{page} 페이지 · 10개씩</span>
+            >{tr("이전")}</button>
+            <span>{page}{tr(" 페이지 · 10개씩")}</span>
             <button
               disabled={busy || scanning || page * 10 >= data.count}
               onClick={() => setPage((p) => p + 1)}
-            >
-              다음
-            </button>
+            >{tr("다음")}</button>
           </div>
           <div className="shop-section-head">
             <button
@@ -487,9 +456,7 @@ export function Sweeps() {
                 setSelected(eligible.map((w) => w.user_id));
                 setReview(null);
               }}
-            >
-              이 페이지 잔액 보유 지갑 전체 선택
-            </button>
+            >{tr("이 페이지 잔액 보유 지갑 전체 선택")}</button>
             <button
               disabled={busy || scanning || !selected.length}
               onClick={async () => {
@@ -501,44 +468,39 @@ export function Sweeps() {
                 }
               }}
             >
-              {busy ? "처리 중…" : `선택 ${selected.length}개 회수 검토`}
+              {busy ? tr("처리 중…") : tr("선택 {0}개 회수 검토", {"0": selected.length})}
             </button>
           </div>
         </>
       )}
       {review && (
-        <section className="shop-editor" aria-label="회수 최종 검토">
-          <h2>일괄 회수 최종 검토</h2>
-          <p>
-            네트워크 {review.network} · 수신 회사 지갑 {review.company}
+        <section className="shop-editor" aria-label={tr("회수 최종 검토")}>
+          <h2>{tr("일괄 회수 최종 검토")}</h2>
+          <p>{tr("네트워크 ")}{review.network}{tr(" · 수신 회사 지갑 ")}{review.company}
           </p>
-          <p>
-            검토 만료{" "}
-            {new Date(review.expiresAt).toLocaleTimeString("ko-KR", {
+          <p>{tr("검토 만료")}{" "}
+            {new Date(review.expiresAt).toLocaleTimeString(localeTag, {
               timeZone: "Asia/Seoul",
-            })}{" "}
-            KST · 총 USDT{" "}
-            {fmt(
+            })}{" "}{tr("KST · 총 USDT")}{" "}
+            {displayAmount(
               review.items
                 .reduce((n, i) => n + BigInt(i.amount), 0n)
                 .toString(),
               "USDT",
             )}
           </p>
-          <p>
-            회사 TRX {fmt(review.companyTrx, "TRX")} · 보충 상한 합계{" "}
-            {fmt(review.totalFunding, "TRX")} · 최소 보유{" "}
-            {fmt(review.reserve, "TRX")}
+          <p>{tr("회사 TRX ")}{displayAmount(review.companyTrx, "TRX")}{tr(" · 보충 상한 합계")}{" "}
+            {displayAmount(review.totalFunding, "TRX")}{tr(" · 최소 보유")}{" "}
+            {displayAmount(review.reserve, "TRX")}
           </p>
           {review.items.map((i) => (
             <article className="shop-order" key={i.userId}>
               <div>
                 <strong>{i.source}</strong>
-                <p>{fmt(i.amount, "USDT")} → 회사</p>
-                <p>
-                  회원 TRX {fmt(i.sourceTrx, "TRX")} · 보충 상한{" "}
-                  {fmt(i.topup, "TRX")} · 계약 수수료 한도{" "}
-                  {fmt(i.feeLimit, "TRX")}
+                <p>{displayAmount(i.amount, "USDT")}{tr(" → 회사")}</p>
+                <p>{tr("회원 TRX ")}{displayAmount(i.sourceTrx, "TRX")}{tr(" · 보충 상한")}{" "}
+                  {displayAmount(i.topup, "TRX")}{tr(" · 계약 수수료 한도")}{" "}
+                  {displayAmount(i.feeLimit, "TRX")}
                 </p>
               </div>
             </article>
@@ -548,23 +510,15 @@ export function Sweeps() {
               {i}
             </p>
           ))}
-          <p className="shop-muted">
-            상한 내에서 필요한 TRX만 보충하고, 승인한 USDT 수량만 이동합니다.
-            이후 입금분은 다음 검토 대상입니다. 실제 수수료는 체인에서 정해지며
-            남은 회원 TRX는 회수하지 않습니다.
-          </p>
-          <label>
-            회수 사유
-            <input
+          <p className="shop-muted">{tr("상한 내에서 필요한 TRX만 보충하고, 승인한 USDT 수량만 이동합니다. 이후 입금분은 다음 검토 대상입니다. 실제 수수료는 체인에서 정해지며 남은 회원 TRX는 회수하지 않습니다.")}</p>
+          <label>{tr("회수 사유")}<input
               maxLength={500}
               minLength={3}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
           </label>
-          <label>
-            확인 문구: USDT 회수
-            <input
+          <label>{tr("확인 문구: USDT 회수")}<input
               autoComplete="off"
               value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)}
@@ -599,30 +553,22 @@ export function Sweeps() {
                 await load().catch((e) => setError(e.message));
               }
             }}
-          >
-            검토한 일괄 회수 승인
-          </button>
-          <button disabled={busy} onClick={() => setReview(null)}>
-            검토 닫기
-          </button>
+          >{tr("검토한 일괄 회수 승인")}</button>
+          <button disabled={busy} onClick={() => setReview(null)}>{tr("검토 닫기")}</button>
         </section>
       )}
-      <h2>회수 진행 이력 ({data?.jobCount || 0})</h2>
-      <p className="shop-muted">
-        5초마다 상태를 갱신합니다. 전송 접수는 완료가 아니며 확정 영수증을
-        확인한 뒤 완료됩니다. 조사 필요 요청은 기존 TX 확인 전 새 전송을 만들지
-        않습니다.
-      </p>
+      <h2>{tr("회수 진행 이력 (")}{data?.jobCount || 0})</h2>
+      <p className="shop-muted">{tr("5초마다 상태를 갱신합니다. 전송 접수는 완료가 아니며 확정 영수증을 확인한 뒤 완료됩니다. 조사 필요 요청은 기존 TX 확인 전 새 전송을 만들지 않습니다.")}</p>
       {data?.jobs.map((j) => (
         <article className="shop-editor" key={j.id}>
           <h3>
-            {j.email} · {statusLabels[j.status] || j.status}
+            {j.email} · {tr(statusLabels[j.status]) || j.status}
           </h3>
           <p>
-            {j.source || "기존 요청"} → {j.destination || "기존 회사 지갑"}
+            {j.source || tr("기존 요청")} → {j.destination || tr("기존 회사 지갑")}
           </p>
           <p>
-            {fmt(j.amount, "USDT")} · 보충 상한 {fmt(j.max_topup, "TRX")}
+            {displayAmount(j.amount, "USDT")}{tr(" · 보충 상한 ")}{displayAmount(j.max_topup, "TRX")}
           </p>
           <p>
             TRX TX {txLink(j.gas_txid, j.network || data.config.network)} ·{" "}
@@ -637,9 +583,8 @@ export function Sweeps() {
             · {j.token_status}
           </p>
           <p>{j.note}</p>
-          <small>
-            요청 {j.id} ·{" "}
-            {new Date(j.created_at).toLocaleString("ko-KR", {
+          <small>{tr("요청 ")}{j.id} ·{" "}
+            {new Date(j.created_at).toLocaleString(localeTag, {
               timeZone: "Asia/Seoul",
             })}
           </small>
@@ -651,7 +596,7 @@ export function Sweeps() {
               <button
                 disabled={busy || !data.canExecute}
                 onClick={async () => {
-                  if (!window.confirm("서명 전 대기 요청을 취소할까요?"))
+                  if (!window.confirm(tr("서명 전 대기 요청을 취소할까요?")))
                     return;
                   const d = await act({
                     action: "cancel",
@@ -663,9 +608,7 @@ export function Sweeps() {
                     await load();
                   }
                 }}
-              >
-                서명 전 요청 취소
-              </button>
+              >{tr("서명 전 요청 취소")}</button>
             )}
         </article>
       ))}
@@ -673,16 +616,12 @@ export function Sweeps() {
         <button
           disabled={busy || historyPage === 1}
           onClick={() => setHistoryPage((p) => p - 1)}
-        >
-          이전 이력
-        </button>
-        <span>{historyPage} 페이지</span>
+        >{tr("이전 이력")}</button>
+        <span>{historyPage}{tr(" 페이지")}</span>
         <button
           disabled={busy || historyPage * 50 >= (data?.jobCount || 0)}
           onClick={() => setHistoryPage((p) => p + 1)}
-        >
-          다음 이력
-        </button>
+        >{tr("다음 이력")}</button>
       </div>
     </main>
   );

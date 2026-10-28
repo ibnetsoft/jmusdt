@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useEffect, useRef, useState } from "react";
 import { formatUsdt } from "@/lib/money";
 import "./shop.css";
@@ -29,6 +31,7 @@ type Order = {
   refund_transaction_id: string | null;
 };
 export function OrderAdmin() {
+  const { tr, localeTag } = useI18n();
   const [orders, setOrders] = useState<Order[]>([]),
     [q, setQ] = useState(""),
     [status, setStatus] = useState("all"),
@@ -106,15 +109,12 @@ export function OrderAdmin() {
   return (
     <main className="commerce">
       <header>
-        <a href="/admin">← 관리자 콘솔</a>
-        <a href="/admin/shop">상품 관리</a>
+        <a href="/admin">{tr("← 관리자 콘솔")}</a>
+        <a href="/admin/shop">{tr("상품 관리")}</a>
       </header>
       <p className="shop-kicker">ADMIN / ORDERS</p>
-      <h1>주문 관리</h1>
-      <p className="shop-muted">
-        취소 승인 시 결제 자산 전액 반환과 주문 수량만큼의 재고 복구가 함께
-        처리됩니다.
-      </p>
+      <h1>{tr("주문 관리")}</h1>
+      <p className="shop-muted">{tr("취소 승인 시 결제 자산 전액 반환과 주문 수량만큼의 재고 복구가 함께 처리됩니다.")}</p>
       <form
         className="shop-editor"
         onSubmit={(e) => {
@@ -123,18 +123,14 @@ export function OrderAdmin() {
           load().catch((e) => setError(e.message));
         }}
       >
-        <label>
-          주문·상품·회원 검색
-          <input
+        <label>{tr("주문·상품·회원 검색")}<input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             maxLength={150}
           />
         </label>
-        <label>
-          주문 상태
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="all">전체</option>
+        <label>{tr("주문 상태")}<select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="all">{tr("전체")}</option>
             {Object.entries(orderStatus).map(([key, text]) => (
               <option key={key} value={key}>
                 {text}
@@ -142,19 +138,19 @@ export function OrderAdmin() {
             ))}
           </select>
         </label>
-        <button>조회</button>
+        <button>{tr("조회")}</button>
       </form>
-      {error && (
+      {tr(error) && (
         <p className="shop-error" role="alert">
-          {error}
+          {tr(error)}
         </p>
       )}
-      {notice && (
+      {tr(notice) && (
         <p className="shop-success" role="status">
-          {notice}
+          {tr(notice)}
         </p>
       )}
-      <p className="shop-muted">최근 조회 결과 최대 200건</p>
+      <p className="shop-muted">{tr("최근 조회 결과 최대 200건")}</p>
       {orders.map((o) => (
         <article className="shop-order" key={o.id}>
           <div>
@@ -165,8 +161,8 @@ export function OrderAdmin() {
               {o.member_name} · {o.email}
             </p>
             <small>
-              {o.id} · {orderStatus[o.status]} ·{" "}
-              {new Date(o.created_at).toLocaleString("ko-KR")}
+              {o.id} · {tr(orderStatus[o.status])} ·{" "}
+              {new Date(o.created_at).toLocaleString(localeTag, { timeZone: 'Asia/Seoul' })}
             </small>
           </div>
           <strong>
@@ -183,21 +179,19 @@ export function OrderAdmin() {
               setConfirmation(false);
               setNotice("");
             }}
-          >
-            주문 상세
-          </button>
+          >{tr("주문 상세")}</button>
         </article>
       ))}
-      {!orders.length && <p>조회된 주문이 없습니다.</p>}
+      {!orders.length && <p>{tr("조회된 주문이 없습니다.")}</p>}
       {selected && (
-        <section ref={detail} className="shop-detail" aria-label="주문 상세">
+        <section ref={detail} className="shop-detail" aria-label={tr("주문 상세")}>
           <h2>{selected.product_name}</h2>
-          <p>주문번호 {selected.id}</p>
+          <p>{tr("주문번호 ")}{selected.id}</p>
           <p>
             {selected.member_name} · {selected.email}
           </p>
           <p>
-            {orderStatus[selected.status]} · 수량 {selected.quantity} · 단가{" "}
+            {tr(orderStatus[selected.status])}{tr(" · 수량 ")}{selected.quantity}{tr(" · 단가")}{" "}
             {formatUsdt(selected.unit_price, 6)}{" "}
             {selected.currency === "POINT" ? "P" : "USDT"}
           </p>
@@ -205,34 +199,31 @@ export function OrderAdmin() {
             description={selected.product_description}
             blocks={selected.product_detail_blocks}
           />
-          {selected.shipping && <section className="shop-editor" aria-label="배송 정보">
-            <h3>배송 정보</h3>
+          {selected.shipping && <section className="shop-editor" aria-label={tr("배송 정보")}>
+            <h3>{tr("배송 정보")}</h3>
             <p>{selected.shipping.recipient} · {selected.shipping.phone}</p>
             <p>{selected.shipping.address}</p>
-            {selected.shipping.note && <p>요청사항: {selected.shipping.note}</p>}
-            <label>배송 상태<select value={deliveryStatus} disabled={busy || selected.status !== "paid"} onChange={e=>setDeliveryStatus(e.target.value as typeof deliveryStatus)}>
-              <option value="preparing" disabled={selected.shipping.status !== "preparing"}>배송 준비</option>
-              <option value="shipped" disabled={selected.shipping.status === "delivered"}>배송 중</option>
-              <option value="delivered" disabled={selected.shipping.status === "preparing"}>배송 완료</option>
+            {selected.shipping.note && <p>{tr("요청사항: ")}{selected.shipping.note}</p>}
+            <label>{tr("배송 상태")}<select value={deliveryStatus} disabled={busy || selected.status !== "paid"} onChange={e=>setDeliveryStatus(e.target.value as typeof deliveryStatus)}>
+              <option value="preparing" disabled={selected.shipping.status !== "preparing"}>{tr("배송 준비")}</option>
+              <option value="shipped" disabled={selected.shipping.status === "delivered"}>{tr("배송 중")}</option>
+              <option value="delivered" disabled={selected.shipping.status === "preparing"}>{tr("배송 완료")}</option>
             </select></label>
-            <label>택배사<input maxLength={100} value={carrier} disabled={busy || selected.status !== "paid"} onChange={e=>setCarrier(e.target.value)} /></label>
-            <label>송장번호<input maxLength={100} value={tracking} disabled={busy || selected.status !== "paid"} onChange={e=>setTracking(e.target.value)} /></label>
-            <button disabled={busy || selected.status !== "paid"} onClick={saveShipping}>배송 정보 저장</button>
-            {selected.status !== "paid" && <p>취소 요청 또는 취소된 주문은 배송 정보를 변경할 수 없습니다.</p>}
+            <label>{tr("택배사")}<input maxLength={100} value={carrier} disabled={busy || selected.status !== "paid"} onChange={e=>setCarrier(e.target.value)} /></label>
+            <label>{tr("송장번호")}<input maxLength={100} value={tracking} disabled={busy || selected.status !== "paid"} onChange={e=>setTracking(e.target.value)} /></label>
+            <button disabled={busy || selected.status !== "paid"} onClick={saveShipping}>{tr("배송 정보 저장")}</button>
+            {selected.status !== "paid" && <p>{tr("취소 요청 또는 취소된 주문은 배송 정보를 변경할 수 없습니다.")}</p>}
           </section>}
-          <p>
-            취소 요청 사유: {selected.cancellation_reason || "관리자 직접 취소"}
+          <p>{tr("취소 요청 사유: ")}{selected.cancellation_reason || tr("관리자 직접 취소")}
           </p>
           {selected.status === "cancelled" ? (
             <>
-              <p>환불 사유: {selected.refund_reason}</p>
-              <p>환불 거래: {selected.refund_transaction_id}</p>
+              <p>{tr("환불 사유: ")}{selected.refund_reason}</p>
+              <p>{tr("환불 거래: ")}{selected.refund_transaction_id}</p>
             </>
           ) : (
             <>
-              <label>
-                처리 사유
-                <textarea
+              <label>{tr("처리 사유")}<textarea
                   required
                   maxLength={500}
                   value={reason}
@@ -244,22 +235,18 @@ export function OrderAdmin() {
                 <>
                   <p role="alert">
                     {formatUsdt(selected.total, 6)}{" "}
-                    {selected.currency === "POINT" ? "P" : "USDT"}를 반환하고
-                    재고 {selected.quantity}개를 복구합니다.
-                  </p>
+                    {selected.currency === "POINT" ? "P" : "USDT"}{tr("를 반환하고 재고 ")}{selected.quantity}{tr("개를 복구합니다.")}</p>
                   <button
                     className="shop-primary"
                     disabled={busy}
                     onClick={() => decide("approve")}
                   >
-                    {busy ? "처리 중…" : "취소 승인 및 전액 환불 확정"}
+                    {busy ? tr("처리 중…") : tr("취소 승인 및 전액 환불 확정")}
                   </button>
                   <button
                     disabled={busy}
                     onClick={() => setConfirmation(false)}
-                  >
-                    돌아가기
-                  </button>
+                  >{tr("돌아가기")}</button>
                 </>
               ) : (
                 <>
@@ -267,16 +254,12 @@ export function OrderAdmin() {
                     className="shop-primary"
                     disabled={busy || !reason.trim()}
                     onClick={() => setConfirmation(true)}
-                  >
-                    취소 승인·환불 검토
-                  </button>
+                  >{tr("취소 승인·환불 검토")}</button>
                   {selected.status === "cancellation_requested" && (
                     <button
                       disabled={busy || !reason.trim()}
                       onClick={() => decide("reject")}
-                    >
-                      취소 요청 반려
-                    </button>
+                    >{tr("취소 요청 반려")}</button>
                   )}
                 </>
               )}
@@ -288,9 +271,7 @@ export function OrderAdmin() {
               setSelected(null);
               setConfirmation(false);
             }}
-          >
-            상세 닫기
-          </button>
+          >{tr("상세 닫기")}</button>
         </section>
       )}
     </main>

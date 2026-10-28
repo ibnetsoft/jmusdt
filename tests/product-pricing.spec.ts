@@ -22,7 +22,7 @@ test("member pricing displays the consumer comparison and requires shipping befo
   await page.getByLabel("연락처", { exact: true }).fill("010-0000-0000");
   await page.getByLabel("배송 주소", { exact: true }).fill("서울시 테스트 주소");
   await expect(confirm).toBeEnabled();
-  await page.getByRole("combobox").selectOption("2");
+  await page.getByRole("combobox", { name: "수량", exact: true }).selectOption("2");
   await expect(page.locator(".shop-total")).toHaveText("결제금액 176,000.000000 포인트");
   await expect(page.getByRole("button", { name: "포인트 잔액 부족", exact: true })).toBeDisabled();
   await page.setViewportSize({ width: 390, height: 844 });

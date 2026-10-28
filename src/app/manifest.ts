@@ -1,15 +1,18 @@
 import type { MetadataRoute } from "next";
-export default function manifest(): MetadataRoute.Manifest {
+import { serverI18n } from "@/lib/i18n-server";
+export const dynamic = "force-dynamic";
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const { tr, locale } = await serverI18n();
   return {
     name: "JMUSDT Wallet",
     short_name: "JMUSDT",
-    description: "TRON USDT 지갑",
+    description: tr("TRON USDT 지갑"),
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#101010",
     theme_color: "#101010",
-    lang: "ko",
+    lang: locale,
     icons: [
       {
         src: "/icons/icon-192.png",

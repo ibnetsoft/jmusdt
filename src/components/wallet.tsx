@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -40,6 +42,7 @@ type InstallEvent = Event & {
   userChoice: Promise<{ outcome: string }>;
 };
 export function WalletApp({initialView = "home"}: {initialView?: View}) {
+  const { tr } = useI18n();
   const [data, setData] = useState<WalletData | null>(null),
     [view, setView] = useState<View>(initialView),
     [error, setError] = useState(""),
@@ -118,35 +121,27 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
           <br />
           Your everyday.
         </div>
-        <nav aria-label="주 메뉴">
+        <nav aria-label={tr("주 메뉴")}>
           <button
             onClick={() => {
               location.href = "/rewards";
             }}
-          >
-            리워드 · 주머니
-          </button>
+          >{tr("리워드 · 주머니")}</button>
           <button
             onClick={() => {
               location.href = "/organization";
             }}
-          >
-            추천 · 후원 조직도
-          </button>
+          >{tr("추천 · 후원 조직도")}</button>
           <button
             onClick={() => {
               location.href = "/points";
             }}
-          >
-            포인트 · 1:1 전환
-          </button>
+          >{tr("포인트 · 1:1 전환")}</button>
           <button
             onClick={() => {
               location.href = "/shop";
             }}
-          >
-            쇼핑몰
-          </button>
+          >{tr("쇼핑몰")}</button>
           {nav.map((n) => (
             <button
               key={n.view}
@@ -154,7 +149,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
               onClick={() => setView(n.view)}
             >
               <n.icon size={20} />
-              {n.label}
+              {tr(n.label)}
               {view === n.view ? <span className="nav-dot" /> : null}
             </button>
           ))}
@@ -164,13 +159,8 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             <i />
             TRON NETWORK
           </span>
-          <p>
-            심플하게 보내고,
-            <br />
-            안전하게 보관하세요.
-          </p>
-          <a href="/admin">
-            관리자 콘솔 <ExternalLink size={14} />
+          <p>{tr("심플하게 보내고,")}<br />{tr("안전하게 보관하세요.")}</p>
+          <a href="/admin">{tr("관리자 콘솔 ")}<ExternalLink size={14} />
           </a>
         </div>
       </aside>
@@ -189,7 +179,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             </span>
             <button
               className="icon-button"
-              aria-label="마이페이지"
+              aria-label={tr("마이페이지")}
               onClick={() => setView("settings")}
             >
               <Settings size={18} />
@@ -199,22 +189,19 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
         {data?.mode === "demo" ? (
           <div className="demo-strip">
             <span>
-              <i />
-              데모 지갑 · 실제 자산이 아닙니다
-            </span>
-            <a href="/login">
-              계정 연결 <ArrowUpRight size={12} />
+              <i />{tr("데모 지갑 · 실제 자산이 아닙니다")}</span>
+            <a href="/login">{tr("계정 연결 ")}<ArrowUpRight size={12} />
             </a>
           </div>
         ) : data?.network === "nile" ? (
           <div className="demo-strip">
-            <span>Nile 테스트넷 · 실제 USDT가 아닙니다</span>
+            <span>{tr("Nile 테스트넷 · 실제 USDT가 아닙니다")}</span>
           </div>
         ) : null}
         {error ? (
           <div className="error-banner" role="alert">
-            {error}
-            <button onClick={() => void refresh()}>다시 시도</button>
+            {tr(error)}
+            <button onClick={() => void refresh()}>{tr("다시 시도")}</button>
           </div>
         ) : null}
         {!data && !error ? <Spinner /> : null}
@@ -225,31 +212,24 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                 <div className="page-heading">
                   <div>
                     <p className="eyebrow">A LITTLE MORE FREEDOM</p>
-                    <h1>
-                      나의 일상,
-                      <br />
-                      하나의 지갑.
-                    </h1>
+                    <h1>{tr("나의 일상,")}<br />{tr("하나의 지갑.")}</h1>
                   </div>
                   <span className="outline-token">
                     <Token />
                   </span>
                 </div>
                 <p>
-                  <a href="/points">
-                    포인트{" "}
-                    {hidden ? "••••••" : formatUsdt(data.points || "0", 6)} P ·
-                    USDT ↔ 포인트 전환
-                  </a>
+                  <a href="/points">{tr("포인트")}{" "}
+                    {hidden ? "••••••" : formatUsdt(data.points || "0", 6)}{tr(" P · USDT ↔ 포인트 전환")}</a>
                 </p>
                 <p>
-                  <a href="/rewards">리워드 · 주머니 보기 →</a>
+                  <a href="/rewards">{tr("리워드 · 주머니 보기 →")}</a>
                 </p>
                 <section className="balance-card">
                   <div className="balance-title">
-                    <span>사용 가능한 잔액</span>
+                    <span>{tr("사용 가능한 잔액")}</span>
                     <button
-                      aria-label={hidden ? "잔액 표시" : "잔액 숨기기"}
+                      aria-label={hidden ? tr("잔액 표시") : tr("잔액 숨기기")}
                       onClick={() => setHidden(!hidden)}
                     >
                       {hidden ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -264,8 +244,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                       <i />
                       TRON · TRC20
                     </span>
-                    <span>
-                      출금 예약{" "}
+                    <span>{tr("출금 예약")}{" "}
                       <b>{hidden ? "••••" : formatUsdt(data.reserved)}</b>
                     </span>
                   </div>
@@ -274,22 +253,17 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                   <button onClick={() => setView("deposit")}>
                     <span>
                       <ArrowDownLeft size={24} />
-                    </span>
-                    입금하기
-                    <ArrowRight size={19} />
+                    </span>{tr("입금하기")}<ArrowRight size={19} />
                   </button>
                   <button onClick={() => setView("send")}>
                     <span>
                       <ArrowUpRight size={24} />
-                    </span>
-                    송금하기
-                    <ArrowRight size={19} />
+                    </span>{tr("송금하기")}<ArrowRight size={19} />
                   </button>
                 </div>
                 <div className="section-heading">
-                  <h2>최근 거래</h2>
-                  <button onClick={() => setView("activity")}>
-                    전체 보기 <ChevronRight size={15} />
+                  <h2>{tr("최근 거래")}</h2>
+                  <button onClick={() => setView("activity")}>{tr("전체 보기 ")}<ChevronRight size={15} />
                   </button>
                 </div>
                 <ActivityList
@@ -298,7 +272,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                 />
                 <div className="secure-note">
                   <ShieldCheck size={16} />
-                  <span>안전한 원장 관리 · USDT 전용 지갑</span>
+                  <span>{tr("안전한 원장 관리 · USDT 전용 지갑")}</span>
                 </div>
               </>
             ) : null}
@@ -325,7 +299,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                 <div className="page-heading compact">
                   <div>
                     <p className="eyebrow">MAKE IT YOURS</p>
-                    <h1>마이페이지</h1>
+                    <h1>{tr("마이페이지")}</h1>
                   </div>
                   <Settings className="muted" size={30} />
                 </div>
@@ -335,7 +309,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                   </span>
                   <h2>{data.user.name}</h2>
                   <p>{data.user.email}</p>
-                  {data.user.gradeName && <p>회원등급: {data.user.gradeName}</p>}
+                  {tr(data.user.gradeName) && <p>{tr("회원등급: ")}{tr(data.user.gradeName)}</p>}
                   <span className="network-pill">
                     {data.mode === "demo" ? "DEMO ACCOUNT" : "VERIFIED ACCOUNT"}
                   </span>
@@ -345,18 +319,18 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                 <div className="settings-list">
                   <div>
                     <Globe size={19} />
-                    <span>네트워크</span>
+                    <span>{tr("네트워크")}</span>
                     <b>
                       {data.mode === "demo"
-                        ? "데모"
+                        ? tr("데모")
                         : data.network === "nile"
-                          ? "Nile 테스트넷"
-                          : "TRON 메인넷"}
+                          ? tr("Nile 테스트넷")
+                          : tr("TRON 메인넷")}
                     </b>
                   </div>
                   <div>
                     <WalletIcon size={19} />
-                    <span>지원 자산</span>
+                    <span>{tr("지원 자산")}</span>
                     <b>USDT · TRC20</b>
                   </div>
                   <button
@@ -371,7 +345,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                     }}
                   >
                     <Download size={19} />
-                    <span>홈 화면에 설치</span>
+                    <span>{tr("홈 화면에 설치")}</span>
                     <ChevronRight size={16} />
                   </button>
                   {data.mode === "demo" ? (
@@ -382,13 +356,13 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                       }}
                     >
                       <History size={19} />
-                      <span>데모 데이터 초기화</span>
+                      <span>{tr("데모 데이터 초기화")}</span>
                       <ChevronRight size={16} />
                     </button>
                   ) : null}
                   <button onClick={() => void logout()}>
                     <LogOut size={19} />
-                    <span>로그아웃</span>
+                    <span>{tr("로그아웃")}</span>
                     <ChevronRight size={16} />
                   </button>
                 </div>
@@ -397,14 +371,14 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             ) : null}
           </>
         ) : null}
-        <nav className="bottom-nav" aria-label="모바일 메뉴">
+        <nav className="bottom-nav" aria-label={tr("모바일 메뉴")}>
           <button
             onClick={() => {
               location.href = "/organization";
             }}
           >
             <House size={20} />
-            <span>조직도</span>
+            <span>{tr("조직도")}</span>
           </button>
           <button
             onClick={() => {
@@ -412,7 +386,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             }}
           >
             <Plus size={20} />
-            <span>쇼핑몰</span>
+            <span>{tr("쇼핑몰")}</span>
           </button>
           {nav.map((n) => (
             <button
@@ -421,12 +395,12 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
               onClick={() => setView(n.view)}
             >
               <n.icon size={20} />
-              <span>{n.label}</span>
+              <span>{tr(n.label)}</span>
             </button>
           ))}
           <button
             className="send-nav"
-            aria-label="송금하기"
+            aria-label={tr("송금하기")}
             onClick={() => setView("send")}
           >
             <ArrowUpRight size={23} />
@@ -450,23 +424,14 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             <br />
             More freedom.
           </h2>
-          <p>
-            복잡함은 줄이고,
-            <br />
-            당신의 자산에 집중하세요.
-          </p>
-          <button onClick={() => setView("deposit")}>
-            내 지갑에 입금하기 <ArrowUpRight size={21} />
+          <p>{tr("복잡함은 줄이고,")}<br />{tr("당신의 자산에 집중하세요.")}</p>
+          <button onClick={() => setView("deposit")}>{tr("내 지갑에 입금하기 ")}<ArrowUpRight size={21} />
           </button>
         </div>
         <div className="aside-security">
           <ShieldCheck size={25} />
           <h3>Built around trust.</h3>
-          <p>
-            거래 내역을 한눈에 확인하고
-            <br />
-            자산의 흐름을 관리하세요.
-          </p>
+          <p>{tr("거래 내역을 한눈에 확인하고")}<br />{tr("자산의 흐름을 관리하세요.")}</p>
           <span>
             USDT ONLY <i /> TRC20 NETWORK
           </span>
@@ -475,7 +440,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
       {toast ? (
         <div className="toast" role="status">
           <Check size={17} />
-          {toast}
+          {tr(toast)}
         </div>
       ) : null}
       {selected ? (
@@ -489,6 +454,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
   );
 }
 function ReferralCard({code,onNotice}: {code?: string;onNotice:(text:string)=>void}) {
+  const { tr } = useI18n();
   const [origin,setOrigin]=useState("");
   useEffect(()=>{setOrigin(location.origin);},[]);
   const link=code && origin ? `${origin}/login?ref=${encodeURIComponent(code)}` : "";
@@ -497,20 +463,20 @@ function ReferralCard({code,onNotice}: {code?: string;onNotice:(text:string)=>vo
     catch {onNotice("복사하지 못했습니다. 입력란의 내용을 직접 복사해 주세요.");}
   }
   return <section className="referral-card" aria-labelledby="referral-title">
-    <h2 id="referral-title">내 추천 정보</h2>
+    <h2 id="referral-title">{tr("내 추천 정보")}</h2>
     {code ? <>
-      <label className="field">자동 생성된 추천코드<input value={code} readOnly /></label>
-      <button className="secondary-button" onClick={()=>void copy(code,"추천코드")}><Copy size={16}/> 추천코드 복사</button>
-      <label className="field">추천 가입 링크<input value={link} readOnly onFocus={e=>e.currentTarget.select()} /></label>
-      <button className="secondary-button" disabled={!link} onClick={()=>void copy(link,"추천링크")}><Copy size={16}/> 추천링크 복사</button>
-    </> : <p className="muted">실제 회원 계정으로 로그인하면 자동 생성된 추천 정보를 확인할 수 있습니다.</p>}
+      <label className="field">{tr("자동 생성된 추천코드")}<input value={code} readOnly /></label>
+      <button className="secondary-button" onClick={()=>void copy(code,"추천코드")}><Copy size={16}/>{tr(" 추천코드 복사")}</button>
+      <label className="field">{tr("추천 가입 링크")}<input value={link} readOnly onFocus={e=>e.currentTarget.select()} /></label>
+      <button className="secondary-button" disabled={!link} onClick={()=>void copy(link,"추천링크")}><Copy size={16}/>{tr(" 추천링크 복사")}</button>
+    </> : <p className="muted">{tr("실제 회원 계정으로 로그인하면 자동 생성된 추천 정보를 확인할 수 있습니다.")}</p>}
   </section>;
 }
 function Back({ onBack }: { onBack: () => void }) {
+  const { tr } = useI18n();
   return (
     <button className="back-button" onClick={onBack}>
-      <ArrowLeft size={18} />내 지갑
-    </button>
+      <ArrowLeft size={18} />{tr("내 지갑")}</button>
   );
 }
 function Deposit({
@@ -524,6 +490,7 @@ function Deposit({
   onUpdate: () => Promise<void>;
   notify: (value: string) => void;
 }) {
+  const { tr } = useI18n();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   async function create() {
@@ -553,11 +520,7 @@ function Deposit({
           <span>TRON · TRC20</span>
           <ArrowDownLeft size={23} />
         </div>
-        <h1>
-          내 지갑에
-          <br />
-          USDT 입금하기.
-        </h1>
+        <h1>{tr("내 지갑에")}<br />{tr("USDT 입금하기.")}</h1>
         <div className="qr-wrap">
           <QRCodeSVG
             value={data.address || "JMUSDT-DEMO-NOT-A-DEPOSIT-ADDRESS"}
@@ -572,52 +535,48 @@ function Deposit({
           </span>
           {!data.address ? (
             <span className="qr-demo">
-              {data.mode === "demo" ? "DEMO · 입금 불가" : "주소 생성 대기"}
+              {data.mode === "demo" ? tr("DEMO · 입금 불가") : tr("주소 생성 대기")}
             </span>
           ) : null}
         </div>
         <p className="qr-caption">
           {data.address
-            ? "아래 주소로 USDT를 보내 주세요."
-            : "전용 입금 주소로 간편하게"}
+            ? tr("아래 주소로 USDT를 보내 주세요.")
+            : tr("전용 입금 주소로 간편하게")}
         </p>
         <div className="deposit-address">
-          {data.address || "계정 연결 후 주소가 표시됩니다."}
+          {data.address || tr("계정 연결 후 주소가 표시됩니다.")}
         </div>
       </section>
       <section className="deposit-info">
         <p className="network-warning">
           <ShieldCheck size={17} />
           <span>
-            <b>{data.network === "nile" ? "Nile 테스트넷" : "TRON(TRC20)"}</b>의
-            USDT만 입금해 주세요.
-            <br />
-            다른 네트워크나 자산을 보내면 복구가 어려울 수 있습니다.
-          </span>
+            <b>{data.network === "nile" ? tr("Nile 테스트넷") : "TRON(TRC20)"}</b>{tr("의 USDT만 입금해 주세요.")}<br />{tr("다른 네트워크나 자산을 보내면 복구가 어려울 수 있습니다.")}</span>
         </p>
         <dl className="details">
           <div>
-            <dt>입금 자산</dt>
+            <dt>{tr("입금 자산")}</dt>
             <dd>USDT</dd>
           </div>
           <div>
-            <dt>네트워크</dt>
+            <dt>{tr("네트워크")}</dt>
             <dd>
               {data.mode === "demo"
-                ? "TRON · 데모"
+                ? tr("TRON · 데모")
                 : data.network === "nile"
-                  ? "Nile 테스트넷"
+                  ? tr("Nile 테스트넷")
                   : "TRON (TRC20)"}
             </dd>
           </div>
           <div>
-            <dt>잔액 반영</dt>
-            <dd>블록체인 확정 후 자동 반영</dd>
+            <dt>{tr("잔액 반영")}</dt>
+            <dd>{tr("블록체인 확정 후 자동 반영")}</dd>
           </div>
         </dl>
         {error ? (
           <p className="form-error" role="alert">
-            {error}
+            {tr(error)}
           </p>
         ) : null}
         <button
@@ -636,10 +595,10 @@ function Deposit({
         >
           {data.address ? <Copy size={18} /> : <Plus size={18} />}{" "}
           {busy
-            ? "주소 생성 중…"
+            ? tr("주소 생성 중…")
             : data.address
-              ? "입금 주소 복사"
-              : "전용 입금 주소 생성"}
+              ? tr("입금 주소 복사")
+              : tr("전용 입금 주소 생성")}
         </button>
       </section>
     </div>
@@ -654,6 +613,7 @@ function Send({
   onBack: () => void;
   onUpdate: () => Promise<void>;
 }) {
+  const { tr } = useI18n();
   const [kind, setKind] = useState<"internal" | "external">("internal"),
     [recipient, setRecipient] = useState(""),
     [amount, setAmount] = useState(""),
@@ -730,17 +690,16 @@ function Send({
         <p className="eyebrow">
           {data.mode === "demo" ? "DEMO TRANSACTION" : "REQUEST RECEIVED"}
         </p>
-        <h1>{kind === "internal" ? "송금 완료." : "출금 요청 완료."}</h1>
+        <h1>{kind === "internal" ? tr("송금 완료.") : tr("출금 요청 완료.")}</h1>
         <p>
           {kind === "internal"
-            ? "회원 지갑으로 USDT를 보냈습니다."
-            : "관리자 승인 후 외부 지갑으로 전송됩니다."}
+            ? tr("회원 지갑으로 USDT를 보냈습니다.")
+            : tr("관리자 승인 후 외부 지갑으로 전송됩니다.")}
         </p>
         <div className="success-amount">
           {formatUsdt(units)} <small>USDT</small>
         </div>
-        <button className="primary" onClick={onBack}>
-          내 지갑으로 돌아가기 <ArrowRight size={18} />
+        <button className="primary" onClick={onBack}>{tr("내 지갑으로 돌아가기 ")}<ArrowRight size={18} />
         </button>
       </div>
     );
@@ -750,8 +709,8 @@ function Send({
       <p className="eyebrow">MOVE MONEY, SIMPLY</p>
       <h1>
         {stage === "review"
-          ? "송금 정보를\n확인하세요."
-          : "필요한 곳으로,\n간편하게 송금."}
+          ? tr("송금 정보를\n확인하세요.")
+          : tr("필요한 곳으로,\n간편하게 송금.")}
       </h1>
       {stage === "form" ? (
         <>
@@ -762,22 +721,18 @@ function Send({
                 setKind("internal");
                 setError("");
               }}
-            >
-              회원에게 송금
-            </button>
+            >{tr("회원에게 송금")}</button>
             <button
               className={kind === "external" ? "active" : ""}
               onClick={() => {
                 setKind("external");
                 setError("");
               }}
-            >
-              외부 지갑 출금
-            </button>
+            >{tr("외부 지갑 출금")}</button>
           </div>
           <label className="field">
             <span>
-              {kind === "internal" ? "받는 회원 이메일" : "받는 TRON 주소"}
+              {kind === "internal" ? tr("받는 회원 이메일") : tr("받는 TRON 주소")}
             </span>
             <input
               type={kind === "internal" ? "email" : "text"}
@@ -787,19 +742,19 @@ function Send({
               placeholder={
                 kind === "internal"
                   ? "name@example.com"
-                  : "T로 시작하는 TRC20 주소"
+                  : tr("T로 시작하는 TRC20 주소")
               }
             />
           </label>
           {data.mode === "demo" && kind === "internal" ? (
-            <p className="field-hint">데모 회원: min@example.com</p>
+            <p className="field-hint">{tr("데모 회원: min@example.com")}</p>
           ) : null}
           <label className="amount-field">
-            <span>보낼 금액</span>
+            <span>{tr("보낼 금액")}</span>
             <div>
               <input
                 inputMode="decimal"
-                aria-label="송금 금액"
+                aria-label={tr("송금 금액")}
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => {
@@ -822,16 +777,14 @@ function Send({
                 const maximum = BigInt(data.available) - fee;
                 setAmount(maximum > 0n ? decimalUsdt(maximum) : "0");
               }}
-            >
-              최대
-            </button>
+            >{tr("최대")}</button>
           </div>
-          <div className="keypad" aria-label="금액 입력 키패드">
+          <div className="keypad" aria-label={tr("금액 입력 키패드")}>
             {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"].map(
               (k) => (
                 <button
                   key={k}
-                  aria-label={k === "⌫" ? "한 자리 지우기" : k}
+                  aria-label={k === "⌫" ? tr("한 자리 지우기") : k}
                   onClick={() => {
                     const next = k === "⌫" ? amount.slice(0, -1) : amount + k;
                     if (/^\d*(\.\d{0,6})?$/.test(next)) setAmount(next);
@@ -859,26 +812,24 @@ function Send({
       )}
       <dl className="details">
         <div>
-          <dt>사용 가능</dt>
+          <dt>{tr("사용 가능")}</dt>
           <dd>{formatUsdt(data.available)} USDT</dd>
         </div>
         <div>
-          <dt>수수료</dt>
+          <dt>{tr("수수료")}</dt>
           <dd>{formatUsdt(fee)} USDT</dd>
         </div>
         <div>
-          <dt>총 차감 금액</dt>
+          <dt>{tr("총 차감 금액")}</dt>
           <dd>{formatUsdt(units + fee, 6)} USDT</dd>
         </div>
       </dl>
       {kind === "external" ? (
-        <p className="field-hint">
-          최소 {formatUsdt(data.minimum)} USDT · 관리자 승인 후 전송됩니다.
-        </p>
+        <p className="field-hint">{tr("최소 ")}{formatUsdt(data.minimum)}{tr(" USDT · 관리자 승인 후 전송됩니다.")}</p>
       ) : null}
       {error ? (
         <p className="form-error" role="alert">
-          {error}
+          {tr(error)}
         </p>
       ) : null}
       <button
@@ -887,12 +838,12 @@ function Send({
         onClick={stage === "form" ? review : () => void submit()}
       >
         {busy
-          ? "처리 중…"
+          ? tr("처리 중…")
           : stage === "form"
-            ? "송금 정보 확인"
+            ? tr("송금 정보 확인")
             : kind === "internal"
-              ? "송금하기"
-              : "출금 요청하기"}
+              ? tr("송금하기")
+              : tr("출금 요청하기")}
         <ArrowUpRight size={19} />
       </button>
       {stage === "review" ? (
@@ -900,9 +851,7 @@ function Send({
           className="text-button"
           disabled={busy}
           onClick={() => setStage("form")}
-        >
-          정보 수정
-        </button>
+        >{tr("정보 수정")}</button>
       ) : null}
     </section>
   );
@@ -914,6 +863,7 @@ function Activity({
   data: WalletData;
   onSelect: (t: Transaction) => void;
 }) {
+  const { tr } = useI18n();
   const [filter, setFilter] = useState("all");
   const filtered = data.transactions.filter(
     (t) =>
@@ -936,7 +886,7 @@ function Activity({
       <div className="page-heading compact">
         <div>
           <p className="eyebrow">EVERY MOVE, IN ONE PLACE</p>
-          <h1>거래 내역</h1>
+          <h1>{tr("거래 내역")}</h1>
         </div>
         <History size={30} className="muted" />
       </div>
@@ -951,12 +901,12 @@ function Activity({
             onClick={() => setFilter(key)}
             key={key}
           >
-            {label}
+            {tr(label)}
           </button>
         ))}
       </div>
       <ActivityList transactions={filtered} onSelect={onSelect} />
-      <p className="field-hint">최근 100건 · 시각은 한국 표준시(KST)입니다.</p>
+      <p className="field-hint">{tr("최근 100건 · 시각은 한국 표준시(KST)입니다.")}</p>
     </>
   );
 }

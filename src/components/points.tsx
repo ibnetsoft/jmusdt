@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useEffect, useRef, useState } from "react";
 import { formatUsdt, parseUsdt } from "@/lib/money";
 import "./shop.css";
@@ -14,6 +16,7 @@ type Data = {
   }[];
 };
 export function Points() {
+  const { tr, localeTag } = useI18n();
   const [data, setData] = useState<Data | null>(null),
     [direction, setDirection] = useState("usdt_to_points"),
     [amount, setAmount] = useState(""),
@@ -63,36 +66,30 @@ export function Points() {
   return (
     <main className="commerce">
       <header>
-        <a href="/">← 내 지갑</a>
-        <a href="/shop">쇼핑몰 ↗</a>
+        <a href="/">{tr("← 내 지갑")}</a>
+        <a href="/shop">{tr("쇼핑몰 ↗")}</a>
       </header>
       <p className="shop-kicker">JMUSDT / POINTS</p>
-      <h1>포인트 전환</h1>
-      <p className="shop-muted">1 USDT = 1 포인트 · 수수료 0 · 소수점 6자리</p>
+      <h1>{tr("포인트 전환")}</h1>
+      <p className="shop-muted">{tr("1 USDT = 1 포인트 · 수수료 0 · 소수점 6자리")}</p>
       {BigInt(data?.debt || "0") > 0n && (
-        <p className="shop-error">
-          취소 보상 미수금 {formatUsdt(data!.debt, 6)} P가 있습니다. USDT →
-          포인트 전환 시 미수금이 우선 상계되므로 실제 사용 가능 포인트는
-          전환액보다 적을 수 있습니다.
-        </p>
+        <p className="shop-error">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt, 6)}{tr(" P가 있습니다. USDT → 포인트 전환 시 미수금이 우선 상계되므로 실제 사용 가능 포인트는 전환액보다 적을 수 있습니다.")}</p>
       )}
-      <p>
-        포인트로 쇼핑몰 상품을 구매하세요. 전환은 내부 잔액에서 즉시 처리됩니다.
-      </p>
+      <p>{tr("포인트로 쇼핑몰 상품을 구매하세요. 전환은 내부 잔액에서 즉시 처리됩니다.")}</p>
       {data && (
         <div className="shop-balance">
           <strong>{formatUsdt(data.usdt, 6)} USDT</strong>
           <strong>{formatUsdt(data.points, 6)} P</strong>
         </div>
       )}
-      {error && (
+      {tr(error) && (
         <p role="alert" className="shop-error">
-          {error}
+          {tr(error)}
         </p>
       )}
-      {notice && (
+      {tr(notice) && (
         <p role="status" className="shop-success">
-          {notice}
+          {tr(notice)}
         </p>
       )}
       <form
@@ -116,22 +113,18 @@ export function Points() {
         }}
       >
         <fieldset disabled={busy || confirm}>
-          <label>
-            전환 방향
-            <select
+          <label>{tr("전환 방향")}<select
               value={direction}
               onChange={(e) => {
                 setDirection(e.target.value);
                 setNotice("");
               }}
             >
-              <option value="usdt_to_points">USDT → 포인트</option>
-              <option value="points_to_usdt">포인트 → USDT</option>
+              <option value="usdt_to_points">{tr("USDT → 포인트")}</option>
+              <option value="points_to_usdt">{tr("포인트 → USDT")}</option>
             </select>
           </label>
-          <label>
-            전환 금액
-            <input
+          <label>{tr("전환 금액")}<input
               inputMode="decimal"
               required
               value={amount}
@@ -141,12 +134,10 @@ export function Points() {
               }}
             />
           </label>
-          <button className="shop-primary" disabled={!data}>
-            전환 내용 확인
-          </button>
+          <button className="shop-primary" disabled={!data}>{tr("전환 내용 확인")}</button>
         </fieldset>
         {confirm && (
-          <section aria-label="전환 최종 확인">
+          <section aria-label={tr("전환 최종 확인")}>
             <p>
               {amount}{" "}
               {direction === "usdt_to_points"
@@ -159,31 +150,29 @@ export function Points() {
               disabled={busy}
               onClick={swap}
             >
-              {busy ? "처리 중…" : "1:1 전환 확정"}
+              {busy ? tr("처리 중…") : tr("1:1 전환 확정")}
             </button>
             <button
               type="button"
               disabled={busy}
               onClick={() => setConfirm(false)}
-            >
-              취소
-            </button>
+            >{tr("취소")}</button>
           </section>
         )}
       </form>
-      <h2>전환 내역</h2>
+      <h2>{tr("전환 내역")}</h2>
       {data?.history.map((h) => (
         <article className="shop-order" key={h.id}>
           <span>
             {h.direction === "usdt_to_points"
-              ? "USDT → 포인트"
-              : "포인트 → USDT"}
-            <small> · {new Date(h.created_at).toLocaleString("ko-KR")}</small>
+              ? tr("USDT → 포인트")
+              : tr("포인트 → USDT")}
+            <small> · {new Date(h.created_at).toLocaleString(localeTag, { timeZone: 'Asia/Seoul' })}</small>
           </span>
           <strong>{formatUsdt(h.amount, 6)}</strong>
         </article>
       ))}
-      {data?.history.length === 0 && <p>아직 전환 내역이 없습니다.</p>}
+      {data?.history.length === 0 && <p>{tr("아직 전환 내역이 없습니다.")}</p>}
     </main>
   );
 }

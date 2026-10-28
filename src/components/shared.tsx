@@ -1,4 +1,7 @@
 "use client";
+import { useI18n } from "./i18n";
+import { localeTags, type Locale } from "@/lib/i18n";
+
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -24,8 +27,9 @@ export function Token({ small = false }: { small?: boolean }) {
   );
 }
 export function Brand({ admin = false }: { admin?: boolean }) {
+  const { tr } = useI18n();
   return (
-    <a className="brand" href={admin ? "/admin" : "/"} aria-label="JMUSDT 홈">
+    <a className="brand" href={admin ? "/admin" : "/"} aria-label={tr("JMUSDT 홈")}>
       <span className="brand-mark">
         j<span>m</span>
         <i />
@@ -60,15 +64,16 @@ export const statusLabels: Record<string, string> = {
   failed: "실패",
 };
 export function Status({ value }: { value: string }) {
+  const { tr } = useI18n();
   return (
     <span className={`status ${value}`}>
       <i />
-      {statusLabels[value] || value}
+      {tr(statusLabels[value]) || value}
     </span>
   );
 }
-export function txDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+export function txDate(value: string, locale: Locale = "ko") {
+  return new Intl.DateTimeFormat(localeTags[locale], {
     timeZone: "Asia/Seoul",
     month: "2-digit",
     day: "2-digit",
@@ -84,6 +89,7 @@ export function ActivityList({
   transactions: Transaction[];
   onSelect: (t: Transaction) => void;
 }) {
+  const { tr, locale } = useI18n();
   return transactions.length ? (
     <div className="activity-list">
       {transactions.map((t) => {
@@ -109,9 +115,9 @@ export function ActivityList({
               )}
             </span>
             <span className="tx-description">
-              <strong>{kindLabels[t.kind]}</strong>
+              <strong>{tr(kindLabels[t.kind])}</strong>
               <small>
-                {txDate(t.created_at)} · {statusLabels[t.status] || t.status}
+                {txDate(t.created_at, locale)} · {tr(statusLabels[t.status]) || t.status}
               </small>
             </span>
             <span className={`tx-amount ${incoming ? "incoming" : ""}`}>
@@ -128,24 +134,26 @@ export function ActivityList({
   ) : (
     <div className="empty">
       <Clock3 />
-      <p>아직 거래 내역이 없습니다.</p>
-      <small>입금하거나 송금하면 이곳에 표시됩니다.</small>
+      <p>{tr("아직 거래 내역이 없습니다.")}</p>
+      <small>{tr("입금하거나 송금하면 이곳에 표시됩니다.")}</small>
     </div>
   );
 }
 export function Notice({ message }: { message: string }) {
+  const { tr } = useI18n();
   return (
     <div className="notice" role="status">
       <Check size={17} />
-      {message}
+      {tr(message)}
     </div>
   );
 }
 export function Spinner() {
+  const { tr } = useI18n();
   return (
     <div className="loading">
       <LoaderCircle className="spin" />
-      <p>지갑을 불러오는 중…</p>
+      <p>{tr("지갑을 불러오는 중…")}</p>
     </div>
   );
 }
@@ -158,6 +166,7 @@ export function TransactionModal({
   onClose: () => void;
   network: string;
 }) {
+  const { tr, locale } = useI18n();
   useDialogFocus(true);
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -172,12 +181,12 @@ export function TransactionModal({
           className="icon-button modal-close"
           autoFocus
           onClick={onClose}
-          aria-label="닫기"
+          aria-label={tr("닫기")}
         >
           <X size={20} />
         </button>
         <p className="eyebrow">TRANSACTION</p>
-        <h2 id="tx-title">{kindLabels[transaction.kind]}</h2>
+        <h2 id="tx-title">{tr(kindLabels[transaction.kind])}</h2>
         <div className="detail-amount">
           {formatUsdt(transaction.amount, 6)}{" "}
           <small>{transaction.asset === "POINT" ? "P" : "USDT"}</small>
@@ -185,24 +194,24 @@ export function TransactionModal({
         <Status value={transaction.status} />
         <dl className="details">
           <div>
-            <dt>거래 시각</dt>
-            <dd>{txDate(transaction.created_at)} KST</dd>
+            <dt>{tr("거래 시각")}</dt>
+            <dd>{txDate(transaction.created_at, locale)} KST</dd>
           </div>
           <div>
-            <dt>수수료</dt>
+            <dt>{tr("수수료")}</dt>
             <dd>{formatUsdt(transaction.fee, 6)} USDT</dd>
           </div>
           <div>
-            <dt>받는 곳</dt>
-            <dd>{transaction.destination || "내 지갑"}</dd>
+            <dt>{tr("받는 곳")}</dt>
+            <dd>{transaction.destination || tr("내 지갑")}</dd>
           </div>
           <div>
-            <dt>거래 ID</dt>
+            <dt>{tr("거래 ID")}</dt>
             <dd>{transaction.id}</dd>
           </div>
           {transaction.note ? (
             <div>
-              <dt>메모</dt>
+              <dt>{tr("메모")}</dt>
               <dd>{transaction.note}</dd>
             </div>
           ) : null}
@@ -213,8 +222,7 @@ export function TransactionModal({
             target="_blank"
             rel="noreferrer"
             href={`https://${network === "nile" ? "nile." : ""}tronscan.org/#/transaction/${transaction.txid}`}
-          >
-            블록체인에서 확인 <ArrowUpRight size={17} />
+          >{tr("블록체인에서 확인 ")}<ArrowUpRight size={17} />
           </a>
         ) : null}
       </section>

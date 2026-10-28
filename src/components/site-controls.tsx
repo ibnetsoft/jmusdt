@@ -1,7 +1,10 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useEffect, useState } from "react";
 
 export function SiteControls() {
+  const { tr, locale, setLocale } = useI18n();
   const [theme,setTheme]=useState<"dark"|"light">("dark");
   const [logo,setLogo]=useState(true);
   const [logoReady,setLogoReady]=useState(false);
@@ -13,7 +16,12 @@ export function SiteControls() {
     setTheme(next);
   }
   return <div className="site-controls">
-    {logo && <a href="/" aria-label="JMUSDT 홈" style={{display:logoReady?"block":"none"}}><img src="/api/branding/logo" alt="JMUSDT 로고" onLoad={()=>setLogoReady(true)} onError={()=>setLogo(false)} /></a>}
-    <button type="button" onClick={toggle} aria-label={theme==="dark"?"브라이트 모드로 전환":"다크 모드로 전환"}>{theme==="dark"?"☀ 브라이트":"☾ 다크"}</button>
+    {logo && <a href="/" aria-label={tr("JMUSDT 홈")} style={{display:logoReady?"block":"none"}}><img src="/api/branding/logo" alt={tr("JMUSDT 로고")} onLoad={()=>setLogoReady(true)} onError={()=>setLogo(false)} /></a>}
+    <select aria-label={tr("언어 선택")} value={locale} onChange={e=>setLocale(e.target.value as "ko"|"en"|"ja")}>
+      <option value="ko" lang="ko">한국어</option>
+      <option value="en" lang="en">English</option>
+      <option value="ja" lang="ja">日本語</option>
+    </select>
+    <button type="button" onClick={toggle} aria-label={theme==="dark"?tr("브라이트 모드로 전환"):tr("다크 모드로 전환")}>{theme==="dark"?tr("☀ 브라이트"):tr("☾ 다크")}</button>
   </div>;
 }

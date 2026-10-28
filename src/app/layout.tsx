@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SiteControls } from "@/components/site-controls";
-export const metadata: Metadata = {
+import { LanguageProvider } from "@/components/i18n";
+import { serverI18n } from "@/lib/i18n-server";
+const baseMetadata: Metadata = {
   title: "JMUSDT — Everyday wallet",
   description: "TRON USDT 중앙화 지갑",
   manifest: "/manifest.webmanifest",
@@ -12,20 +14,25 @@ export const metadata: Metadata = {
   },
   icons: { icon: "/icons/icon.svg", apple: "/icons/icon-192.png" },
 };
+export async function generateMetadata(): Promise<Metadata> {
+  const { tr } = await serverI18n();
+  return { ...baseMetadata, description: tr("TRON USDT 중앙화 지갑") };
+}
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#101010",
 };
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { locale } = await serverI18n();
   return (
-    <html lang="ko" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{__html:"try{var t=localStorage.getItem('jmusdt-theme');document.documentElement.dataset.theme=t==='light'?'light':'dark'}catch(e){document.documentElement.dataset.theme='dark'}"}} /></head>
-      <body><SiteControls />{children}</body>
+      <body><LanguageProvider initialLocale={locale}><SiteControls />{children}</LanguageProvider></body>
     </html>
   );
 }

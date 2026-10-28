@@ -1,4 +1,6 @@
 "use client";
+import { useI18n } from "./i18n";
+
 import { useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { ShieldCheck, KeyRound } from "lucide-react";
@@ -9,6 +11,7 @@ function browserAuth() {
   );
 }
 export function SecuritySettings({ demo = false }: { demo?: boolean }) {
+  const { tr } = useI18n();
   const [factor, setFactor] = useState(""),
     [qr, setQr] = useState(""),
     [code, setCode] = useState(""),
@@ -70,25 +73,23 @@ export function SecuritySettings({ demo = false }: { demo?: boolean }) {
       <div>
         <ShieldCheck size={23} />
         <span>
-          <strong>2단계 인증</strong>
-          <small>인증 앱으로 계정을 보호하세요.</small>
+          <strong>{tr("2단계 인증")}</strong>
+          <small>{tr("인증 앱으로 계정을 보호하세요.")}</small>
         </span>
-        <button onClick={() => void begin()} disabled={busy}>
-          인증하기
-        </button>
+        <button onClick={() => void begin()} disabled={busy}>{tr("인증하기")}</button>
       </div>
       {factor ? (
         <div className="mfa-form">
           {qr ? (
             <img
-              alt="인증 앱 등록 QR 코드"
+              alt={tr("인증 앱 등록 QR 코드")}
               width={170}
               height={170}
               src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr)}`}
             />
           ) : null}
           <label className="field">
-            <span>인증 앱의 6자리 코드</span>
+            <span>{tr("인증 앱의 6자리 코드")}</span>
             <input
               inputMode="numeric"
               autoComplete="one-time-code"
@@ -103,13 +104,13 @@ export function SecuritySettings({ demo = false }: { demo?: boolean }) {
             onClick={() => void verify()}
           >
             <KeyRound size={16} />
-            {busy ? "확인 중…" : "코드 확인"}
+            {busy ? tr("확인 중…") : tr("코드 확인")}
           </button>
         </div>
       ) : null}
       {message ? (
         <p className="field-hint" role="status">
-          {message}
+          {tr(message)}
         </p>
       ) : null}
     </section>
