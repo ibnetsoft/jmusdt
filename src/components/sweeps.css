@@ -1,0 +1,35 @@
+.sweep-page header,
+.sweep-page .shop-section-head {
+  flex-wrap: wrap;
+}
+.sweep-page .shop-editor {
+  margin: 20px 0;
+  overflow-wrap: anywhere;
+}
+.sweep-page .shop-order {
+  overflow-wrap: anywhere;
+}
+.sweep-page .sweep-table {
+  overflow-x: auto;
+  margin: 24px 0;
+}
+.sweep-page table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+.sweep-page th,
+.sweep-page td {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+.sweep-page td small {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 6px;
+  color: #aaa;
+}
+.sweep-page td input {
+  width: auto;
+}

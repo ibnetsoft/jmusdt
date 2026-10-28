@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "worker": "tsx workers/tron.ts",
+    "worker:sweep": "tsx workers/sweep.ts",
     "db:apply": "tsx scripts/apply-schema.ts",
     "custody": "tsx --env-file=.env.custody services/custody.ts",
     "test:ui": "playwright test"

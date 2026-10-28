@@ -304,6 +304,13 @@ export function AdminApp() {
           </button>
           <button
             onClick={() => {
+              location.href = "/admin/sweeps";
+            }}
+          >
+            USDT 모으기
+          </button>
+          <button
+            onClick={() => {
               location.href = "/admin/marketing";
             }}
           >
@@ -737,9 +744,11 @@ export function AdminApp() {
                               <td>
                                 <button
                                   className="table-link"
-                                  onClick={() =>
-                                    open("sweep", u.id, "자금 회수 요청")
-                                  }
+                                  onClick={() => {
+                                    location.href =
+                                      "/admin/sweeps?q=" +
+                                      encodeURIComponent(u.email);
+                                  }}
                                 >
                                   회수 요청 <ArrowUpRight size={14} />
                                 </button>

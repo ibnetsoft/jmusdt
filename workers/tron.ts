@@ -16,6 +16,7 @@ import {
   type Receipt,
 } from "../src/lib/tron-transaction";
 import { ensureChainBinding } from "../src/lib/chain-binding";
+import { advanceSweep } from "../src/lib/sweep-worker";
 const pool = database(),
   tron = tronClient(),
   config = chainConfig();
@@ -268,130 +269,7 @@ async function sendWithdrawal() {
   }
 }
 async function sweep() {
-  const hot = process.env.TRON_HOT_WALLET_ADDRESS;
-  if (!hot || !validTronAddress(hot))
-    throw new Error("Valid hot wallet required");
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
-      "tron-sweep:" + config.network,
-    ]);
-    const row = (
-      await client.query(
-        `SELECT j.*,a.address,a.derivation_index FROM sweep_jobs j JOIN deposit_addresses a ON a.user_id=j.user_id
-      WHERE j.status IN('requested','signing','broadcast') AND a.network=$1
-      ORDER BY CASE WHEN j.status IN('signing','broadcast') AND j.expiration>extract(epoch from now())*1000 THEN 0 WHEN j.status='requested' THEN 1 ELSE 2 END,j.updated_at LIMIT 1 FOR UPDATE OF j`,
-        [config.network],
-      )
-    ).rows[0];
-    if (!row) {
-      await client.query("COMMIT");
-      return;
-    }
-    if (!row.payload) {
-      const result = await tron.transactionBuilder.triggerConstantContract(
-        contract,
-        "balanceOf(address)",
-        {},
-        [{ type: "address", value: row.address }],
-        hot,
-      );
-      const amount = BigInt("0x" + result.constant_result?.[0]);
-      if (amount === 0n) {
-        await client.query(
-          "UPDATE sweep_jobs SET status='completed',note='No balance to sweep' WHERE id=$1",
-          [row.id],
-        );
-        await client.query("COMMIT");
-        return;
-      }
-      const tx = await build(row.address, hot, amount.toString());
-      await client.query(
-        "UPDATE sweep_jobs SET status='signing',amount=$2,payload=$3,txid=$4,expiration=$5,updated_at=now() WHERE id=$1",
-        [
-          row.id,
-          amount.toString(),
-          JSON.stringify(tx),
-          tx.txID,
-          tx.raw_data.expiration,
-        ],
-      );
-      await client.query("COMMIT");
-      return;
-    }
-    const receipt = await rpc<Receipt>(
-      "walletsolidity/gettransactioninfobyid",
-      { value: row.txid },
-    );
-    if (receipt.id) {
-      const success =
-        receipt.receipt?.result === "SUCCESS" &&
-        decodeDeposits(receipt, contract).some(
-          (event) => event.address === hot && event.amount === row.amount,
-        );
-      if (receipt.receipt?.result === "SUCCESS" && !success)
-        throw new Error("Ambiguous sweep receipt");
-      if (!receipt.receipt?.result && receipt.result !== "FAILED")
-        throw new Error("Unknown sweep outcome");
-      await client.query("UPDATE sweep_jobs SET status=$2 WHERE id=$1", [
-        row.id,
-        success ? "completed" : "failed",
-      ]);
-      await client.query(
-        "INSERT INTO audit_logs(action,details) VALUES($1,$2)",
-        [
-          "sweep.settled",
-          JSON.stringify({ id: row.id, txid: row.txid, success }),
-        ],
-      );
-      await client.query("COMMIT");
-      return;
-    }
-    if (Number(row.expiration) <= Date.now()) {
-      await client.query(
-        "UPDATE sweep_jobs SET note='Expired / unconfirmed: manual reconciliation required',updated_at=now() WHERE id=$1",
-        [row.id],
-      );
-      await client.query("COMMIT");
-      return;
-    }
-    const payload = row.payload as Signed;
-    validateTransfer(payload, {
-      owner: row.address,
-      contract,
-      to: hot,
-      amount: row.amount,
-      feeLimit: feeLimit(),
-    });
-    if (!payload.signature) {
-      const signed = await custody<Signed>("/sign", {
-        network: config.network,
-        kind: "sweep",
-        id: row.id,
-        transaction: payload,
-      });
-      validateSigned(payload, signed);
-      await client.query("UPDATE sweep_jobs SET payload=$2 WHERE id=$1", [
-        row.id,
-        JSON.stringify(signed),
-      ]);
-      await client.query("COMMIT");
-      return;
-    }
-    const response = await tron.trx.sendRawTransaction(payload);
-    if (!response.result && String(response.code) !== "DUP_TRANSACTION_ERROR")
-      throw new Error("Sweep broadcast rejected");
-    await client.query("UPDATE sweep_jobs SET status='broadcast' WHERE id=$1", [
-      row.id,
-    ]);
-    await client.query("COMMIT");
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
-  }
+  await advanceSweep();
 }
 // Fail on incorrect token decimals before touching any ledger.
 await ensureChainBinding();
@@ -410,15 +288,23 @@ console.log(
 while (!stopped) {
   try {
     await scan();
-    if (process.env.TRON_BROADCAST_ENABLED === "true") {
-      await sendWithdrawal();
-      await sweep();
-    }
   } catch (error) {
     console.error(
       "TRON worker:",
       error instanceof Error ? error.message : "Unknown error",
     );
+  }
+  if (process.env.TRON_BROADCAST_ENABLED === "true") {
+    try {
+      await sendWithdrawal();
+    } catch {
+      console.error("Withdrawal worker retry required");
+    }
+    try {
+      await sweep();
+    } catch {
+      console.error("Sweep worker retry required");
+    }
   }
   await delay(3000);
 }

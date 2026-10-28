@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { api, identity, checkOrigin, HttpError } from "@/lib/http";
-import { database, transaction } from "@/lib/db";
+import { database } from "@/lib/db";
 import { changeUserStatus } from "@/lib/wallet-service";
 const schema = z.object({
   action: z.enum(["approve", "reject", "block", "unblock", "sweep"]),
@@ -29,22 +29,10 @@ export async function POST(request: Request) {
         action === "block" ? "blocked" : "active",
       );
     else
-      await transaction(async (client) => {
-        const address = await client.query(
-          "SELECT address FROM deposit_addresses WHERE user_id=$1 AND address IS NOT NULL",
-          [id],
-        );
-        if (!address.rowCount)
-          throw new HttpError(400, "회수할 입금 주소가 없습니다.");
-        await client.query(
-          "INSERT INTO sweep_jobs(user_id,note) VALUES($1,$2) ON CONFLICT DO NOTHING",
-          [id, reason],
-        );
-        await client.query(
-          "INSERT INTO audit_logs(actor,action,details) VALUES($1,$2,$3)",
-          [user.id, "sweep.requested", JSON.stringify({ user_id: id, reason })],
-        );
-      });
+      throw new HttpError(
+        409,
+        "USDT 모으기 화면에서 확정 잔액·회사 지갑·TRX를 검토한 후 승인하세요.",
+      );
     return { ok: true };
   });
 }
