@@ -42,6 +42,7 @@ export const kindLabels: Record<string, string> = {
   transfer_in: "회원 송금 받음",
   transfer_out: "회원에게 송금",
   withdrawal: "외부 지갑 출금",
+  purchase: "쇼핑몰 상품 구매",
 };
 export const statusLabels: Record<string, string> = {
   completed: "완료",

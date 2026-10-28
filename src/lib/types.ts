@@ -1,6 +1,6 @@
 export type Transaction = {
   id: string;
-  kind: "deposit" | "transfer_in" | "transfer_out" | "withdrawal";
+  kind: "deposit" | "transfer_in" | "transfer_out" | "withdrawal" | "purchase";
   amount: string;
   fee: string;
   status: string;

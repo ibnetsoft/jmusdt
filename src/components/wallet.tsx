@@ -119,6 +119,13 @@ export function WalletApp() {
           Your everyday.
         </div>
         <nav aria-label="주 메뉴">
+          <button
+            onClick={() => {
+              location.href = "/shop";
+            }}
+          >
+            쇼핑몰
+          </button>
           {nav.map((n) => (
             <button
               key={n.view}
@@ -358,6 +365,14 @@ export function WalletApp() {
           </>
         ) : null}
         <nav className="bottom-nav" aria-label="모바일 메뉴">
+          <button
+            onClick={() => {
+              location.href = "/shop";
+            }}
+          >
+            <Plus size={20} />
+            <span>쇼핑몰</span>
+          </button>
           {nav.map((n) => (
             <button
               className={view === n.view ? "active" : ""}
@@ -846,7 +861,9 @@ function Activity({
       filter === "all" ||
       (filter === "in"
         ? t.kind === "deposit" || t.kind === "transfer_in"
-        : t.kind === "transfer_out" || t.kind === "withdrawal"),
+        : t.kind === "transfer_out" ||
+          t.kind === "withdrawal" ||
+          t.kind === "purchase"),
   );
   return (
     <>

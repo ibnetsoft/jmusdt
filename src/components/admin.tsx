@@ -289,6 +289,13 @@ export function AdminApp() {
         <Brand admin />
         <div className="console-label">WORKSPACE / JMUSDT</div>
         <nav aria-label="관리자 메뉴">
+          <button
+            onClick={() => {
+              location.href = "/admin/shop";
+            }}
+          >
+            상품 관리
+          </button>
           {nav.map((n) => (
             <button
               key={n.key}
