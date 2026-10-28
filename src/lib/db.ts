@@ -13,7 +13,8 @@ export function database() {
       : undefined);
   return (globalDb.walletPool ??= new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 8,
+    // Keep each serverless instance small; production uses the transaction pooler.
+    max: process.env.VERCEL ? 3 : 8,
     connectionTimeoutMillis: 10000,
     ssl:
       process.env.DATABASE_SSL === "false"

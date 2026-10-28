@@ -3,29 +3,35 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
-import { chromium, expect, type Browser } from "@playwright/test";
+import { chromium, expect, type Browser, type Page, type Response as BrowserResponse } from "@playwright/test";
 import { database, transaction } from "../src/lib/db";
 
 assert.ok(process.argv.includes("--verify"), "Explicit --verify required");
 assert.equal(new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname, "thxpejttykcdgvjjgwxv.supabase.co");
+const databaseUrl = new URL(process.env.DATABASE_URL!);
+assert.equal(databaseUrl.hostname, "aws-0-ap-northeast-2.pooler.supabase.com");
+assert.ok(decodeURIComponent(databaseUrl.username).endsWith(".thxpejttykcdgvjjgwxv"));
+databaseUrl.port = "6543";
+process.env.DATABASE_URL = databaseUrl.toString();
 const origin = "https://jmusdt.com", directory = "artifacts/i18n/live", pool = database();
 const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SERVICE_ROLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
 await mkdir(directory, { recursive: true });
 const email = `language-qa-${randomBytes(8).toString("hex")}@example.com`, password = randomBytes(30).toString("base64url");
 let userId: string | undefined, cookie = "", browser: Browser | undefined;
+let page: Page | undefined;
 const results: { locale: string; path: string; status: number }[] = [];
 const routes = [
-  { path: "/mypage", headings: ["마이페이지", "My page", "マイページ"] },
-  { path: "/points", headings: ["포인트 전환", "Point conversion", "ポイント交換"] },
-  { path: "/organization", headings: ["함께 만드는 조직.", "Build your network together.", "一緒に育てる組織。"] },
-  { path: "/rewards", headings: ["나의 리워드", "My rewards", "マイリワード"] },
-  { path: "/admin", headings: ["대시보드", "Dashboard", "ダッシュボード"] },
-  { path: "/admin/shop", headings: ["상품 관리", "Products", "商品管理"] },
-  { path: "/admin/orders", headings: ["주문 관리", "Orders", "注文管理"] },
-  { path: "/admin/grades", headings: ["회원등급 관리", "Membership levels", "会員ランク管理"] },
-  { path: "/admin/marketing", headings: ["마케팅 관리", "Reward management", "報酬管理"] },
+  { path: "/mypage", api: "/api/wallet", headings: ["마이페이지", "My page", "マイページ"] },
+  { path: "/points", api: "/api/points", headings: ["포인트 전환", "Point conversion", "ポイント交換"] },
+  { path: "/organization", api: "/api/organization", headings: ["함께 만드는 조직.", "Build your network together.", "一緒に育てる組織。"] },
+  { path: "/rewards", api: "/api/rewards", headings: ["나의 리워드", "My rewards", "マイリワード"] },
+  { path: "/admin", api: "/api/admin", headings: ["대시보드", "Dashboard", "ダッシュボード"] },
+  { path: "/admin/shop", api: "/api/admin/products", headings: ["상품 관리", "Products", "商品管理"] },
+  { path: "/admin/orders", api: "/api/admin/orders", headings: ["주문 관리", "Orders", "注文管理"] },
+  { path: "/admin/grades", api: "/api/admin/grades", headings: ["회원등급 관리", "Membership levels", "会員ランク管理"] },
+  { path: "/admin/marketing", api: "/api/admin/marketing", headings: ["마케팅 관리", "Reward management", "報酬管理"] },
   { path: "/admin/branding", headings: ["로고 설정", "Logo settings", "ロゴ設定"] },
-  { path: "/admin/sweeps", headings: ["USDT 모으기", "Collect USDT", "USDT集約"] },
+  { path: "/admin/sweeps", api: "/api/admin/sweeps", headings: ["USDT 모으기", "Collect USDT", "USDT集約"] },
 ];
 try {
   const { data, error } = await client.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name: "QA language verification" }, app_metadata: { adminConsole: true } });
@@ -37,15 +43,18 @@ try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   await context.addCookies(cookie.split("; ").map(s => { const i = s.indexOf("="); return { name: s.slice(0, i), value: s.slice(i + 1), url: origin, secure: true, sameSite: "Lax" as const }; }));
-  const page = await context.newPage(), errors: string[] = [];
+  page = await context.newPage();
+  const errors: string[] = [];
   page.on("pageerror", e => errors.push(e.message));
   for (const [index, locale] of ["ko", "en", "ja"].entries()) {
     await context.addCookies([{ name: "jmusdt-locale", value: locale, url: origin, secure: true, sameSite: "Lax" }]);
     for (const route of routes) {
+      const dataResponse: Promise<BrowserResponse> | null = route.api ? page.waitForResponse(r => new URL(r.url()).pathname === route.api && r.request().method() === "GET", { timeout: 30000 }) : null;
       const response = await page.goto(origin + route.path);
       assert.equal(response?.status(), 200);
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
       await expect(page.getByRole("heading", { name: route.headings[index], exact: true })).toBeVisible({ timeout: 30000 });
+      if (dataResponse) assert.equal((await dataResponse).status(), 200, `${locale} ${route.api} data request`);
       if (route.path === "/admin/shop") {
         const card = page.locator(".shop-order").filter({ hasText: ["척척보감", "Cheokcheok Bogam", "チョクチョクボガム"][index] });
         await expect(card).toBeVisible({ timeout: 30000 });
@@ -73,6 +82,10 @@ try {
   assert.equal(Number((await pool.query("SELECT count(*) AS n FROM shop_orders WHERE user_id=$1", [userId])).rows[0].n), 0);
   await writeFile(directory + "/verified.json", JSON.stringify({ origin, verifiedAt: new Date().toISOString(), results, locales: ["ko", "en", "ja"], browserErrors: errors, financialTransactionsCreated: 0 }, null, 2));
   console.log(JSON.stringify({ verification: "PASS", routes: results.length, financialTransactionsCreated: 0 }));
+} catch (error) {
+  if (page) await page.screenshot({ path: directory + "/failure.png", fullPage: true });
+  await writeFile(directory + "/failure.json", JSON.stringify({ url: page?.url(), results }, null, 2));
+  throw error;
 } finally {
   await browser?.close();
   if (userId) {
