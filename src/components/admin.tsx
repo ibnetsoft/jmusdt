@@ -393,6 +393,8 @@ export function AdminApp() {
               </p>
             </div>
             <div className="heading-actions">
+              <a href="/admin/branding">로고 설정</a>
+              <a href="/admin/grades">회원등급 관리</a>
               <button onClick={() => void refresh()}>
                 <RefreshCw size={16} />
                 새로고침
@@ -471,7 +473,7 @@ export function AdminApp() {
                         <div
                           className="allocation-ring"
                           style={{
-                            background: `conic-gradient(#e83434 0 ${allAvailable + allReserved === 0n ? 0 : Number((allAvailable * 100n) / (allAvailable + allReserved))}%,#e9e9ed 0 100%)`,
+                            background: `conic-gradient(var(--red) 0 ${allAvailable + allReserved === 0n ? 0 : Number((allAvailable * 100n) / (allAvailable + allReserved))}%,#e9e9ed 0 100%)`,
                           }}
                         >
                           <div>

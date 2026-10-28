@@ -26,6 +26,8 @@ export async function POST(request: Request) {
       );
     const p = parsed.data;
     const price = productPrice(p.price);
+    if ((p.packageType === "lucky" && price !== "350000000000") || (p.packageType === "treasure" && price !== "3500000000000"))
+      throw new HttpError(400, "복주머니패키지는 350,000 P, 보물상자패키지는 3,500,000 P로 설정해 주세요.");
     const plan = p.rewardPlan ? planUnits(p.rewardPlan) : undefined;
     if (
       plan &&
@@ -47,14 +49,15 @@ export async function POST(request: Request) {
         p.detailBlocks === undefined ? null : JSON.stringify(p.detailBlocks),
         plan ? JSON.stringify(plan) : null,
         p.shippingType,
+        p.packageType ?? null,
       ];
       const result = p.id
         ? await db.query(
-            "UPDATE shop_products SET name=$1,description=$2,image_url=$3,price=$4,stock=$5,active=$6,detail_blocks=COALESCE($7::jsonb,detail_blocks),reward_plan=COALESCE($8::jsonb,reward_plan),shipping_type=$9,version=version+1,updated_at=now() WHERE id=$10 AND version=$11 RETURNING *",
+            "UPDATE shop_products SET name=$1,description=$2,image_url=$3,price=$4,stock=$5,active=$6,detail_blocks=COALESCE($7::jsonb,detail_blocks),reward_plan=COALESCE($8::jsonb,reward_plan),shipping_type=$9,package_type=COALESCE($10,package_type),version=version+1,updated_at=now() WHERE id=$11 AND version=$12 RETURNING *",
             [...values, p.id, p.version],
           )
         : await db.query(
-            'INSERT INTO shop_products(name,description,image_url,price,stock,active,detail_blocks,reward_plan,shipping_type) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7::jsonb,\'[]\'::jsonb),COALESCE($8::jsonb,\'{"referral":"0","sponsor":"0","mom":"0","daily":"0","days":0,"lucky":0,"treasure":0}\'::jsonb),$9) RETURNING *',
+            'INSERT INTO shop_products(name,description,image_url,price,stock,active,detail_blocks,reward_plan,shipping_type,package_type) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7::jsonb,\'[]\'::jsonb),COALESCE($8::jsonb,\'{"referral":"0","sponsor":"0","mom":"0","daily":"0","days":0,"lucky":0,"treasure":0}\'::jsonb),$9,COALESCE($10,\'none\')) RETURNING *',
             values,
           );
       if (!result.rows[0])
@@ -72,6 +75,7 @@ export async function POST(request: Request) {
             version: result.rows[0].version,
             rewardPlan: result.rows[0].reward_plan,
             shippingType: result.rows[0].shipping_type,
+            packageType: result.rows[0].package_type,
           }),
         ],
       );

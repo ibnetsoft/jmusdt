@@ -5,6 +5,7 @@ import { formatUsdt } from "@/lib/money";
 import "./shop.css";
 import "./rewards.css";
 type Kind = keyof typeof rewardLabels;
+const directKinds = ["referral", "sponsor", "mom", "daily"] as const;
 const statuses: Record<string, string> = {
   scheduled: "지급 예정",
   paid: "지급 완료",
@@ -38,11 +39,13 @@ type Data = {
   debts?: { user_id: string; name: string; email: string; amount: string }[];
   settings?: Settings;
   count?: number;
+  pools?: {kind:"lucky"|"treasure";cutoff:string;quantity:string;amount:string}[];
+  packages?: {package_type:"lucky"|"treasure";quantity:string}[];
+  poolBalances?: {kind:"lucky"|"treasure";cutoff:string;amount:string}[];
+  poolRuns?: {kind:"lucky"|"treasure";cutoff:string;total:string;distributed:string;retained:string;package_count:string}[];
 };
-function amount(type: Kind, units: string) {
-  return type === "lucky" || type === "treasure"
-    ? `${BigInt(units).toLocaleString()}개`
-    : `${formatUsdt(units, 6)} P`;
+function amount(units: string) {
+  return `${formatUsdt(units, 6)} P`;
 }
 export function Rewards({ admin = false }: { admin?: boolean }) {
   const [data, setData] = useState<Data | null>(null),
@@ -101,7 +104,9 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       setNotice(
-        d.paid === undefined
+        d.poolRuns !== undefined
+          ? `일일 마감 ${d.poolRuns}건을 처리했습니다.`
+          : d.paid === undefined
           ? "설정을 저장했습니다."
           : `기한이 도래한 데일리 ${d.paid}건을 지급했습니다. 미처리 건은 다시 실행할 수 있습니다.`,
       );
@@ -129,8 +134,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
       <p className="shop-kicker">JMUSDT / MARKETING</p>
       <h1>{admin ? "마케팅 관리" : "나의 리워드"}</h1>
       <p className="shop-muted">
-        추천·후원·맘은 포인트로 지급됩니다. 복·보물주머니는 보유 수량입니다.
-        데일리는 구매 다음 날부터 한국 시간 기준으로 지급됩니다.
+        추천·후원·맘리워드는 실시간으로 지급됩니다. 데일리·복주머니·보물상자는 매일 한국시간 자정에 포인트로 배당됩니다. 데일리는 구매 다음 날부터, 복주머니·보물상자는 보유 패키지 수량에 비례해 지급됩니다.
       </p>
       {error && (
         <p role="alert" className="shop-error">
@@ -142,6 +146,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
           {notice}
         </p>
       )}
+      {admin ? <section className="shop-editor"><h2>회사 일일 적립 및 마감</h2>{data?.poolBalances?.map(p=><p key={p.kind+p.cutoff}>{p.kind==='lucky'?'복주머니P':'보물상자P'} · {new Date(p.cutoff).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 마감 · {formatUsdt(p.amount,6)} P</p>)}{data?.poolRuns?.map(r=><p key={r.kind+r.cutoff}>{r.kind==='lucky'?'복주머니P':'보물상자P'} · {new Date(r.cutoff).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} · 적립 {formatUsdt(r.total,6)} P · 지급 {formatUsdt(r.distributed,6)} P · 회사 잔여 {formatUsdt(r.retained,6)} P · 패키지 {r.package_count}개</p>)}</section> : <section className="shop-editor"><h2>일일 패키지와 분배</h2><p>복주머니패키지 {data?.packages?.find(p=>p.package_type==='lucky')?.quantity || '0'}개 · 보물상자패키지 {data?.packages?.find(p=>p.package_type==='treasure')?.quantity || '0'}개</p>{data?.pools?.map(w=><p key={w.kind+w.cutoff}>{w.kind==='lucky'?'복주머니P':'보물상자P'} · {new Date(w.cutoff).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} · {w.quantity}개 기준 · {formatUsdt(w.amount,6)} P 지급</p>)}</section>}
       <button
         disabled={busy || loading}
         onClick={() => setRevision((n) => n + 1)}
@@ -172,7 +177,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
                   setSettings({ ...settings, enabled: e.target.checked })
                 }
               />
-              신규 구매 마케팅 적용
+              신규 구매 추천·후원·맘·데일리 적용
             </label>
             <label className="shop-check">
               <input
@@ -185,7 +190,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
               데일리 지급 일시정지
             </label>
             <p className="shop-muted">
-              신규 구매 적용을 꺼도 기존 주문의 권리는 유지됩니다. 일시정지 중
+              회사 복주머니P·보물상자P는 모든 상품 매출에서 적립됩니다. 신규 구매 적용을 꺼도 기존 주문의 권리는 유지됩니다. 일시정지 중
               밀린 데일리는 재개 후 지급됩니다. 취소 요청 중인 주문은 지급이
               보류됩니다. 금액과 수량은 상품 관리에서 입력합니다.
             </p>
@@ -208,21 +213,20 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
             >
               기한 도래 데일리 지급 / 누락 재처리
             </button>
+            <button type="button" disabled={!reason.trim()} onClick={()=>void action({action:"pools",reason})}>기한 도래 일일 마감 재처리</button>
           </fieldset>
         </form>
       )}
       <section className="shop-grid" aria-label="보상 합계">
-        {(Object.keys(rewardLabels) as Kind[]).map((k) => (
+        {directKinds.map((k) => (
           <article className="shop-editor" key={k}>
             <h2>{rewardLabels[k]}</h2>
             {["paid", "scheduled", "reversed", "skipped", "void"].map((s) => {
               const t = totals.find((t) => t.type === k && t.status === s);
               return t ? (
                 <p key={s}>
-                  {s === "paid" && (k === "lucky" || k === "treasure")
-                    ? "보유 수량"
-                    : statuses[s]}{" "}
-                  <strong>{amount(k, t.amount)}</strong>
+                  {statuses[s]}{" "}
+                  <strong>{amount(t.amount)}</strong>
                 </p>
               ) : null;
             })}
@@ -266,9 +270,9 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
               }}
             >
               <option value="all">전체</option>
-              {Object.entries(rewardLabels).map(([v, l]) => (
+              {directKinds.map((v) => (
                 <option key={v} value={v}>
-                  {l}
+                  {rewardLabels[v]}
                 </option>
               ))}
             </select>
@@ -309,7 +313,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
           <article key={r.id} className="shop-order">
             <div>
               <strong>
-                {rewardLabels[r.type]} · {amount(r.type, r.amount)}
+                {rewardLabels[r.type]} · {amount(r.amount)}
               </strong>
               <p>
                 {r.product_name} · {statuses[r.status]}

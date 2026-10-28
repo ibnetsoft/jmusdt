@@ -50,6 +50,7 @@ test("admin rejection returns reservation to user; double processing is absent",
 test("deposit demo is unmistakable, transaction dialog and PWA metadata work", async ({
   page,
   request,
+  baseURL,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
@@ -65,7 +66,7 @@ test("deposit demo is unmistakable, transaction dialog and PWA metadata work", a
   expect(manifest.ok()).toBeTruthy();
   expect((await manifest.json()).display).toBe("standalone");
   const response = await request.post("/api/wallet/send", {
-    headers: { Origin: "http://127.0.0.1:3000" },
+    headers: { Origin: baseURL! },
     data: {
       kind: "internal",
       recipient: "min@example.com",

@@ -51,7 +51,7 @@ export async function identity(admin = false, funds = false) {
   if (result.rows[0].status !== "active")
     throw new HttpError(403, "이용이 제한된 계정입니다.");
   await database().query(
-    "INSERT INTO member_network(user_id,activated_at) VALUES($1,now()) ON CONFLICT(user_id) DO UPDATE SET activated_at=coalesce(member_network.activated_at,now())",
+    "SELECT network_activate($1)",
     [user.id],
   );
   return { user, profile: result.rows[0] };

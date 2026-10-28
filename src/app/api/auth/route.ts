@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (action === "login") await clearRecoveryGrant();
     if (action === "signup" && referralCode) {
       const ref = await database().query(
-        "SELECT n.user_id FROM member_network n JOIN profiles p ON p.id=n.user_id WHERE n.referral_code=$1 AND n.activated_at IS NOT NULL AND p.status='active'",
+        "SELECT n.user_id FROM member_network n JOIN profiles p ON p.id=n.user_id WHERE n.referral_code=$1 AND p.status='active'",
         [referralCode],
       );
       if (!ref.rows.length)

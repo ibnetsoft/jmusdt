@@ -7,6 +7,7 @@ import { DetailContent } from "./product-content";
 import { DetailEditor, ImageUpload } from "./product-editor";
 import { zeroPlan, rewardLabels, type RewardPlan } from "@/lib/marketing-plan";
 type Product = {
+  package_type: "none" | "lucky" | "treasure";
   shipping_type: "physical" | "none" | null;
   id: string;
   name: string;
@@ -218,7 +219,7 @@ export function Shop({ productId }: { productId?: string }) {
           {!marketing.enabled && (
             <p className="shop-error">
               현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는
-              리워드·주머니·데일리가 발생하지 않습니다.
+              추천·후원·맘 리워드와 데일리가 발생하지 않습니다. 일일 분배 적립금은 상품별로 적립됩니다.
             </p>
           )}
           {marketing.enabled && marketing.daily_paused && (
@@ -229,13 +230,13 @@ export function Shop({ productId }: { productId?: string }) {
           )}
           {marketing.enabled && selected.reward_plan && (
             <p className="shop-muted">
-              상품 1개당 복주머니 {selected.reward_plan.lucky}개 · 보물주머니{" "}
-              {selected.reward_plan.treasure}개 · 데일리{" "}
+              상품 1개당 데일리{" "}
               {formatUsdt(selected.reward_plan.daily, 6)} P ×{" "}
               {selected.reward_plan.days}일. 보상 운영이 켜진 구매에 적용되며
               데일리는 구매 다음 날부터입니다.
             </p>
           )}
+          {selected.reward_plan && <p className="shop-muted">상품 1개당 회사 적립: 복주머니P {selected.reward_plan.lucky} P · 보물상자P {selected.reward_plan.treasure} P</p>}
           <label>
             수량
             <select
@@ -368,6 +369,7 @@ function CancelOrder({
   );
 }
 const empty = {
+  packageType: "none" as "none" | "lucky" | "treasure",
   shippingType: "" as "" | "physical" | "none",
   name: "",
   description: "",
@@ -391,6 +393,7 @@ export function ProductAdmin() {
       stock: number;
       active: boolean;
       shippingType: "" | "physical" | "none";
+      packageType: "none" | "lucky" | "treasure";
       rewardPlan: RewardPlan;
     }>(empty);
   const [busy, setBusy] = useState(false),
@@ -540,6 +543,13 @@ export function ProductAdmin() {
                 <option value="none">배송 불필요</option>
               </select>
             </label>
+            <label>일일 분배 패키지
+              <select value={form.packageType} onChange={(e) => setForm({...form,packageType:e.target.value as typeof form.packageType})}>
+                <option value="none">일반 상품</option>
+                <option value="lucky">복주머니패키지 · 350,000 P</option>
+                <option value="treasure">보물상자패키지 · 3,500,000 P</option>
+              </select>
+            </label>
             <section className="shop-editor" aria-label="상품별 마케팅 보상">
               <h3>상품 1개당 마케팅 보상</h3>
               <p className="shop-muted">
@@ -588,7 +598,7 @@ export function ProductAdmin() {
               </label>
               {(["lucky", "treasure"] as const).map((key) => (
                 <label key={key}>
-                  {rewardLabels[key]} (개)
+                  회사 {rewardLabels[key]} 적립 (정수 P)
                   <input
                     required
                     type="number"
@@ -608,8 +618,7 @@ export function ProductAdmin() {
                 </label>
               ))}
               <small>
-                주머니는 보유 수량으로 지급됩니다. 개봉·추첨 기능은 포함되지
-                않습니다.
+                판매 시 회사에 적립하고 일일 마감 후 해당 패키지 보유 수량에 따라 일반 포인트로 분배합니다.
               </small>
             </section>
             <label className="shop-check">
@@ -690,6 +699,7 @@ export function ProductAdmin() {
                     stock: p.stock,
                     active: p.active,
                     shippingType: p.shipping_type || "",
+                    packageType: p.package_type || "none",
                     rewardPlan: {
                       ...(p.reward_plan || zeroPlan),
                       ...Object.fromEntries(

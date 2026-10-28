@@ -25,7 +25,7 @@ export async function GET() {
         "SELECT COALESCE(sum(units),0)::text AS units FROM journal WHERE account='shop:revenue'",
       ),
       pool.query(
-        "SELECT (SELECT coalesce(sum(units),0)::text FROM journal WHERE account='marketing:reserve' AND asset='POINT') AS reserve,(SELECT coalesce(sum(outstanding),0)::text FROM marketing_debts) AS debt",
+        "SELECT (SELECT coalesce(sum(units),0)::text FROM journal WHERE account IN ('marketing:reserve','daily:pool_reserve') AND asset='POINT') AS reserve,(SELECT coalesce(sum(outstanding),0)::text FROM marketing_debts) AS debt",
       ),
     ]);
     if (accounts.rows.length > 500)

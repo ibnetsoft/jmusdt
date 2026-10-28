@@ -22,6 +22,7 @@ export const productInput = z.object({
   stock: z.number().int().min(0).max(1000000),
   active: z.boolean(),
   shippingType: z.enum(["physical", "none"]),
+  packageType: z.enum(["none", "lucky", "treasure"]).optional(),
 });
 export function productPrice(price: string) {
   try {

@@ -39,9 +39,9 @@ type InstallEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: string }>;
 };
-export function WalletApp() {
+export function WalletApp({initialView = "home"}: {initialView?: View}) {
   const [data, setData] = useState<WalletData | null>(null),
-    [view, setView] = useState<View>("home"),
+    [view, setView] = useState<View>(initialView),
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
     [hidden, setHidden] = useState(false),
@@ -107,7 +107,7 @@ export function WalletApp() {
   const nav = [
     { view: "home" as View, label: "내 지갑", icon: House },
     { view: "activity" as View, label: "거래 내역", icon: History },
-    { view: "settings" as View, label: "설정", icon: Settings },
+    { view: "settings" as View, label: "마이페이지", icon: Settings },
   ];
   return (
     <div className="wallet-layout">
@@ -189,7 +189,7 @@ export function WalletApp() {
             </span>
             <button
               className="icon-button"
-              aria-label="설정"
+              aria-label="마이페이지"
               onClick={() => setView("settings")}
             >
               <Settings size={18} />
@@ -243,7 +243,7 @@ export function WalletApp() {
                   </a>
                 </p>
                 <p>
-                  <a href="/rewards">리워드 · 복주머니 · 보물주머니 보기 →</a>
+                  <a href="/rewards">리워드 · 주머니 보기 →</a>
                 </p>
                 <section className="balance-card">
                   <div className="balance-title">
@@ -325,7 +325,7 @@ export function WalletApp() {
                 <div className="page-heading compact">
                   <div>
                     <p className="eyebrow">MAKE IT YOURS</p>
-                    <h1>설정</h1>
+                    <h1>마이페이지</h1>
                   </div>
                   <Settings className="muted" size={30} />
                 </div>
@@ -335,10 +335,12 @@ export function WalletApp() {
                   </span>
                   <h2>{data.user.name}</h2>
                   <p>{data.user.email}</p>
+                  {data.user.gradeName && <p>회원등급: {data.user.gradeName}</p>}
                   <span className="network-pill">
                     {data.mode === "demo" ? "DEMO ACCOUNT" : "VERIFIED ACCOUNT"}
                   </span>
                 </section>
+                <ReferralCard code={data.referralCode} onNotice={setToast} />
                 <SecuritySettings demo={data.mode === "demo"} />
                 <div className="settings-list">
                   <div>
@@ -486,6 +488,24 @@ export function WalletApp() {
     </div>
   );
 }
+function ReferralCard({code,onNotice}: {code?: string;onNotice:(text:string)=>void}) {
+  const [origin,setOrigin]=useState("");
+  useEffect(()=>{setOrigin(location.origin);},[]);
+  const link=code && origin ? `${origin}/login?ref=${encodeURIComponent(code)}` : "";
+  async function copy(value:string,label:string) {
+    try {await navigator.clipboard.writeText(value);onNotice(`${label}를 복사했습니다.`);}
+    catch {onNotice("복사하지 못했습니다. 입력란의 내용을 직접 복사해 주세요.");}
+  }
+  return <section className="referral-card" aria-labelledby="referral-title">
+    <h2 id="referral-title">내 추천 정보</h2>
+    {code ? <>
+      <label className="field">자동 생성된 추천코드<input value={code} readOnly /></label>
+      <button className="secondary-button" onClick={()=>void copy(code,"추천코드")}><Copy size={16}/> 추천코드 복사</button>
+      <label className="field">추천 가입 링크<input value={link} readOnly onFocus={e=>e.currentTarget.select()} /></label>
+      <button className="secondary-button" disabled={!link} onClick={()=>void copy(link,"추천링크")}><Copy size={16}/> 추천링크 복사</button>
+    </> : <p className="muted">실제 회원 계정으로 로그인하면 자동 생성된 추천 정보를 확인할 수 있습니다.</p>}
+  </section>;
+}
 function Back({ onBack }: { onBack: () => void }) {
   return (
     <button className="back-button" onClick={onBack}>
@@ -543,7 +563,7 @@ function Deposit({
             value={data.address || "JMUSDT-DEMO-NOT-A-DEPOSIT-ADDRESS"}
             size={190}
             fgColor="#101010"
-            bgColor="#e83434"
+            bgColor="#17695a"
             level="H"
             marginSize={1}
           />

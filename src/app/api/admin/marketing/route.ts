@@ -37,8 +37,8 @@ export async function GET(request: Request) {
     const { type, status, q, page } = parsed.data;
     const db = database();
     const filter =
-      "($1='all' OR r.type=$1) AND ($2='all' OR r.status=$2) AND ($3='' OR r.order_id::text ILIKE '%'||$3||'%' OR p.email ILIKE '%'||$3||'%' OR p.name ILIKE '%'||$3||'%')";
-    const [settings, rewards, count, summary, debts] = await Promise.all([
+      "r.type IN ('referral','sponsor','mom','daily') AND ($1='all' OR r.type=$1) AND ($2='all' OR r.status=$2) AND ($3='' OR r.order_id::text ILIKE '%'||$3||'%' OR p.email ILIKE '%'||$3||'%' OR p.name ILIKE '%'||$3||'%')";
+    const [settings, rewards, count, summary, debts, poolBalances, poolRuns] = await Promise.all([
       db.query("SELECT * FROM marketing_settings WHERE id=true"),
       db.query(
         `SELECT r.*,r.due_date::text AS due_date,o.product_name,p.name,p.email FROM marketing_rewards r JOIN shop_orders o ON o.id=r.order_id LEFT JOIN profiles p ON p.id=r.user_id WHERE ${filter} ORDER BY r.created_at DESC,r.id LIMIT 100 OFFSET $4`,
@@ -49,11 +49,13 @@ export async function GET(request: Request) {
         [type, status, q],
       ),
       db.query(
-        "SELECT type,status,sum(amount)::text AS amount,count(*)::int AS count FROM marketing_rewards GROUP BY type,status",
+        "SELECT type,status,sum(amount)::text AS amount,count(*)::int AS count FROM marketing_rewards WHERE type IN ('referral','sponsor','mom','daily') GROUP BY type,status",
       ),
       db.query(
         "SELECT d.user_id,p.name,p.email,sum(d.outstanding)::text AS amount FROM marketing_debts d JOIN profiles p ON p.id=d.user_id WHERE d.outstanding>0 GROUP BY d.user_id,p.name,p.email ORDER BY sum(d.outstanding) DESC LIMIT 100",
       ),
+      db.query("SELECT kind,cutoff,sum(amount)::text AS amount FROM daily_pool_entries WHERE cancelled_at IS NULL AND settled_at IS NULL GROUP BY kind,cutoff ORDER BY cutoff DESC LIMIT 20"),
+      db.query("SELECT kind,cutoff,total::text,distributed::text,retained::text,package_count::text FROM daily_pool_runs ORDER BY cutoff DESC,kind LIMIT 30"),
     ]);
     return {
       settings: settings.rows[0],
@@ -62,6 +64,8 @@ export async function GET(request: Request) {
       page,
       summary: summary.rows,
       debts: debts.rows,
+      poolBalances: poolBalances.rows,
+      poolRuns: poolRuns.rows,
     };
   });
 }
@@ -74,6 +78,7 @@ const input = z.discriminatedUnion("action", [
     reason: z.string().trim().min(1).max(500),
   }),
   z.object({ action: z.literal("daily") }),
+  z.object({ action: z.literal("pools"), reason:z.string().trim().min(1).max(500) }),
 ]);
 export async function POST(request: Request) {
   return api(async () => {
@@ -99,6 +104,12 @@ export async function POST(request: Request) {
           [user.id, JSON.stringify({ ...p, version: result.rows[0].version })],
         );
         return { settings: result.rows[0] };
+      }
+      if(p.action==="pools") {
+        const due=await db.query("SELECT kind,cutoff FROM daily_pool_entries WHERE cutoff<=now() AND settled_at IS NULL AND cancelled_at IS NULL GROUP BY kind,cutoff ORDER BY cutoff,kind LIMIT 20");
+        for(const entry of due.rows) await db.query("SELECT daily_pool_settle($1,$2)",[entry.kind,entry.cutoff]);
+        await db.query("INSERT INTO audit_logs(actor,action,details) VALUES($1,'marketing.pools_retry',$2)",[user.id,JSON.stringify({reason:p.reason,runs:due.rows.length})]);
+        return {poolRuns:due.rows.length};
       }
       const paid = (await db.query("SELECT marketing_run_daily() AS paid"))
         .rows[0].paid;

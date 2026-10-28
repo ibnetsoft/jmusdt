@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { SiteControls } from "@/components/site-controls";
 export const metadata: Metadata = {
   title: "JMUSDT — Everyday wallet",
   description: "TRON USDT 중앙화 지갑",
@@ -22,8 +23,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko">
-      <body>{children}</body>
+    <html lang="ko" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{__html:"try{var t=localStorage.getItem('jmusdt-theme');document.documentElement.dataset.theme=t==='light'?'light':'dark'}catch(e){document.documentElement.dataset.theme='dark'}"}} /></head>
+      <body><SiteControls />{children}</body>
     </html>
   );
 }

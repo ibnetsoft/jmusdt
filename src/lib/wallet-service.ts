@@ -14,7 +14,7 @@ export async function walletSnapshot(profile: {
   status: string;
 }) {
   const pool = database();
-  const [balance, addresses, history] = await Promise.all([
+  const [balance, addresses, history, grade] = await Promise.all([
     pool.query(
       "SELECT b.*,coalesce(p.available,0)::text AS points FROM balances b LEFT JOIN point_balances p ON p.user_id=b.user_id WHERE b.user_id=$1",
       [profile.id],
@@ -27,6 +27,7 @@ export async function walletSnapshot(profile: {
       "SELECT * FROM transactions WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100",
       [profile.id],
     ),
+    pool.query("SELECT g.name,n.referral_code FROM profiles p JOIN member_grades g ON g.code=p.grade_code LEFT JOIN member_network n ON n.user_id=p.id WHERE p.id=$1",[profile.id]),
   ]);
   const config = chainConfig();
   const address = addresses.rows[0];
@@ -34,7 +35,8 @@ export async function walletSnapshot(profile: {
     throw new HttpError(503, "지갑 네트워크 설정이 일치하지 않습니다.");
   return {
     mode: "live",
-    user: profile,
+    user: { ...profile, gradeName: grade.rows[0]?.name || "일반회원" },
+    referralCode: grade.rows[0]?.referral_code || "",
     available: balance.rows[0]?.available || "0",
     points: balance.rows[0]?.points || "0",
     reserved: balance.rows[0]?.reserved || "0",
@@ -154,6 +156,7 @@ export async function changeUserStatus(
   if (userId === actor)
     throw new HttpError(400, "자신의 계정은 차단할 수 없습니다.");
   await transaction(async (client) => {
+    await client.query("SELECT pg_advisory_xact_lock(9692027)");
     const row = await client.query(
       "UPDATE profiles SET status=$2 WHERE id=$1 RETURNING id",
       [userId, status],

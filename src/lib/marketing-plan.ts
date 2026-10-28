@@ -3,8 +3,8 @@ export const rewardLabels = {
   referral: "추천리워드",
   sponsor: "후원리워드",
   mom: "맘리워드",
-  lucky: "복주머니",
-  treasure: "보물주머니",
+  lucky: "복주머니P",
+  treasure: "보물상자P",
   daily: "데일리수당",
 } as const;
 export type RewardPlan = {
@@ -55,6 +55,7 @@ export function planBudget(p: RewardPlan) {
     BigInt(p.referral) +
     BigInt(p.sponsor) +
     BigInt(p.mom) +
-    BigInt(p.daily) * BigInt(p.days)
+    BigInt(p.daily) * BigInt(p.days) +
+    (BigInt(p.lucky) + BigInt(p.treasure)) * 1000000n
   );
 }

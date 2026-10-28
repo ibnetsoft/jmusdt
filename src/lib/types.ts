@@ -23,9 +23,10 @@ export type Transaction = {
 };
 export type WalletData = {
   mode: "demo" | "live";
-  user: { id: string; email: string; name: string; status: string };
+  user: { id: string; email: string; name: string; status: string; gradeName?: string };
   available: string;
   points?: string;
+  referralCode?: string;
   reserved: string;
   address: string | null;
   network: string;

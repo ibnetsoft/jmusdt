@@ -167,12 +167,14 @@ try {
   try {
     await db.query("BEGIN");
     await db.query("SET LOCAL statement_timeout=60000");
-    // All synthetic funds, rewards, changes and orders below are rolled back.
+    // All synthetic funds, rewards, qualification and orders below are rolled back.
+    await db.query("SELECT pg_advisory_xact_lock(9692027)");
+    await db.query("UPDATE profiles SET grade_code='vip' WHERE id=ANY($1::uuid[])",[users.map(u=>u.id)]);
     await db.query(
       "UPDATE marketing_settings SET enabled=true,daily_paused=false WHERE id=true",
     );
     await db.query(
-      "UPDATE member_network SET referrer_id=$1,sponsor_id=$2,position='L' WHERE user_id=$3",
+      "UPDATE member_network SET referrer_id=$1,sponsor_id=$2,position=NULL WHERE user_id=$3",
       [ref.id, sponsor.id, buyer.id],
     );
     await db.query(
@@ -207,7 +209,7 @@ try {
           [id],
         )
       ).rows[0].n,
-      8,
+      6,
     );
     assert.equal(
       (
@@ -291,12 +293,12 @@ try {
       0,
     );
     const accounts = await db.query(
-      "SELECT account,sum(units)::text AS amount FROM journal WHERE account IN ('marketing:reserve','marketing:receivable') AND transaction_id IN (SELECT id FROM transactions WHERE user_id=ANY($1::uuid[])) GROUP BY account",
+      "SELECT account,sum(units)::text AS amount FROM journal WHERE account IN ('marketing:reserve','marketing:receivable','daily:pool_reserve') AND transaction_id IN (SELECT id FROM transactions WHERE user_id=ANY($1::uuid[])) GROUP BY account",
       [users.map((u) => u.id)],
     );
     for (const account of accounts.rows) assert.equal(account.amount, "0");
     console.log(
-      "Real PostgreSQL: six rewards, exact quantity/6-decimal amounts, daily schedule/replay, refund/stock restoration, spent-reward debt and incoming-credit recovery PASS (rollback-only)",
+      "Real PostgreSQL: three immediate rewards, daily installments and two company pools, exact quantity/6-decimal amounts, daily schedule/replay, refund/stock restoration, spent-reward debt and incoming-credit recovery PASS (rollback-only)",
     );
   } finally {
     await db.query("ROLLBACK");
