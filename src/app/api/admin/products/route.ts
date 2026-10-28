@@ -1,7 +1,7 @@
 import { api, identity, checkOrigin, HttpError } from "@/lib/http";
 import { database, transaction } from "@/lib/db";
 import { productInput, productPrice } from "@/lib/commerce";
-import { planBudget, planUnits } from "@/lib/marketing-plan";
+import { planUnits, validRewardBudget } from "@/lib/marketing-plan";
 export async function GET() {
   return api(async () => {
     await identity(true);
@@ -26,19 +26,15 @@ export async function POST(request: Request) {
       );
     const p = parsed.data;
     const price = productPrice(p.price);
-    if ((p.packageType === "lucky" && price !== "350000000000") || (p.packageType === "treasure" && price !== "3500000000000"))
-      throw new HttpError(400, "복주머니패키지는 350,000 P, 보물상자패키지는 3,500,000 P로 설정해 주세요.");
     const plan = p.rewardPlan ? planUnits(p.rewardPlan) : undefined;
-    if (
-      plan &&
-      (planBudget(plan) > BigInt(price) ||
-        (BigInt(plan.daily) === 0n) !== (plan.days === 0))
-    )
-      throw new HttpError(
-        400,
-        "보상 총액(데일리 전체 기간 포함)은 상품 가격 이하여야 하며, 데일리 금액과 일수를 함께 입력해야 합니다.",
-      );
     return transaction(async (db) => {
+      const existing = p.id ? (await db.query("SELECT package_type,reward_plan FROM shop_products WHERE id=$1 FOR UPDATE",[p.id])).rows[0] : undefined;
+      const packageType = p.packageType ?? existing?.package_type ?? "none";
+      if ((packageType === "lucky" && price !== "350000000000") || (packageType === "treasure" && price !== "3500000000000"))
+        throw new HttpError(400, "복주머니패키지는 350,000 P, 보물상자패키지는 3,500,000 P로 설정해 주세요.");
+      const effectivePlan = plan ?? existing?.reward_plan;
+      if (effectivePlan && !validRewardBudget(effectivePlan,BigInt(price),packageType))
+        throw new HttpError(400,"보상 총액은 상품 가격 이하여야 합니다. 복주머니 1,000 P·보물상자 10,000 P × 369일 데일리 전용 플랜만 예외이며, 다른 리워드·회사 적립은 0이어야 합니다.");
       const values = [
         p.name,
         p.description,

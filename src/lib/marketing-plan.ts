@@ -32,7 +32,7 @@ export const rewardPlanInput = z
     sponsor: amount,
     mom: amount,
     daily: amount,
-    days: z.number().int().min(0).max(365),
+    days: z.number().int().min(0).max(369),
     lucky: z.number().int().min(0).max(1000000),
     treasure: z.number().int().min(0).max(1000000),
   })
@@ -58,4 +58,16 @@ export function planBudget(p: RewardPlan) {
     BigInt(p.daily) * BigInt(p.days) +
     (BigInt(p.lucky) + BigInt(p.treasure)) * 1000000n
   );
+}
+export const packageDailyTerms = {
+  lucky: { price: "350000000000", daily: "1000000000", days: 369 },
+  treasure: { price: "3500000000000", daily: "10000000000", days: 369 },
+} as const;
+export function validRewardBudget(plan: RewardPlan, price: bigint, packageType: "none" | "lucky" | "treasure") {
+  if ((BigInt(plan.daily) === 0n) !== (plan.days === 0)) return false;
+  if (planBudget(plan) <= price) return true;
+  if (packageType === "none") return false;
+  const terms = packageDailyTerms[packageType];
+  return price === BigInt(terms.price) && plan.daily === terms.daily && plan.days === terms.days &&
+    [plan.referral, plan.sponsor, plan.mom, plan.lucky, plan.treasure].every(value => BigInt(value) === 0n);
 }

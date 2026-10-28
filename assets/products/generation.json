@@ -1,0 +1,13 @@
+{
+  "mode": "built-in image_gen",
+  "assets": [
+    {
+      "asset": "lucky-package.png",
+      "prompt": "Use case: product-mockup. Asset type: square ecommerce catalog product image for the existing JMUSDT dark emerald-green storefront. Primary request: create an elegant Korean lucky pouch (복주머니) as the single hero object, a premium digital package product illustration. A plush emerald jade green satin drawstring pouch, softly rounded and generously filled, finely woven tonal Korean-inspired auspicious geometric embroidery, polished gold drawstring tips, understated warm gold decorative accents. Centered three-quarter product view on a deep forest-green studio background, beautiful soft studio lighting, refined realistic 3D product photography, clean luxury composition with generous safe margins so it crops neatly into a product card. Palette: emerald, deep forest green and warm brushed gold. Make the pouch unmistakable, attractive and tactile. No text, numbers, lettering, logos, price labels, people, watermarks, currency symbols or other objects. One square finished catalog image."
+    },
+    {
+      "asset": "treasure-package.png",
+      "prompt": "Use case: product-mockup. Asset type: square ecommerce catalog product image for the existing JMUSDT dark emerald-green storefront, a companion to an emerald lucky pouch catalog image. Primary request: create one exquisite treasure chest (보물상자), the hero object for a premium digital package product illustration. A handsome deep emerald-green lacquered treasure chest with refined polished warm gold metal bands, decorative corner fittings and a distinctive gold central lock. The lid is slightly open, emitting a restrained, inviting warm golden glow from within; avoid an overflowing pile of money. Centered three-quarter product view on a deep forest-green studio background, beautiful soft studio lighting, refined realistic 3D product photography, elegant luxury composition with generous safe margins so it crops neatly into a product card. Palette: emerald, deep forest green and warm brushed gold. Make the treasure chest recognizable, premium and visually distinct from a pouch. No text, numbers, lettering, logos, price labels, people, watermarks, currency symbols or unrelated objects. One square finished catalog image."
+    }
+  ]
+}

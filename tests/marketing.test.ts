@@ -22,7 +22,7 @@ test("product reward inputs preserve exact micro units and reject malformed plan
     false,
   );
   assert.equal(
-    rewardPlanInput.safeParse({ ...zeroPlan, days: 366 }).success,
+    rewardPlanInput.safeParse({ ...zeroPlan, days: 370 }).success,
     false,
   );
   assert.equal(

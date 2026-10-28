@@ -20,12 +20,17 @@ BEGIN
  FOREACH k IN ARRAY ARRAY['referral','sponsor','mom','daily','days','lucky','treasure'] LOOP
   IF coalesce(v->>k,'') !~ '^[0-9]{1,16}$' THEN RETURN false; END IF;
  END LOOP;
- IF (v->>'days')::bigint>365 OR (v->>'lucky')::bigint>1000000 OR (v->>'treasure')::bigint>1000000 THEN RETURN false; END IF;
+ IF (v->>'days')::bigint>369 OR (v->>'lucky')::bigint>1000000 OR (v->>'treasure')::bigint>1000000 THEN RETURN false; END IF;
  IF ((v->>'daily')::bigint=0)<>((v->>'days')::bigint=0) THEN RETURN false; END IF;
  RETURN (v->>'referral')::numeric+(v->>'sponsor')::numeric+(v->>'mom')::numeric+(v->>'daily')::numeric*(v->>'days')::numeric+((v->>'lucky')::numeric+(v->>'treasure')::numeric)*1000000<=price;
 END $$;
-ALTER TABLE shop_products DROP CONSTRAINT IF EXISTS product_reward_budget;
-ALTER TABLE shop_products ADD CONSTRAINT product_reward_budget CHECK(marketing_plan_valid(reward_plan,price));
+-- Keep the newer package-aware constraint when repeatable base migrations are rerun.
+DO $$ BEGIN
+ IF to_regprocedure('marketing_plan_valid(jsonb,bigint,text)') IS NULL THEN
+  ALTER TABLE shop_products DROP CONSTRAINT IF EXISTS product_reward_budget;
+  ALTER TABLE shop_products ADD CONSTRAINT product_reward_budget CHECK(marketing_plan_valid(reward_plan,price));
+ END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS daily_pool_entries (
  order_id uuid NOT NULL REFERENCES shop_orders(id), kind text NOT NULL CHECK(kind IN ('lucky','treasure')),

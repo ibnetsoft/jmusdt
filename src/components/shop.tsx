@@ -555,8 +555,9 @@ export function ProductAdmin() {
               <p className="shop-muted">
                 고정 포인트를 입력하세요. 0은 미지급입니다.
                 추천인·후원인·후원인의 추천인에게 지급하며, 맘은 후원리워드가
-                지급될 때만 발생합니다. 보상 총액(데일리 전체 기간 포함)은 상품
-                가격 이하여야 합니다. 변경은 이후 구매에만 적용됩니다.
+                지급될 때만 발생합니다. 보상 총액은 상품 가격 이하여야 합니다.
+                복주머니 1,000 P·보물상자 10,000 P × 369일 데일리 전용 플랜은 예외입니다.
+                이 경우 다른 리워드·회사 적립은 모두 0이어야 합니다. 변경은 이후 구매에만 적용됩니다.
               </p>
               {(["referral", "sponsor", "mom", "daily"] as const).map((key) => (
                 <label key={key}>
@@ -578,12 +579,12 @@ export function ProductAdmin() {
                 </label>
               ))}
               <label>
-                데일리 지급 일수 (최대 365일)
+                데일리 지급 일수 (최대 369일)
                 <input
                   required
                   type="number"
                   min={0}
-                  max={365}
+                  max={369}
                   value={form.rewardPlan.days}
                   onChange={(e) =>
                     setForm({

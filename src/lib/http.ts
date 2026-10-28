@@ -83,7 +83,7 @@ export async function api(run: () => Promise<unknown>) {
       return NextResponse.json(
         {
           error:
-            "보상 총액은 상품 가격 이하여야 합니다. 데일리 금액과 일수를 함께 확인해 주세요.",
+            "상품의 보상 금액·지급 일수·패키지 유형을 확인해 주세요. 판매가 초과는 지정된 369일 패키지 데일리 전용 플랜만 허용됩니다.",
         },
         { status: 400 },
       );
