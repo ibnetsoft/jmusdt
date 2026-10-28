@@ -11,7 +11,7 @@ test("shop purchase conserves funds, snapshots prices, deduplicates and rejects 
     await db.exec(
       "CREATE ROLE anon;CREATE ROLE authenticated;CREATE SCHEMA auth;CREATE TABLE auth.users(id uuid PRIMARY KEY);CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS 'SELECT NULL::uuid';",
     );
-    for (const file of ["schema.sql", "commerce.sql"])
+    for (const file of ["schema.sql", "commerce.sql", "points.sql"])
       await db.exec(
         await readFile(new URL("../db/" + file, import.meta.url), "utf8"),
       );
@@ -37,12 +37,30 @@ test("shop purchase conserves funds, snapshots prices, deduplicates and rejects 
         version,
         k,
       ]);
+    await db.query("SELECT wallet_swap($1,'usdt_to_points',10000000,$2)", [
+      user,
+      crypto.randomUUID(),
+    ]);
     const order = (await buy(2, 1, key)).rows[0];
     assert.deepEqual((await buy(2, 1, key)).rows[0], order);
     assert.equal(
       (
         await db.query<{ available: number }>(
           "SELECT available FROM balances WHERE user_id=$1",
+          [user],
+        )
+      ).rows[0].available,
+      0,
+    );
+    assert.equal(
+      (await db.query<{ currency: string }>("SELECT currency FROM shop_orders"))
+        .rows[0].currency,
+      "POINT",
+    );
+    assert.equal(
+      (
+        await db.query<{ available: number }>(
+          "SELECT available FROM point_balances WHERE user_id=$1",
           [user],
         )
       ).rows[0].available,
@@ -67,7 +85,7 @@ test("shop purchase conserves funds, snapshots prices, deduplicates and rejects 
       "UPDATE shop_products SET name='Changed',price=9000000,version=2",
     );
     await assert.rejects(buy(1, 1), /PRICE_CHANGED/);
-    await assert.rejects(buy(1, 2), /INSUFFICIENT_BALANCE/);
+    await assert.rejects(buy(1, 2), /INSUFFICIENT_POINTS/);
     assert.equal(
       (
         await db.query<{ product_name: string }>(

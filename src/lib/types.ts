@@ -1,6 +1,14 @@
 export type Transaction = {
   id: string;
-  kind: "deposit" | "transfer_in" | "transfer_out" | "withdrawal" | "purchase";
+  kind:
+    | "deposit"
+    | "transfer_in"
+    | "transfer_out"
+    | "withdrawal"
+    | "purchase"
+    | "swap_in"
+    | "swap_out";
+  asset?: "USDT" | "POINT";
   amount: string;
   fee: string;
   status: string;
@@ -13,6 +21,7 @@ export type WalletData = {
   mode: "demo" | "live";
   user: { id: string; email: string; name: string; status: string };
   available: string;
+  points?: string;
   reserved: string;
   address: string | null;
   network: string;

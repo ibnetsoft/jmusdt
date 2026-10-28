@@ -43,6 +43,8 @@ export const kindLabels: Record<string, string> = {
   transfer_out: "회원에게 송금",
   withdrawal: "외부 지갑 출금",
   purchase: "쇼핑몰 상품 구매",
+  swap_in: "전환 받음",
+  swap_out: "전환 보냄",
 };
 export const statusLabels: Record<string, string> = {
   completed: "완료",
@@ -81,7 +83,10 @@ export function ActivityList({
   return transactions.length ? (
     <div className="activity-list">
       {transactions.map((t) => {
-        const incoming = t.kind === "deposit" || t.kind === "transfer_in";
+        const incoming =
+          t.kind === "deposit" ||
+          t.kind === "transfer_in" ||
+          t.kind === "swap_in";
         return (
           <button
             className="activity-row"
@@ -108,7 +113,7 @@ export function ActivityList({
                 {incoming ? "+" : "−"}
                 {formatUsdt(t.amount)}
               </strong>
-              <small>USDT</small>
+              <small>{t.asset === "POINT" ? "P" : "USDT"}</small>
             </span>
           </button>
         );
@@ -168,7 +173,8 @@ export function TransactionModal({
         <p className="eyebrow">TRANSACTION</p>
         <h2 id="tx-title">{kindLabels[transaction.kind]}</h2>
         <div className="detail-amount">
-          {formatUsdt(transaction.amount, 6)} <small>USDT</small>
+          {formatUsdt(transaction.amount, 6)}{" "}
+          <small>{transaction.asset === "POINT" ? "P" : "USDT"}</small>
         </div>
         <Status value={transaction.status} />
         <dl className="details">

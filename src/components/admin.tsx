@@ -55,6 +55,7 @@ export function AdminApp() {
       onchain: string;
       liability: string;
       fees: string;
+      shopRevenue: string;
       difference: string;
       addresses: number;
       trx: string;
@@ -171,6 +172,7 @@ export function AdminApp() {
         "email",
         "kind",
         "amount_units",
+        "asset",
         "fee_units",
         "status",
         "created_at",
@@ -181,6 +183,7 @@ export function AdminApp() {
         t.email,
         t.kind,
         t.amount,
+        t.asset || "USDT",
         t.fee,
         t.status,
         t.created_at,
@@ -234,7 +237,8 @@ export function AdminApp() {
                 </td>
                 <td>
                   <strong>
-                    {formatUsdt(t.amount)} <em>USDT</em>
+                    {formatUsdt(t.amount)}{" "}
+                    <em>{t.asset === "POINT" ? "P" : "USDT"}</em>
                   </strong>
                   <small>수수료 {formatUsdt(t.fee)}</small>
                 </td>
@@ -578,7 +582,8 @@ export function AdminApp() {
                               <td>{t.email}</td>
                               <td>
                                 <strong>
-                                  {formatUsdt(t.amount)} <em>USDT</em>
+                                  {formatUsdt(t.amount)}{" "}
+                                  <em>{t.asset === "POINT" ? "P" : "USDT"}</em>
                                 </strong>
                               </td>
                               <td>
@@ -598,7 +603,7 @@ export function AdminApp() {
                     </table>
                   </div>
                   <p className="table-footnote">
-                    최근 200건 · CSV 금액은 USDT 최소 단위(1 USDT =
+                    최근 200건 · CSV 금액은 자산별 최소 단위(1 USDT 또는 1 P =
                     1,000,000)입니다.
                   </p>
                 </section>
@@ -758,6 +763,13 @@ export function AdminApp() {
                           <div>
                             <dt>누적 수수료</dt>
                             <dd>{formatUsdt(reconciliation.fees, 6)} USDT</dd>
+                          </div>
+                          <div>
+                            <dt>쇼핑몰 매출 (USDT 환산)</dt>
+                            <dd>
+                              {formatUsdt(reconciliation.shopRevenue || "0", 6)}{" "}
+                              USDT
+                            </dd>
                           </div>
                           <div>
                             <dt>차이</dt>

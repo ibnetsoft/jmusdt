@@ -24,7 +24,7 @@ export function productPrice(price: string) {
   } catch {
     throw new HttpError(
       400,
-      "0보다 큰 USDT 가격을 소수점 6자리 이내로 입력해 주세요.",
+      "0보다 큰 금액을 소수점 6자리 이내로 입력해 주세요.",
     );
   }
 }
@@ -37,6 +37,8 @@ export const orderInput = z.object({
 export function commerceError(error: unknown): never {
   const message = error instanceof Error ? error.message : "";
   for (const [code, text] of Object.entries({
+    INSUFFICIENT_POINTS:
+      "사용 가능한 포인트가 부족합니다. USDT를 포인트로 전환해 주세요.",
     PRODUCT_UNAVAILABLE: "판매 중인 상품이 아닙니다.",
     PRICE_CHANGED: "상품 정보가 변경됐습니다. 새로고침 후 다시 확인해 주세요.",
     OUT_OF_STOCK: "재고가 부족합니다.",

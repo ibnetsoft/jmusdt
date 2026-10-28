@@ -12,9 +12,10 @@ export async function GET() {
         "SELECT * FROM shop_orders WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100",
         [user.id],
       ),
-      database().query("SELECT available FROM balances WHERE user_id=$1", [
-        user.id,
-      ]),
+      database().query(
+        "SELECT coalesce((SELECT available FROM point_balances WHERE user_id=$1),0)::text AS available",
+        [user.id],
+      ),
     ]);
     return {
       products: products.rows,

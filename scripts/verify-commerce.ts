@@ -52,6 +52,22 @@ try {
     );
   }
   assert.equal((await call("/api/shop")).status, 401);
+  assert.equal((await call("/api/points")).status, 401);
+  const points = await call("/api/points", cookies[1]);
+  assert.equal(points.status, 200);
+  assert.equal((await points.json()).points, "0");
+  for (const direction of ["usdt_to_points", "points_to_usdt"]) {
+    assert.equal(
+      (
+        await call("/api/points", cookies[1], {
+          direction,
+          amount: "1",
+          requestKey: crypto.randomUUID(),
+        })
+      ).status,
+      409,
+    );
+  }
   assert.equal((await call("/api/admin/products", cookies[1])).status, 403);
   const product = {
     name: "QA commerce verification",
@@ -108,6 +124,21 @@ try {
     await db.query("UPDATE balances SET available=2000002 WHERE user_id=$1", [
       users[1],
     ]);
+    for (const [direction, amount] of [
+      ["usdt_to_points", 2000002],
+      ["points_to_usdt", 1],
+      ["usdt_to_points", 1],
+    ] as const) {
+      await db.query("SELECT wallet_swap($1,$2,$3,$4)", [
+        users[1],
+        direction,
+        amount,
+        crypto.randomUUID(),
+      ]);
+    }
+    console.log(
+      "Real PostgreSQL 1:1 USDT/POINT round trip PASS (rollback-only)",
+    );
     const key = crypto.randomUUID(),
       args = [users[1], productId, 2, version, key];
     const first = await db.query(
@@ -121,9 +152,10 @@ try {
     );
     assert.equal(
       (
-        await db.query("SELECT available FROM balances WHERE user_id=$1", [
-          users[1],
-        ])
+        await db.query(
+          "SELECT available FROM point_balances WHERE user_id=$1",
+          [users[1]],
+        )
       ).rows[0].available,
       "0",
     );
@@ -163,6 +195,10 @@ try {
       [productId],
     );
   for (const id of users) {
+    await pool.query(
+      "DELETE FROM point_balances WHERE user_id=$1 AND available=0",
+      [id],
+    );
     await pool.query("DELETE FROM audit_logs WHERE actor=$1", [id]);
     await pool.query(
       "DELETE FROM balances WHERE user_id=$1 AND available=0 AND reserved=0",

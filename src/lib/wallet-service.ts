@@ -15,7 +15,10 @@ export async function walletSnapshot(profile: {
 }) {
   const pool = database();
   const [balance, addresses, history] = await Promise.all([
-    pool.query("SELECT * FROM balances WHERE user_id=$1", [profile.id]),
+    pool.query(
+      "SELECT b.*,coalesce(p.available,0)::text AS points FROM balances b LEFT JOIN point_balances p ON p.user_id=b.user_id WHERE b.user_id=$1",
+      [profile.id],
+    ),
     pool.query(
       "SELECT address,network FROM deposit_addresses WHERE user_id=$1",
       [profile.id],
@@ -33,6 +36,7 @@ export async function walletSnapshot(profile: {
     mode: "live",
     user: profile,
     available: balance.rows[0]?.available || "0",
+    points: balance.rows[0]?.points || "0",
     reserved: balance.rows[0]?.reserved || "0",
     address: address?.address || null,
     network: config.network,

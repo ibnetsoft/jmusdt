@@ -10,16 +10,19 @@ export async function GET() {
     const hot = process.env.TRON_HOT_WALLET_ADDRESS;
     if (!contract || !hot || !validTronAddress(hot))
       throw new HttpError(503, "토큰과 핫월렛 주소를 설정해 주세요.");
-    const [accounts, liability, fees] = await Promise.all([
+    const [accounts, liability, fees, revenue] = await Promise.all([
       pool.query(
         "SELECT address FROM deposit_addresses WHERE network=$1 AND address IS NOT NULL",
         [network],
       ),
       pool.query(
-        "SELECT COALESCE(sum(available+reserved),0)::text AS units FROM balances",
+        "SELECT ((SELECT COALESCE(sum(available+reserved),0) FROM balances)+(SELECT COALESCE(sum(available),0) FROM point_balances))::text AS units",
       ),
       pool.query(
-        "SELECT COALESCE(sum(units),0)::text AS units FROM journal WHERE account='fees'",
+        "SELECT COALESCE(sum(units),0)::text AS units FROM journal WHERE account='fees' AND asset='USDT'",
+      ),
+      pool.query(
+        "SELECT COALESCE(sum(units),0)::text AS units FROM journal WHERE account='shop:revenue'",
       ),
     ]);
     if (accounts.rows.length > 500)
@@ -49,11 +52,14 @@ export async function GET() {
       tron.trx.getAccountResources(hot),
     ]);
     const expected =
-      BigInt(liability.rows[0].units) + BigInt(fees.rows[0].units);
+      BigInt(liability.rows[0].units) +
+      BigInt(fees.rows[0].units) +
+      BigInt(revenue.rows[0].units);
     return {
       onchain: onchain.toString(),
       liability: liability.rows[0].units,
       fees: fees.rows[0].units,
+      shopRevenue: revenue.rows[0].units,
       difference: (onchain - expected).toString(),
       addresses: addresses.length,
       trx: String(trx),

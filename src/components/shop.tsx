@@ -13,6 +13,7 @@ type Product = {
   version: number;
 };
 type Order = {
+  currency: "USDT" | "POINT";
   id: string;
   product_name: string;
   quantity: number;
@@ -115,7 +116,7 @@ export function Shop({ productId }: { productId?: string }) {
     <main className="commerce">
       <header>
         <a href="/">← 내 지갑</a>
-        <a href="#orders">구매 내역</a>
+        <a href="/points">USDT ↔ 포인트 전환</a>
       </header>
       <p className="shop-kicker">JMUSDT / EVERYDAY SHOP</p>
       <h1>
@@ -123,9 +124,9 @@ export function Shop({ productId }: { productId?: string }) {
         <br />
         새로운 일상.
       </h1>
-      <p className="shop-muted">내 USDT로 간편하게 구매하세요.</p>
+      <p className="shop-muted">내 포인트로 간편하게 구매하세요.</p>
       <div className="shop-balance">
-        사용 가능한 잔액 <strong>{formatUsdt(available, 6)} USDT</strong>
+        사용 가능한 잔액 <strong>{formatUsdt(available, 6)} 포인트</strong>
       </div>
       {error && (
         <p className="shop-error" role="alert">
@@ -157,7 +158,7 @@ export function Shop({ productId }: { productId?: string }) {
                 <div>
                   <h2>{p.name}</h2>
                   <p className="shop-muted">재고 {p.stock}개</p>
-                  <strong>{formatUsdt(p.price, 6)} USDT</strong>
+                  <strong>{formatUsdt(p.price, 6)} 포인트</strong>
                   <a className="shop-primary" href={`/shop/${p.id}`}>
                     상품 상세 보기
                   </a>
@@ -185,7 +186,8 @@ export function Shop({ productId }: { productId?: string }) {
             {selected.description || "등록된 상세 설명이 없습니다."}
           </div>
           <p>
-            단가 {formatUsdt(selected.price, 6)} USDT · 재고 {selected.stock}개
+            단가 {formatUsdt(selected.price, 6)} 포인트 · 재고 {selected.stock}
+            개
           </p>
           <label>
             수량
@@ -203,7 +205,7 @@ export function Shop({ productId }: { productId?: string }) {
             </select>
           </label>
           <div className="shop-total">
-            결제금액 <strong>{formatUsdt(total, 6)} USDT</strong>
+            결제금액 <strong>{formatUsdt(total, 6)} 포인트</strong>
           </div>
           <p className="shop-muted">
             결제 확정 시 지갑 잔액에서 차감됩니다. 상품·가격이 변경되면 결제가
@@ -221,8 +223,8 @@ export function Shop({ productId }: { productId?: string }) {
               : selected.stock === 0
                 ? "품절"
                 : BigInt(available) < total
-                  ? "USDT 잔액 부족"
-                  : `${formatUsdt(total, 6)} USDT 결제 확정`}
+                  ? "포인트 잔액 부족"
+                  : `${formatUsdt(total, 6)} 포인트 결제 확정`}
           </button>
         </section>
       )}
@@ -239,7 +241,9 @@ export function Shop({ productId }: { productId?: string }) {
               </p>
               <small>주문번호 {o.id}</small>
             </div>
-            <strong>{formatUsdt(o.total, 6)} USDT</strong>
+            <strong>
+              {formatUsdt(o.total, 6)} {o.currency === "USDT" ? "USDT" : "P"}
+            </strong>
           </article>
         ))}
         {!orders.length && (
@@ -304,7 +308,7 @@ export function ProductAdmin() {
       <p className="shop-kicker">ADMIN / COMMERCE</p>
       <h1>상품 관리</h1>
       <p className="shop-muted">
-        상품과 상세 설명을 등록하고 USDT 가격으로 판매하세요.
+        상품과 상세 설명을 등록하고 포인트 가격으로 판매하세요.
       </p>
       {error && (
         <p className="shop-error" role="alert">
@@ -353,7 +357,7 @@ export function ProductAdmin() {
               줄바꿈이 유지됩니다. HTML·스크립트는 실행되지 않습니다.
             </small>
             <label>
-              가격 (USDT)
+              가격 (포인트)
               <input
                 required
                 inputMode="decimal"
@@ -399,7 +403,7 @@ export function ProductAdmin() {
               <div>
                 <strong>{p.name}</strong>
                 <p>
-                  {formatUsdt(p.price, 6)} USDT · 재고 {p.stock}
+                  {formatUsdt(p.price, 6)} 포인트 · 재고 {p.stock}
                 </p>
                 <small>
                   {p.active ? "판매 중" : "비공개"} · 버전 {p.version}
