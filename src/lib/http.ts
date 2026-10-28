@@ -3,6 +3,7 @@ import { authClient, isDemo } from "./supabase";
 import { isAuthorizedAdmin, canManageFunds } from "./admin-access";
 import { database } from "./db";
 import { verifyExistingChainBinding } from "./chain-binding";
+import { verifiedAuthSession } from "./auth-session";
 export class HttpError extends Error {
   constructor(
     public status: number,
@@ -18,12 +19,9 @@ export async function identity(admin = false, funds = false) {
       "데모 모드에서는 실제 자금 작업을 실행할 수 없습니다.",
     );
   const auth = await authClient();
-  const {
-    data: { user },
-    error,
-  } = await auth.auth.getUser();
-  if (error || !user || !user.email || !user.email_confirmed_at)
-    throw new HttpError(401, "로그인이 필요합니다.");
+  const session = await verifiedAuthSession(auth);
+  if (!session) throw new HttpError(401, "로그인이 필요합니다.");
+  const { user } = session;
   if (admin && !isAuthorizedAdmin(user))
     throw new HttpError(403, "관리자 권한이 필요합니다.");
   if (funds && !canManageFunds(user))

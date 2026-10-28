@@ -2,9 +2,10 @@ import { z } from "zod";
 import { authClient, isDemo } from "@/lib/supabase";
 import { api, checkOrigin, HttpError } from "@/lib/http";
 import { database } from "@/lib/db";
+import { clearRecoveryGrant } from "@/lib/password-recovery";
 const schema = z.object({
   action: z.enum(["login", "signup"]),
-  email: z.string().email().max(254),
+  email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(12).max(128),
   name: z.string().trim().min(1).max(60).optional(),
   referralCode: z
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
       );
     const client = await authClient();
     const { action, email, password, name, referralCode } = parsed.data;
+    if (action === "login") await clearRecoveryGrant();
     if (action === "signup" && referralCode) {
       const ref = await database().query(
         "SELECT n.user_id FROM member_network n JOIN profiles p ON p.id=n.user_id WHERE n.referral_code=$1 AND n.activated_at IS NOT NULL AND p.status='active'",
@@ -77,6 +79,7 @@ export async function DELETE(request: Request) {
     if (!isDemo()) {
       const auth = await authClient();
       await auth.auth.signOut();
+      await clearRecoveryGrant();
     }
     return { ok: true };
   });

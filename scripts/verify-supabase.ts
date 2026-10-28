@@ -67,7 +67,7 @@ try {
   const before = await postAuth({ action: "login", email, password });
   assert.equal(before.status, 400);
   console.log("Unconfirmed account login denied: PASS");
-  const confirmed = await fetch(
+  const landing = await fetch(
     origin +
       "/auth/confirm?" +
       new URLSearchParams({
@@ -76,8 +76,25 @@ try {
       }),
     { redirect: "manual" },
   );
-  assert.equal(confirmed.status, 307);
-  assert.equal(new URL(confirmed.headers.get("location")!).pathname, "/");
+  assert.equal(landing.status, 200);
+  assert.equal(
+    (await admin.auth.admin.getUserById(userId)).data.user?.email_confirmed_at,
+    undefined,
+  );
+  const confirmed = await fetch(origin + "/auth/confirm", {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      Origin: origin,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      token_hash: data.properties.hashed_token,
+      type: "signup",
+    }),
+  });
+  assert.equal(confirmed.status, 303);
+  assert.equal(new URL(confirmed.headers.get("location")!).pathname, "/login");
   const confirmCookie = sessionCookies(confirmed);
   assert.ok(confirmCookie);
   const wallet = await fetch(origin + "/api/wallet", {
@@ -107,8 +124,140 @@ try {
   });
   assert.equal(consoleAccess.status, 403);
   console.log("Ordinary member administrator access denied: PASS");
+  const noTicket = await fetch(origin + "/api/auth/password", {
+    headers: { Cookie: cookie },
+  });
+  assert.equal(noTicket.status, 403);
+  const recovery = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+  });
+  assert.equal(recovery.error, null);
+  const recoveryForm = new URLSearchParams({
+    token_hash: recovery.data.properties!.hashed_token,
+    type: "recovery",
+  });
+  const recoveryLanding = await fetch(
+    origin + "/auth/confirm?" + recoveryForm,
+    { redirect: "manual" },
+  );
+  assert.equal(recoveryLanding.status, 200);
+  const redeem = await fetch(origin + "/auth/confirm", {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      Origin: origin,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: recoveryForm,
+  });
+  assert.equal(redeem.status, 303);
+  assert.equal(
+    new URL(redeem.headers.get("location")!).pathname,
+    "/reset-password",
+  );
+  const recoveryCookies = sessionCookies(redeem);
+  assert.match(recoveryCookies, /jmusdt_password_recovery=/);
+  assert.equal(
+    (
+      await fetch(origin + "/api/auth/password", {
+        headers: { Cookie: recoveryCookies },
+      })
+    ).status,
+    200,
+  );
+  const ticketOnly = recoveryCookies
+    .split("; ")
+    .filter((v) => v.startsWith("jmusdt_password_recovery="))
+    .join("; ");
+  assert.equal(
+    (
+      await fetch(origin + "/api/auth/password", {
+        headers: { Cookie: cookie + "; " + ticketOnly },
+      })
+    ).status,
+    403,
+  );
+  await pool.query(
+    "UPDATE password_recovery_grants SET expires_at=now()-interval '1 minute' WHERE user_id=$1",
+    [userId],
+  );
+  assert.equal(
+    (
+      await fetch(origin + "/api/auth/password", {
+        headers: { Cookie: recoveryCookies },
+      })
+    ).status,
+    403,
+  );
+  await pool.query(
+    "UPDATE password_recovery_grants SET expires_at=now()+interval '15 minutes' WHERE user_id=$1",
+    [userId],
+  );
+  assert.equal(
+    (
+      await fetch(origin + "/api/auth/password", {
+        method: "POST",
+        headers: {
+          Origin: "https://invalid.example",
+          "Content-Type": "application/json",
+          Cookie: recoveryCookies,
+        },
+        body: JSON.stringify({ password: "invalid", confirmation: "invalid" }),
+      })
+    ).status,
+    403,
+  );
+  const hidden = await client.from("password_recovery_grants").select("*");
+  assert.ok(hidden.error);
+  const newPassword = randomBytes(24).toString("base64url") + "aA1!";
+  const update = () =>
+    fetch(origin + "/api/auth/password", {
+      method: "POST",
+      headers: {
+        Origin: origin,
+        "Content-Type": "application/json",
+        Cookie: recoveryCookies,
+      },
+      body: JSON.stringify({
+        password: newPassword,
+        confirmation: newPassword,
+      }),
+    });
+  const changed = await update();
+  assert.equal(changed.status, 200);
+  assert.equal((await update()).status, 403);
+  assert.equal(
+    (await fetch(origin + "/api/wallet", { headers: { Cookie: cookie } }))
+      .status,
+    401,
+  );
+  assert.equal(
+    (await postAuth({ action: "login", email, password })).status,
+    400,
+  );
+  assert.equal(
+    (await postAuth({ action: "login", email, password: newPassword })).status,
+    200,
+  );
+  const replay = await fetch(origin + "/auth/confirm", {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      Origin: origin,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: recoveryForm,
+  });
+  assert.equal(
+    new URL(replay.headers.get("location")!).searchParams.get("error"),
+    "confirmation",
+  );
+  console.log(
+    "Recovery grant session binding, one-use reset, token replay denial and global session revocation: PASS",
+  );
   const { data: session, error: signInError } =
-    await client.auth.signInWithPassword({ email, password });
+    await client.auth.signInWithPassword({ email, password: newPassword });
   if (signInError)
     throw new Error("Provider login failed: " + signInError.code);
   accessToken = session.session!.access_token;
@@ -136,6 +285,12 @@ try {
   const fresh = await fetch(origin + "/api/wallet");
   assert.equal(fresh.status, 401);
   console.log("Logout and anonymous wallet access denied: PASS");
+  assert.equal(
+    (await fetch(origin + "/api/wallet", { headers: { Cookie: cookie } }))
+      .status,
+    401,
+  );
+  console.log("Revoked session JWT replay denied: PASS");
   const invalidLink = await fetch(
     origin + "/auth/confirm?token_hash=invalid&type=signup",
     { redirect: "manual" },
@@ -170,6 +325,10 @@ try {
         0,
       );
       await db.query("DELETE FROM balances WHERE user_id=$1", [userId]);
+      await db.query(
+        "DELETE FROM audit_logs WHERE actor=$1 AND action='auth.password_recovered'",
+        [userId],
+      );
       await db.query("DELETE FROM profiles WHERE id=$1", [userId]);
     });
     const removed = await admin.auth.admin.deleteUser(userId);

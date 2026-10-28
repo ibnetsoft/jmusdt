@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ArrowRight, ArrowUpRight, ShieldCheck } from "lucide-react";
 import { Brand, Token } from "./shared";
 export function Login({
@@ -18,8 +18,38 @@ export function Login({
     [message, setMessage] = useState(initialMessage),
     [busy, setBusy] = useState(false);
   const [referralCode, setReferralCode] = useState(initialReferralCode);
+  const [forgot, setForgot] = useState(false),
+    [pending, setPending] = useState(false);
+  const lock = useRef(false);
+  async function sendEmail(action: "resend" | "recovery") {
+    if (lock.current) return;
+    lock.current = true;
+    setBusy(true);
+    setMessage("");
+    try {
+      const r = await fetch("/api/auth/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, email }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setMessage(d.message);
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "메일 요청 실패");
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (forgot) {
+      await sendEmail("recovery");
+      return;
+    }
+    if (lock.current) return;
+    lock.current = true;
     setBusy(true);
     setMessage("");
     try {
@@ -36,13 +66,16 @@ export function Login({
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error);
-      if (body.confirmationRequired)
+      if (body.confirmationRequired) {
         setMessage("인증 이메일을 보냈습니다. 이메일 인증 후 로그인해 주세요.");
-      else location.href = "/";
+        setPending(true);
+        setPassword("");
+      } else location.href = "/";
     } catch (e) {
       setMessage((e as Error).message);
     } finally {
       setBusy(false);
+      lock.current = false;
     }
   }
   return (
@@ -65,14 +98,22 @@ export function Login({
       </section>
       <section className="login-form">
         <p className="eyebrow">WELCOME TO JMUSDT</p>
-        <h2>{signup ? "새로운 시작." : "다시 만나 반가워요."}</h2>
+        <h2>
+          {forgot
+            ? "비밀번호 찾기."
+            : signup
+              ? "새로운 시작."
+              : "다시 만나 반가워요."}
+        </h2>
         <p>
-          {signup
-            ? "나만의 지갑을 만들어 보세요."
-            : "로그인하고 내 지갑을 확인하세요."}
+          {forgot
+            ? "가입한 이메일로 비밀번호 재설정 링크를 보내드립니다."
+            : signup
+              ? "나만의 지갑을 만들어 보세요."
+              : "로그인하고 내 지갑을 확인하세요."}
         </p>
         <form onSubmit={submit}>
-          {signup ? (
+          {signup && !forgot ? (
             <label className="field">
               <span>이름</span>
               <input
@@ -84,7 +125,7 @@ export function Login({
               />
             </label>
           ) : null}
-          {signup && (
+          {signup && !forgot && (
             <label className="field">
               <span>추천 코드 (선택)</span>
               <input
@@ -101,43 +142,84 @@ export function Login({
             <input
               type="email"
               required
+              maxLength={254}
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
             />
           </label>
-          <label className="field">
-            <span>비밀번호</span>
-            <input
-              type="password"
-              required
-              minLength={12}
-              autoComplete={signup ? "new-password" : "current-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="12자 이상 입력"
-            />
-          </label>
+          {!forgot && (
+            <label className="field">
+              <span>비밀번호</span>
+              <input
+                type="password"
+                required
+                minLength={12}
+                maxLength={128}
+                autoComplete={signup ? "new-password" : "current-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="12자 이상 입력"
+              />
+            </label>
+          )}
           {message ? (
             <p className="form-error" role="status">
               {message}
             </p>
           ) : null}
           <button className="primary" disabled={busy}>
-            {busy ? "처리 중…" : signup ? "회원가입" : "로그인"}
+            {busy
+              ? "처리 중…"
+              : forgot
+                ? "재설정 메일 보내기"
+                : signup
+                  ? "회원가입"
+                  : "로그인"}
             <ArrowRight size={18} />
           </button>
         </form>
         <button
           className="text-button"
+          disabled={busy}
           onClick={() => {
-            setSignup(!signup);
+            setSignup(forgot ? false : !signup);
+            setForgot(false);
+            setPending(false);
             setMessage("");
           }}
         >
-          {signup ? "이미 계정이 있나요? 로그인" : "계정이 없나요? 회원가입"}
+          {forgot
+            ? "로그인으로 돌아가기"
+            : signup
+              ? "이미 계정이 있나요? 로그인"
+              : "계정이 없나요? 회원가입"}
         </button>
+        {!forgot && (
+          <button
+            className="text-button"
+            disabled={busy}
+            onClick={() => {
+              setForgot(true);
+              setSignup(false);
+              setPending(false);
+              setPassword("");
+              setMessage("");
+            }}
+          >
+            비밀번호를 잊으셨나요?
+          </button>
+        )}
+        {!forgot && (
+          <button
+            className="text-button"
+            disabled={busy || !email.trim()}
+            onClick={() => void sendEmail("resend")}
+          >
+            {pending ? "인증 메일 다시 보내기" : "회원가입 인증 메일 재발송"}
+          </button>
+        )}
         {demo ? (
           <a href="/" className="demo-link">
             데모 지갑 둘러보기 <ArrowUpRight size={17} />
