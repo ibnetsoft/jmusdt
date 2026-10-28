@@ -81,6 +81,14 @@ export async function api(run: () => Promise<unknown>) {
         { status: error.status },
       );
     const message = error instanceof Error ? error.message : "";
+    if (message.includes("product_reward_budget"))
+      return NextResponse.json(
+        {
+          error:
+            "보상 총액은 상품 가격 이하여야 합니다. 데일리 금액과 일수를 함께 확인해 주세요.",
+        },
+        { status: 400 },
+      );
     if (message.includes("INSUFFICIENT_BALANCE"))
       return NextResponse.json(
         { error: "사용 가능한 잔액이 부족합니다." },

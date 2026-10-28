@@ -56,6 +56,8 @@ export function AdminApp() {
       liability: string;
       fees: string;
       shopRevenue: string;
+      marketingReserve: string;
+      rewardDebt: string;
       difference: string;
       addresses: number;
       trx: string;
@@ -299,6 +301,13 @@ export function AdminApp() {
             }}
           >
             주문 관리
+          </button>
+          <button
+            onClick={() => {
+              location.href = "/admin/marketing";
+            }}
+          >
+            마케팅 관리
           </button>
           <button
             onClick={() => {
@@ -770,6 +779,23 @@ export function AdminApp() {
                           <div>
                             <dt>누적 수수료</dt>
                             <dd>{formatUsdt(reconciliation.fees, 6)} USDT</dd>
+                          </div>
+                          <div>
+                            <dt>데일리 지급 준비금 (USDT 환산)</dt>
+                            <dd>
+                              {formatUsdt(
+                                reconciliation.marketingReserve || "0",
+                                6,
+                              )}{" "}
+                              USDT
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>취소 보상 회수 미수금 (대사 차감)</dt>
+                            <dd>
+                              {formatUsdt(reconciliation.rewardDebt || "0", 6)}{" "}
+                              USDT
+                            </dd>
                           </div>
                           <div>
                             <dt>쇼핑몰 매출 (USDT 환산)</dt>

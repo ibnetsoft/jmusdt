@@ -1,0 +1,17 @@
+.marketing-rewards header,
+.marketing-rewards .shop-section-head {
+  flex-wrap: wrap;
+}
+.marketing-rewards .shop-order {
+  overflow-wrap: anywhere;
+}
+.marketing-rewards .shop-order > div {
+  min-width: 0;
+}
+.marketing-rewards .shop-grid {
+  margin: 28px 0;
+}
+.marketing-rewards .shop-section-head label {
+  min-width: 140px;
+  flex: 1;
+}

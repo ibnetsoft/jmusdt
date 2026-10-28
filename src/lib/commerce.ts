@@ -2,12 +2,14 @@ import { z } from "zod";
 import { parseUsdt } from "./money";
 import { HttpError } from "./http";
 import { detailBlocksSchema } from "./product-content";
+import { rewardPlanInput } from "./marketing-plan";
 export const productInput = z.object({
   id: z.string().uuid().optional(),
   version: z.number().int().positive().optional(),
   name: z.string().trim().min(1).max(120),
   description: z.string().trim().max(20000),
   detailBlocks: detailBlocksSchema.optional(),
+  rewardPlan: rewardPlanInput.optional(),
   imageUrl: z.union([
     z.literal(""),
     z
@@ -31,6 +33,7 @@ export function productPrice(price: string) {
   }
 }
 export const orderInput = z.object({
+  marketingVersion: z.number().int().positive().optional(),
   productId: z.string().uuid(),
   quantity: z.number().int().min(1).max(99),
   version: z.number().int().positive(),

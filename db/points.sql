@@ -14,7 +14,7 @@ ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAUL
 UPDATE shop_products SET currency='POINT',version=version+1 WHERE currency='USDT';
 ALTER TABLE shop_products ALTER COLUMN currency SET DEFAULT 'POINT';
 ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_kind_check;
-ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check CHECK(kind IN ('deposit','transfer_in','transfer_out','withdrawal','purchase','swap_in','swap_out','refund'));
+ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check CHECK(kind IN ('deposit','transfer_in','transfer_out','withdrawal','purchase','swap_in','swap_out','refund','reward','reward_reversal','reward_recovery'));
 CREATE OR REPLACE FUNCTION check_journal_balance() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
 BEGIN
  IF EXISTS(SELECT 1 FROM journal WHERE batch_id=NEW.batch_id GROUP BY asset HAVING sum(units)<>0) THEN RAISE EXCEPTION 'UNBALANCED_JOURNAL'; END IF;
@@ -45,6 +45,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM transactions WHERE user_id=owner_id AND idempotency_key=request) THEN RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT'; END IF;
  PERFORM 1 FROM profiles WHERE id=owner_id AND status='active' FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'ACCOUNT_BLOCKED'; END IF;
+ INSERT INTO balances(user_id) VALUES(owner_id) ON CONFLICT DO NOTHING;
  INSERT INTO point_balances(user_id) VALUES(owner_id) ON CONFLICT DO NOTHING;
  PERFORM 1 FROM balances WHERE user_id=owner_id FOR UPDATE;
  PERFORM 1 FROM point_balances WHERE user_id=owner_id FOR UPDATE;
@@ -73,6 +74,8 @@ CREATE OR REPLACE FUNCTION shop_purchase(buyer uuid,product uuid,qty integer,exp
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
 DECLARE p shop_products%ROWTYPE; old shop_orders%ROWTYPE; tx uuid; order_id uuid; batch uuid:=gen_random_uuid(); amount bigint;
 BEGIN
+ -- Serialize cross-member reward credits before taking buyer/product locks.
+ PERFORM pg_advisory_xact_lock(9692027);
  IF qty IS NULL OR qty NOT BETWEEN 1 AND 99 OR request IS NULL THEN RAISE EXCEPTION 'INVALID_ORDER'; END IF;
  -- Share the financial request namespace with transfers and withdrawals.
  PERFORM pg_advisory_xact_lock(hashtextextended(buyer::text||request::text,0));

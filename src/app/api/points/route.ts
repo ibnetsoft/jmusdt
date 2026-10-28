@@ -18,7 +18,15 @@ export async function GET() {
       "SELECT * FROM point_swaps WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50",
       [user.id],
     );
-    return { ...balance.rows[0], history: history.rows };
+    const debt = await database().query(
+      "SELECT coalesce(sum(outstanding),0)::text AS debt FROM marketing_debts WHERE user_id=$1",
+      [user.id],
+    );
+    return {
+      ...balance.rows[0],
+      history: history.rows,
+      debt: debt.rows[0].debt,
+    };
   });
 }
 export async function POST(request: Request) {

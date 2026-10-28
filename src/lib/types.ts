@@ -8,7 +8,10 @@ export type Transaction = {
     | "purchase"
     | "swap_in"
     | "swap_out"
-    | "refund";
+    | "refund"
+    | "reward"
+    | "reward_reversal"
+    | "reward_recovery";
   asset?: "USDT" | "POINT";
   amount: string;
   fee: string;

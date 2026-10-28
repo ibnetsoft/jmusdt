@@ -32,6 +32,9 @@ try {
   await client.query(
     await readFile(new URL("../db/organization.sql", import.meta.url), "utf8"),
   );
+  await client.query(
+    await readFile(new URL("../db/marketing.sql", import.meta.url), "utf8"),
+  );
   await client.query("COMMIT");
   console.log("Wallet schema applied.");
 } catch (error) {

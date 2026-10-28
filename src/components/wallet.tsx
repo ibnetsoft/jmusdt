@@ -121,6 +121,13 @@ export function WalletApp() {
         <nav aria-label="주 메뉴">
           <button
             onClick={() => {
+              location.href = "/rewards";
+            }}
+          >
+            리워드 · 주머니
+          </button>
+          <button
+            onClick={() => {
               location.href = "/organization";
             }}
           >
@@ -234,6 +241,9 @@ export function WalletApp() {
                     {hidden ? "••••••" : formatUsdt(data.points || "0", 6)} P ·
                     USDT ↔ 포인트 전환
                   </a>
+                </p>
+                <p>
+                  <a href="/rewards">리워드 · 복주머니 · 보물주머니 보기 →</a>
                 </p>
                 <section className="balance-card">
                   <div className="balance-title">
@@ -892,11 +902,14 @@ function Activity({
         ? t.kind === "deposit" ||
           t.kind === "transfer_in" ||
           t.kind === "swap_in" ||
-          t.kind === "refund"
+          t.kind === "refund" ||
+          t.kind === "reward"
         : t.kind === "transfer_out" ||
           t.kind === "withdrawal" ||
           t.kind === "purchase" ||
-          t.kind === "swap_out"),
+          t.kind === "swap_out" ||
+          t.kind === "reward_reversal" ||
+          t.kind === "reward_recovery"),
   );
   return (
     <>

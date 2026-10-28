@@ -5,6 +5,7 @@ import "./shop.css";
 import type { DetailBlock } from "@/lib/product-content";
 import { DetailContent } from "./product-content";
 import { DetailEditor, ImageUpload } from "./product-editor";
+import { zeroPlan, rewardLabels, type RewardPlan } from "@/lib/marketing-plan";
 type Product = {
   id: string;
   name: string;
@@ -15,6 +16,7 @@ type Product = {
   stock: number;
   active: boolean;
   version: number;
+  reward_plan: RewardPlan;
 };
 type Order = {
   status: string;
@@ -74,12 +76,20 @@ export function Shop({ productId }: { productId?: string }) {
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const key = useRef("");
+  const [marketing, setMarketing] = useState({
+    enabled: false,
+    daily_paused: false,
+    version: 0,
+  });
   const locked = useRef(false);
   async function load(openDetail = false) {
     const data = await requestJson("/api/shop");
     setProducts(data.products);
     setOrders(data.orders);
     setAvailable(data.available);
+    setMarketing(
+      data.marketing || { enabled: false, daily_paused: false, version: 0 },
+    );
     if (productId && openDetail) {
       const product = data.products.find((p: Product) => p.id === productId);
       if (product) choose(product);
@@ -109,6 +119,7 @@ export function Shop({ productId }: { productId?: string }) {
         quantity,
         version: selected.version,
         requestKey: key.current,
+        marketingVersion: marketing.version || undefined,
       });
       setNotice(`구매가 완료되었습니다. 주문번호 ${result.id}`);
       setSelected(null);
@@ -200,6 +211,27 @@ export function Shop({ productId }: { productId?: string }) {
             단가 {formatUsdt(selected.price, 6)} 포인트 · 재고 {selected.stock}
             개
           </p>
+          {!marketing.enabled && (
+            <p className="shop-error">
+              현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는
+              리워드·주머니·데일리가 발생하지 않습니다.
+            </p>
+          )}
+          {marketing.enabled && marketing.daily_paused && (
+            <p className="shop-muted">
+              데일리 지급이 일시정지 중입니다. 구매 권리는 생성되며 재개 후
+              기한이 지난 회차가 지급됩니다.
+            </p>
+          )}
+          {marketing.enabled && selected.reward_plan && (
+            <p className="shop-muted">
+              상품 1개당 복주머니 {selected.reward_plan.lucky}개 · 보물주머니{" "}
+              {selected.reward_plan.treasure}개 · 데일리{" "}
+              {formatUsdt(selected.reward_plan.daily, 6)} P ×{" "}
+              {selected.reward_plan.days}일. 보상 운영이 켜진 구매에 적용되며
+              데일리는 구매 다음 날부터입니다.
+            </p>
+          )}
           <label>
             수량
             <select
@@ -334,6 +366,7 @@ const empty = {
   stock: 0,
   active: false,
   detailBlocks: [] as DetailBlock[],
+  rewardPlan: zeroPlan,
 };
 export function ProductAdmin() {
   const [products, setProducts] = useState<Product[]>([]),
@@ -347,6 +380,7 @@ export function ProductAdmin() {
       price: string;
       stock: number;
       active: boolean;
+      rewardPlan: RewardPlan;
     }>(empty);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -381,6 +415,7 @@ export function ProductAdmin() {
       <header>
         <a href="/admin">← 관리자 콘솔</a>
         <a href="/shop">쇼핑몰 보기 ↗</a>
+        <a href="/admin/marketing">마케팅 관리</a>
       </header>
       <p className="shop-kicker">ADMIN / COMMERCE</p>
       <h1>상품 관리</h1>
@@ -487,6 +522,78 @@ export function ProductAdmin() {
                 }
               />
             </label>
+            <section className="shop-editor" aria-label="상품별 마케팅 보상">
+              <h3>상품 1개당 마케팅 보상</h3>
+              <p className="shop-muted">
+                고정 포인트를 입력하세요. 0은 미지급입니다.
+                추천인·후원인·후원인의 추천인에게 지급하며, 맘은 후원리워드가
+                지급될 때만 발생합니다. 보상 총액(데일리 전체 기간 포함)은 상품
+                가격 이하여야 합니다. 변경은 이후 구매에만 적용됩니다.
+              </p>
+              {(["referral", "sponsor", "mom", "daily"] as const).map((key) => (
+                <label key={key}>
+                  {rewardLabels[key]} ({key === "daily" ? "하루 P" : "P"})
+                  <input
+                    required
+                    inputMode="decimal"
+                    value={form.rewardPlan[key]}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        rewardPlan: {
+                          ...form.rewardPlan,
+                          [key]: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </label>
+              ))}
+              <label>
+                데일리 지급 일수 (최대 365일)
+                <input
+                  required
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={form.rewardPlan.days}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      rewardPlan: {
+                        ...form.rewardPlan,
+                        days: Number(e.target.value),
+                      },
+                    })
+                  }
+                />
+              </label>
+              {(["lucky", "treasure"] as const).map((key) => (
+                <label key={key}>
+                  {rewardLabels[key]} (개)
+                  <input
+                    required
+                    type="number"
+                    min={0}
+                    max={1000000}
+                    value={form.rewardPlan[key]}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        rewardPlan: {
+                          ...form.rewardPlan,
+                          [key]: Number(e.target.value),
+                        },
+                      })
+                    }
+                  />
+                </label>
+              ))}
+              <small>
+                주머니는 보유 수량으로 지급됩니다. 개봉·추첨 기능은 포함되지
+                않습니다.
+              </small>
+            </section>
             <label className="shop-check">
               <input
                 type="checkbox"
@@ -563,6 +670,17 @@ export function ProductAdmin() {
                     price: decimalUsdt(BigInt(p.price)),
                     stock: p.stock,
                     active: p.active,
+                    rewardPlan: {
+                      ...(p.reward_plan || zeroPlan),
+                      ...Object.fromEntries(
+                        (["referral", "sponsor", "mom", "daily"] as const).map(
+                          (k) => [
+                            k,
+                            decimalUsdt(BigInt(p.reward_plan?.[k] || "0")),
+                          ],
+                        ),
+                      ),
+                    },
                   });
                   setNotice("");
                 }}

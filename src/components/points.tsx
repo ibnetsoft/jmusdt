@@ -5,6 +5,7 @@ import "./shop.css";
 type Data = {
   usdt: string;
   points: string;
+  debt: string;
   history: {
     id: string;
     direction: string;
@@ -68,6 +69,13 @@ export function Points() {
       <p className="shop-kicker">JMUSDT / POINTS</p>
       <h1>포인트 전환</h1>
       <p className="shop-muted">1 USDT = 1 포인트 · 수수료 0 · 소수점 6자리</p>
+      {BigInt(data?.debt || "0") > 0n && (
+        <p className="shop-error">
+          취소 보상 미수금 {formatUsdt(data!.debt, 6)} P가 있습니다. USDT →
+          포인트 전환 시 미수금이 우선 상계되므로 실제 사용 가능 포인트는
+          전환액보다 적을 수 있습니다.
+        </p>
+      )}
       <p>
         포인트로 쇼핑몰 상품을 구매하세요. 전환은 내부 잔액에서 즉시 처리됩니다.
       </p>

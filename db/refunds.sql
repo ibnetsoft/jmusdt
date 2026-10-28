@@ -1,6 +1,6 @@
 -- Full-order refunds. Original purchases/journal entries remain immutable.
 ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_kind_check;
-ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check CHECK(kind IN ('deposit','transfer_in','transfer_out','withdrawal','purchase','swap_in','swap_out','refund'));
+ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check CHECK(kind IN ('deposit','transfer_in','transfer_out','withdrawal','purchase','swap_in','swap_out','refund','reward','reward_reversal','reward_recovery'));
 ALTER TABLE shop_orders ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'paid' CHECK(status IN ('paid','cancellation_requested','cancelled'));
 ALTER TABLE shop_orders ADD COLUMN IF NOT EXISTS cancellation_reason text NOT NULL DEFAULT '';
 ALTER TABLE shop_orders ADD COLUMN IF NOT EXISTS refund_reason text NOT NULL DEFAULT '';
@@ -12,6 +12,7 @@ CREATE OR REPLACE FUNCTION shop_refund(order_key uuid,actor_id uuid,reason text)
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
 DECLARE entry shop_orders%ROWTYPE; owner_id uuid; tx uuid; batch uuid:=gen_random_uuid();
 BEGIN
+ PERFORM pg_advisory_xact_lock(9692027);
  IF actor_id IS NULL OR reason IS NULL OR length(trim(reason)) NOT BETWEEN 1 AND 500 THEN RAISE EXCEPTION 'INVALID_REFUND'; END IF;
  SELECT user_id INTO owner_id FROM shop_orders WHERE id=order_key;
  IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_NOT_FOUND'; END IF;
