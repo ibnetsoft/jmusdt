@@ -876,7 +876,8 @@ function Activity({
       (filter === "in"
         ? t.kind === "deposit" ||
           t.kind === "transfer_in" ||
-          t.kind === "swap_in"
+          t.kind === "swap_in" ||
+          t.kind === "refund"
         : t.kind === "transfer_out" ||
           t.kind === "withdrawal" ||
           t.kind === "purchase" ||

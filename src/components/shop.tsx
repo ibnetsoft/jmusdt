@@ -13,6 +13,8 @@ type Product = {
   version: number;
 };
 type Order = {
+  status: string;
+  refund_reason: string;
   currency: "USDT" | "POINT";
   id: string;
   product_name: string;
@@ -237,9 +239,18 @@ export function Shop({ productId }: { productId?: string }) {
                 {o.product_name} × {o.quantity}
               </strong>
               <p className="shop-muted">
-                {new Date(o.created_at).toLocaleString("ko-KR")} · 결제 완료
+                {new Date(o.created_at).toLocaleString("ko-KR")} ·{" "}
+                {o.status === "cancelled"
+                  ? "취소·환불 완료"
+                  : o.status === "cancellation_requested"
+                    ? "취소 승인 대기"
+                    : "결제 완료"}
               </p>
               <small>주문번호 {o.id}</small>
+              {o.status === "cancelled" && <p>환불 사유: {o.refund_reason}</p>}
+              {o.status === "paid" && (
+                <CancelOrder orderId={o.id} onDone={load} />
+              )}
             </div>
             <strong>
               {formatUsdt(o.total, 6)} {o.currency === "USDT" ? "USDT" : "P"}
@@ -251,6 +262,59 @@ export function Shop({ productId }: { productId?: string }) {
         )}
       </section>
     </main>
+  );
+}
+function CancelOrder({
+  orderId,
+  onDone,
+}: {
+  orderId: string;
+  onDone: () => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false),
+    [reason, setReason] = useState(""),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  return open ? (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (busy) return;
+        setBusy(true);
+        setError("");
+        try {
+          await requestJson("/api/orders/cancel", { orderId, reason });
+          await onDone();
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "취소 요청 실패");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <label>
+        취소 요청 사유
+        <input
+          required
+          maxLength={500}
+          disabled={busy}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+      </label>
+      <p className="shop-muted">
+        관리자 승인 후 결제 자산으로 전액 환불됩니다.
+      </p>
+      {error && <p role="alert">{error}</p>}
+      <button disabled={busy || !reason.trim()}>
+        {busy ? "요청 중…" : "취소 요청 제출"}
+      </button>
+      <button type="button" disabled={busy} onClick={() => setOpen(false)}>
+        닫기
+      </button>
+    </form>
+  ) : (
+    <button onClick={() => setOpen(true)}>취소 요청</button>
   );
 }
 const empty = {

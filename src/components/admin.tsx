@@ -295,6 +295,13 @@ export function AdminApp() {
         <nav aria-label="관리자 메뉴">
           <button
             onClick={() => {
+              location.href = "/admin/orders";
+            }}
+          >
+            주문 관리
+          </button>
+          <button
+            onClick={() => {
               location.href = "/admin/shop";
             }}
           >

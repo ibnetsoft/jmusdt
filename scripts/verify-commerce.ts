@@ -52,6 +52,27 @@ try {
     );
   }
   assert.equal((await call("/api/shop")).status, 401);
+  assert.equal((await call("/api/admin/orders", cookies[1])).status, 403);
+  assert.equal((await call("/api/admin/orders", cookies[0])).status, 200);
+  assert.equal(
+    (
+      await call("/api/orders/cancel", cookies[1], {
+        orderId: crypto.randomUUID(),
+        reason: "QA missing order",
+      })
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await call("/api/admin/orders", cookies[0], {
+        orderId: crypto.randomUUID(),
+        action: "approve",
+        reason: "QA missing order",
+      })
+    ).status,
+    404,
+  );
   assert.equal((await call("/api/points")).status, 401);
   const points = await call("/api/points", cookies[1]);
   assert.equal(points.status, 200);
@@ -172,6 +193,44 @@ try {
       [first.rows[0].id],
     );
     assert.equal(journal.rows[0].net, "0");
+    const refundArgs = [first.rows[0].id, users[0], "QA cancellation approved"];
+    const refund = await db.query(
+      "SELECT shop_refund($1,$2,$3) AS id",
+      refundArgs,
+    );
+    assert.equal(
+      (await db.query("SELECT shop_refund($1,$2,$3) AS id", refundArgs)).rows[0]
+        .id,
+      refund.rows[0].id,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "SELECT available FROM point_balances WHERE user_id=$1",
+          [users[1]],
+        )
+      ).rows[0].available,
+      "2000002",
+    );
+    assert.equal(
+      (
+        await db.query("SELECT stock FROM shop_products WHERE id=$1", [
+          productId,
+        ])
+      ).rows[0].stock,
+      2,
+    );
+    assert.equal(
+      (
+        await db.query("SELECT status FROM shop_orders WHERE id=$1", [
+          first.rows[0].id,
+        ])
+      ).rows[0].status,
+      "cancelled",
+    );
+    console.log(
+      "Real PostgreSQL cancellation: full point refund, stock recovery and repeated approval PASS (rollback-only)",
+    );
     console.log(
       "Real PostgreSQL checkout: exact 6-decimal debit, order, stock, balanced journal and duplicate request PASS (rolled back)",
     );

@@ -14,7 +14,7 @@ ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAUL
 UPDATE shop_products SET currency='POINT',version=version+1 WHERE currency='USDT';
 ALTER TABLE shop_products ALTER COLUMN currency SET DEFAULT 'POINT';
 ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_kind_check;
-ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check CHECK(kind IN ('deposit','transfer_in','transfer_out','withdrawal','purchase','swap_in','swap_out'));
+ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check CHECK(kind IN ('deposit','transfer_in','transfer_out','withdrawal','purchase','swap_in','swap_out','refund'));
 CREATE OR REPLACE FUNCTION check_journal_balance() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
 BEGIN
  IF EXISTS(SELECT 1 FROM journal WHERE batch_id=NEW.batch_id GROUP BY asset HAVING sum(units)<>0) THEN RAISE EXCEPTION 'UNBALANCED_JOURNAL'; END IF;

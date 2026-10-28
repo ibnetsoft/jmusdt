@@ -43,6 +43,7 @@ export const kindLabels: Record<string, string> = {
   transfer_out: "회원에게 송금",
   withdrawal: "외부 지갑 출금",
   purchase: "쇼핑몰 상품 구매",
+  refund: "상품 구매 환불",
   swap_in: "전환 받음",
   swap_out: "전환 보냄",
 };
@@ -86,7 +87,8 @@ export function ActivityList({
         const incoming =
           t.kind === "deposit" ||
           t.kind === "transfer_in" ||
-          t.kind === "swap_in";
+          t.kind === "swap_in" ||
+          t.kind === "refund";
         return (
           <button
             className="activity-row"

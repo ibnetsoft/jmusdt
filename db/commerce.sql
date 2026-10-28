@@ -1,6 +1,6 @@
 -- Additive commerce schema; run after schema.sql using a trusted backend role.
 ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_kind_check;
-ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check CHECK(kind IN ('deposit','transfer_in','transfer_out','withdrawal','purchase','swap_in','swap_out'));
+ALTER TABLE transactions ADD CONSTRAINT transactions_kind_check CHECK(kind IN ('deposit','transfer_in','transfer_out','withdrawal','purchase','swap_in','swap_out','refund'));
 CREATE TABLE IF NOT EXISTS shop_products (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL CHECK(length(name) BETWEEN 1 AND 120),
  description text NOT NULL DEFAULT '', image_url text NOT NULL DEFAULT '',
