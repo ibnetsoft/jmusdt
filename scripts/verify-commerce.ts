@@ -141,6 +141,7 @@ try {
     price: "1.000001",
     stock: 2,
     active: false,
+    shippingType: "none",
   };
   const created = await call("/api/admin/products", cookies[0], product);
   assert.equal(created.status, 200);
@@ -190,6 +191,30 @@ try {
     requestKey: crypto.randomUUID(),
   });
   assert.equal(denied.status, 409);
+  const physical = await call("/api/admin/products", cookies[0], {
+    ...product, id: productId, version, active: true, shippingType: "physical",
+  });
+  assert.equal(physical.status, 200);
+  version = (await physical.json()).product.version;
+  const missingShipping = await call("/api/shop", cookies[1], {
+    productId, quantity: 1, version, requestKey: crypto.randomUUID(),
+  });
+  assert.equal(missingShipping.status, 400);
+  const incorrectType = await call("/api/shop", cookies[1], {
+    productId, quantity: 1, version, requestKey: crypto.randomUUID(),
+    shipping: {recipient:"QA",phone:"010",address:"QA address",note:""},
+  });
+  assert.equal(incorrectType.status, 409); // Correct shipping reaches the balance check.
+  const nonDelivery = await call("/api/admin/products", cookies[0], {
+    ...product, id: productId, version, active: true, shippingType: "none",
+  });
+  assert.equal(nonDelivery.status, 200);
+  version = (await nonDelivery.json()).product.version;
+  assert.equal((await call("/api/shop", cookies[1], {
+    productId, quantity: 1, version, requestKey: crypto.randomUUID(),
+    shipping: {recipient:"QA",phone:"010",address:"QA address",note:""},
+  })).status, 400);
+  console.log("HTTP: physical products require delivery details and delivery-free products reject them PASS");
   console.log(
     "HTTP: admin create/publish/edit conflict, member catalog, hidden products, insufficient balance and access control PASS",
   );

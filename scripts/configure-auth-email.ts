@@ -56,7 +56,7 @@ const patch = {
   external_email_enabled: true,
   mailer_autoconfirm: false,
   smtp_host: "smtp.resend.com",
-  smtp_port: 465,
+  smtp_port: "465",
   smtp_user: "resend",
   smtp_pass: password,
   smtp_admin_email: address,

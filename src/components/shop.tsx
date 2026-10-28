@@ -7,6 +7,7 @@ import { DetailContent } from "./product-content";
 import { DetailEditor, ImageUpload } from "./product-editor";
 import { zeroPlan, rewardLabels, type RewardPlan } from "@/lib/marketing-plan";
 type Product = {
+  shipping_type: "physical" | "none" | null;
   id: string;
   name: string;
   description: string;
@@ -19,6 +20,7 @@ type Product = {
   reward_plan: RewardPlan;
 };
 type Order = {
+  shipping: { recipient: string; phone: string; address: string; note: string; status: string; carrier: string; tracking_number: string } | null;
   status: string;
   refund_reason: string;
   currency: "USDT" | "POINT";
@@ -82,6 +84,7 @@ export function Shop({ productId }: { productId?: string }) {
     version: 0,
   });
   const locked = useRef(false);
+  const [shipping, setShipping] = useState({ recipient: "", phone: "", address: "", note: "" });
   async function load(openDetail = false) {
     const data = await requestJson("/api/shop");
     setProducts(data.products);
@@ -120,6 +123,7 @@ export function Shop({ productId }: { productId?: string }) {
         version: selected.version,
         requestKey: key.current,
         marketingVersion: marketing.version || undefined,
+        shipping: selected.shipping_type === "physical" ? shipping : undefined,
       });
       setNotice(`구매가 완료되었습니다. 주문번호 ${result.id}`);
       setSelected(null);
@@ -250,6 +254,10 @@ export function Shop({ productId }: { productId?: string }) {
           <div className="shop-total">
             결제금액 <strong>{formatUsdt(total, 6)} 포인트</strong>
           </div>
+          {selected.shipping_type === "physical" ? <div className="shop-editor">
+            <h3>배송 정보</h3>
+            {([['recipient','받는 분',100],['phone','연락처',40],['address','배송 주소',500],['note','배송 요청사항 (선택)',500]] as const).map(([field,label,max]) => <label key={field}>{label}<input maxLength={max} value={shipping[field]} disabled={busy} onChange={(e) => { setShipping({...shipping,[field]:e.target.value}); key.current = crypto.randomUUID(); }} /></label>)}
+          </div> : <p>배송이 필요 없는 상품입니다.</p>}
           <p className="shop-muted">
             결제 확정 시 지갑 잔액에서 차감됩니다. 상품·가격이 변경되면 결제가
             중단됩니다.
@@ -257,7 +265,7 @@ export function Shop({ productId }: { productId?: string }) {
           <button
             className="shop-primary"
             disabled={
-              busy || selected.stock < quantity || BigInt(available) < total
+              busy || selected.stock < quantity || BigInt(available) < total || (selected.shipping_type === "physical" && (!shipping.recipient.trim() || !shipping.phone.trim() || !shipping.address.trim()))
             }
             onClick={purchase}
           >
@@ -288,6 +296,7 @@ export function Shop({ productId }: { productId?: string }) {
                     : "결제 완료"}
               </p>
               <small>주문번호 {o.id}</small>
+              {o.shipping && <div><p>배송: {({preparing: "배송 준비", shipped: "배송 중", delivered: "배송 완료"} as Record<string,string>)[o.shipping.status]}</p><p>받는 분: {o.shipping.recipient} · {o.shipping.phone}</p><p>주소: {o.shipping.address}</p>{o.shipping.note && <p>요청사항: {o.shipping.note}</p>}{o.shipping.tracking_number && <p>{o.shipping.carrier} · {o.shipping.tracking_number}</p>}</div>}
               {o.status === "cancelled" && <p>환불 사유: {o.refund_reason}</p>}
               {o.status === "paid" && (
                 <CancelOrder orderId={o.id} onDone={load} />
@@ -359,6 +368,7 @@ function CancelOrder({
   );
 }
 const empty = {
+  shippingType: "" as "" | "physical" | "none",
   name: "",
   description: "",
   imageUrl: "",
@@ -380,6 +390,7 @@ export function ProductAdmin() {
       price: string;
       stock: number;
       active: boolean;
+      shippingType: "" | "physical" | "none";
       rewardPlan: RewardPlan;
     }>(empty);
   const [busy, setBusy] = useState(false),
@@ -522,6 +533,13 @@ export function ProductAdmin() {
                 }
               />
             </label>
+            <label>배송 유형
+              <select required value={form.shippingType} onChange={(e) => setForm({...form, shippingType:e.target.value as typeof form.shippingType})}>
+                <option value="">유형을 선택하세요</option>
+                <option value="physical">실물 배송</option>
+                <option value="none">배송 불필요</option>
+              </select>
+            </label>
             <section className="shop-editor" aria-label="상품별 마케팅 보상">
               <h3>상품 1개당 마케팅 보상</h3>
               <p className="shop-muted">
@@ -655,6 +673,7 @@ export function ProductAdmin() {
                 </p>
                 <small>
                   {p.active ? "판매 중" : "비공개"} · 버전 {p.version}
+                  {" · "}{p.shipping_type === "physical" ? "실물 배송" : p.shipping_type === "none" ? "배송 불필요" : "배송 유형 확인 필요 — 판매 목록에서 제외"}
                 </small>
               </div>
               <button
@@ -670,6 +689,7 @@ export function ProductAdmin() {
                     price: decimalUsdt(BigInt(p.price)),
                     stock: p.stock,
                     active: p.active,
+                    shippingType: p.shipping_type || "",
                     rewardPlan: {
                       ...(p.reward_plan || zeroPlan),
                       ...Object.fromEntries(

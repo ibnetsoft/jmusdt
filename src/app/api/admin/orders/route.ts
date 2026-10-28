@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     )
       throw new HttpError(400, "상태를 확인해 주세요.");
     const orders = await database().query(
-      "SELECT o.*,p.email,p.name AS member_name FROM shop_orders o JOIN profiles p ON p.id=o.user_id WHERE ($1='all' OR o.status=$1) AND ($2='' OR o.id::text ILIKE '%'||$2||'%' OR o.product_name ILIKE '%'||$2||'%' OR p.email ILIKE '%'||$2||'%' OR p.name ILIKE '%'||$2||'%') ORDER BY o.created_at DESC LIMIT 200",
+      "SELECT o.*,p.email,p.name AS member_name, CASE WHEN s.order_id IS NULL THEN NULL ELSE json_build_object('recipient',s.recipient,'phone',s.phone,'address',s.address,'note',s.note,'status',s.status,'carrier',s.carrier,'tracking_number',s.tracking_number) END AS shipping FROM shop_orders o JOIN profiles p ON p.id=o.user_id LEFT JOIN shop_order_shipping s ON s.order_id=o.id WHERE ($1='all' OR o.status=$1) AND ($2='' OR o.id::text ILIKE '%'||$2||'%' OR o.product_name ILIKE '%'||$2||'%' OR p.email ILIKE '%'||$2||'%' OR p.name ILIKE '%'||$2||'%') ORDER BY o.created_at DESC LIMIT 200",
       [status, q],
     );
     return { orders: orders.rows };

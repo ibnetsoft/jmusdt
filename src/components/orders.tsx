@@ -10,6 +10,7 @@ export const orderStatus: Record<string, string> = {
   cancelled: "취소·환불 완료",
 };
 type Order = {
+  shipping: {recipient:string; phone:string; address:string; note:string; status:"preparing"|"shipped"|"delivered"; carrier:string; tracking_number:string} | null;
   product_detail_blocks: DetailBlock[];
   id: string;
   email: string;
@@ -38,6 +39,9 @@ export function OrderAdmin() {
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const lock = useRef(false);
+  const [deliveryStatus, setDeliveryStatus] = useState<"preparing"|"shipped"|"delivered">("preparing");
+  const [carrier, setCarrier] = useState("");
+  const [tracking, setTracking] = useState("");
   const detail = useRef<HTMLElement>(null);
   useEffect(() => {
     if (selected)
@@ -88,6 +92,16 @@ export function OrderAdmin() {
       lock.current = false;
       setBusy(false);
     }
+  }
+  async function saveShipping() {
+    if (!selected?.shipping || lock.current) return;
+    lock.current = true; setBusy(true); setError(""); setNotice("");
+    try {
+      const r = await fetch("/api/admin/orders/shipping", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:selected.id,expectedStatus:selected.shipping.status,status:deliveryStatus,carrier,trackingNumber:tracking})});
+      const d = await r.json(); if (!r.ok) throw new Error(d.error);
+      setSelected(null); await load(); setNotice("배송 정보를 저장했습니다.");
+    } catch (e) { setError(e instanceof Error ? e.message : "배송 처리 실패"); }
+    finally { lock.current = false; setBusy(false); }
   }
   return (
     <main className="commerce">
@@ -162,6 +176,9 @@ export function OrderAdmin() {
             disabled={busy}
             onClick={() => {
               setSelected(o);
+              setDeliveryStatus(o.shipping?.status || "preparing");
+              setCarrier(o.shipping?.carrier || "");
+              setTracking(o.shipping?.tracking_number || "");
               setReason("");
               setConfirmation(false);
               setNotice("");
@@ -188,6 +205,21 @@ export function OrderAdmin() {
             description={selected.product_description}
             blocks={selected.product_detail_blocks}
           />
+          {selected.shipping && <section className="shop-editor" aria-label="배송 정보">
+            <h3>배송 정보</h3>
+            <p>{selected.shipping.recipient} · {selected.shipping.phone}</p>
+            <p>{selected.shipping.address}</p>
+            {selected.shipping.note && <p>요청사항: {selected.shipping.note}</p>}
+            <label>배송 상태<select value={deliveryStatus} disabled={busy || selected.status !== "paid"} onChange={e=>setDeliveryStatus(e.target.value as typeof deliveryStatus)}>
+              <option value="preparing" disabled={selected.shipping.status !== "preparing"}>배송 준비</option>
+              <option value="shipped" disabled={selected.shipping.status === "delivered"}>배송 중</option>
+              <option value="delivered" disabled={selected.shipping.status === "preparing"}>배송 완료</option>
+            </select></label>
+            <label>택배사<input maxLength={100} value={carrier} disabled={busy || selected.status !== "paid"} onChange={e=>setCarrier(e.target.value)} /></label>
+            <label>송장번호<input maxLength={100} value={tracking} disabled={busy || selected.status !== "paid"} onChange={e=>setTracking(e.target.value)} /></label>
+            <button disabled={busy || selected.status !== "paid"} onClick={saveShipping}>배송 정보 저장</button>
+            {selected.status !== "paid" && <p>취소 요청 또는 취소된 주문은 배송 정보를 변경할 수 없습니다.</p>}
+          </section>}
           <p>
             취소 요청 사유: {selected.cancellation_reason || "관리자 직접 취소"}
           </p>

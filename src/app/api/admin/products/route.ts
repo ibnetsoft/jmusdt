@@ -46,14 +46,15 @@ export async function POST(request: Request) {
         p.active,
         p.detailBlocks === undefined ? null : JSON.stringify(p.detailBlocks),
         plan ? JSON.stringify(plan) : null,
+        p.shippingType,
       ];
       const result = p.id
         ? await db.query(
-            "UPDATE shop_products SET name=$1,description=$2,image_url=$3,price=$4,stock=$5,active=$6,detail_blocks=COALESCE($7::jsonb,detail_blocks),reward_plan=COALESCE($8::jsonb,reward_plan),version=version+1,updated_at=now() WHERE id=$9 AND version=$10 RETURNING *",
+            "UPDATE shop_products SET name=$1,description=$2,image_url=$3,price=$4,stock=$5,active=$6,detail_blocks=COALESCE($7::jsonb,detail_blocks),reward_plan=COALESCE($8::jsonb,reward_plan),shipping_type=$9,version=version+1,updated_at=now() WHERE id=$10 AND version=$11 RETURNING *",
             [...values, p.id, p.version],
           )
         : await db.query(
-            'INSERT INTO shop_products(name,description,image_url,price,stock,active,detail_blocks,reward_plan) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7::jsonb,\'[]\'::jsonb),COALESCE($8::jsonb,\'{"referral":"0","sponsor":"0","mom":"0","daily":"0","days":0,"lucky":0,"treasure":0}\'::jsonb)) RETURNING *',
+            'INSERT INTO shop_products(name,description,image_url,price,stock,active,detail_blocks,reward_plan,shipping_type) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7::jsonb,\'[]\'::jsonb),COALESCE($8::jsonb,\'{"referral":"0","sponsor":"0","mom":"0","daily":"0","days":0,"lucky":0,"treasure":0}\'::jsonb),$9) RETURNING *',
             values,
           );
       if (!result.rows[0])
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
             productId: result.rows[0].id,
             version: result.rows[0].version,
             rewardPlan: result.rows[0].reward_plan,
+            shippingType: result.rows[0].shipping_type,
           }),
         ],
       );

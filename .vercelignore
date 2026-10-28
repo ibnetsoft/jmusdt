@@ -1,0 +1,7 @@
+.env*
+artifacts/
+test-results/
+playwright-report/
+.git/
+.next/
+node_modules/

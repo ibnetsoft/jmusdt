@@ -123,6 +123,7 @@ try {
     price: "100",
     stock: 10,
     active: false,
+    shippingType: "none",
     rewardPlan: plan,
   };
   const created = await call("/api/admin/products", admin.cookie, draft);

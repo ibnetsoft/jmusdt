@@ -21,6 +21,7 @@ export const productInput = z.object({
   price: z.string().regex(/^\d{1,10}(\.\d{1,6})?$/),
   stock: z.number().int().min(0).max(1000000),
   active: z.boolean(),
+  shippingType: z.enum(["physical", "none"]),
 });
 export function productPrice(price: string) {
   try {
@@ -33,6 +34,12 @@ export function productPrice(price: string) {
   }
 }
 export const orderInput = z.object({
+  shipping: z.object({
+    recipient: z.string().trim().min(1).max(100),
+    phone: z.string().trim().min(1).max(40),
+    address: z.string().trim().min(1).max(500),
+    note: z.string().trim().max(500),
+  }).optional(),
   marketingVersion: z.number().int().positive().optional(),
   productId: z.string().uuid(),
   quantity: z.number().int().min(1).max(99),
