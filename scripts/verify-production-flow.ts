@@ -125,6 +125,7 @@ async function cleanup() {
 }
 
 try {
+  assert.equal((await pool.query("SELECT count(*)::int AS n FROM shop_orders")).rows[0].n,0,"One-time empty-database release QA only. Use an isolated environment once any order history exists.");
   assert.equal((await pool.query("SELECT to_regprocedure('qa_release_product_guard()') AS function")).rows[0].function,null,"An earlier QA guard requires cleanup before another run");
   assert.equal((await pool.query("SELECT count(*)::int AS n FROM daily_pool_entries WHERE settled_at IS NULL AND cancelled_at IS NULL AND cutoff<=now()")).rows[0].n,0,"Existing due pools: use an isolated test environment instead");
   const admin=await member("admin",undefined,true);await regular(admin,admin);
