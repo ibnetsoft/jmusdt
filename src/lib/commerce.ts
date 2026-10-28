@@ -19,6 +19,7 @@ export const productInput = z.object({
       .refine((v) => v.startsWith("https://")),
   ]),
   price: z.string().regex(/^\d{1,10}(\.\d{1,6})?$/),
+  retailPrice: z.union([z.literal(""), z.string().regex(/^\d{1,10}(\.\d{1,6})?$/)]).optional(),
   stock: z.number().int().min(0).max(1000000),
   active: z.boolean(),
   shippingType: z.enum(["physical", "none"]),
@@ -33,6 +34,14 @@ export function productPrice(price: string) {
       "0보다 큰 금액을 소수점 6자리 이내로 입력해 주세요.",
     );
   }
+}
+export function productRetailPrice(value: string | undefined, price: string) {
+  if (value === undefined) return undefined;
+  if (value === "") return null;
+  const retail = productPrice(value);
+  if (BigInt(retail) < BigInt(price))
+    throw new HttpError(400, "소비자가는 회원가 이상으로 입력해 주세요.");
+  return retail;
 }
 export const orderInput = z.object({
   shipping: z.object({

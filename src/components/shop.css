@@ -32,6 +32,12 @@
   color: #aaa;
   line-height: 1.7;
 }
+.shop-prices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-block: 16px;
+}
 .shop-balance,
 .shop-total {
   padding: 20px 0;

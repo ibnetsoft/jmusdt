@@ -1,6 +1,6 @@
 import { api, identity, checkOrigin, HttpError } from "@/lib/http";
 import { database, transaction } from "@/lib/db";
-import { productInput, productPrice } from "@/lib/commerce";
+import { productInput, productPrice, productRetailPrice } from "@/lib/commerce";
 import { planUnits, validRewardBudget } from "@/lib/marketing-plan";
 export async function GET() {
   return api(async () => {
@@ -28,7 +28,11 @@ export async function POST(request: Request) {
     const price = productPrice(p.price);
     const plan = p.rewardPlan ? planUnits(p.rewardPlan) : undefined;
     return transaction(async (db) => {
-      const existing = p.id ? (await db.query("SELECT package_type,reward_plan FROM shop_products WHERE id=$1 FOR UPDATE",[p.id])).rows[0] : undefined;
+      const existing = p.id ? (await db.query("SELECT package_type,reward_plan,retail_price FROM shop_products WHERE id=$1 FOR UPDATE",[p.id])).rows[0] : undefined;
+      const requestedRetailPrice = productRetailPrice(p.retailPrice, price);
+      const retailPrice = requestedRetailPrice === undefined ? existing?.retail_price ?? null : requestedRetailPrice;
+      if (retailPrice !== null && BigInt(retailPrice) < BigInt(price))
+        throw new HttpError(400, "소비자가는 회원가 이상으로 입력해 주세요.");
       const packageType = p.packageType ?? existing?.package_type ?? "none";
       if ((packageType === "lucky" && price !== "350000000000") || (packageType === "treasure" && price !== "3500000000000"))
         throw new HttpError(400, "복주머니패키지는 350,000 P, 보물상자패키지는 3,500,000 P로 설정해 주세요.");
@@ -46,14 +50,15 @@ export async function POST(request: Request) {
         plan ? JSON.stringify(plan) : null,
         p.shippingType,
         p.packageType ?? null,
+        retailPrice,
       ];
       const result = p.id
         ? await db.query(
-            "UPDATE shop_products SET name=$1,description=$2,image_url=$3,price=$4,stock=$5,active=$6,detail_blocks=COALESCE($7::jsonb,detail_blocks),reward_plan=COALESCE($8::jsonb,reward_plan),shipping_type=$9,package_type=COALESCE($10,package_type),version=version+1,updated_at=now() WHERE id=$11 AND version=$12 RETURNING *",
+            "UPDATE shop_products SET name=$1,description=$2,image_url=$3,price=$4,stock=$5,active=$6,detail_blocks=COALESCE($7::jsonb,detail_blocks),reward_plan=COALESCE($8::jsonb,reward_plan),shipping_type=$9,package_type=COALESCE($10,package_type),retail_price=$11,version=version+1,updated_at=now() WHERE id=$12 AND version=$13 RETURNING *",
             [...values, p.id, p.version],
           )
         : await db.query(
-            'INSERT INTO shop_products(name,description,image_url,price,stock,active,detail_blocks,reward_plan,shipping_type,package_type) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7::jsonb,\'[]\'::jsonb),COALESCE($8::jsonb,\'{"referral":"0","sponsor":"0","mom":"0","daily":"0","days":0,"lucky":0,"treasure":0}\'::jsonb),$9,COALESCE($10,\'none\')) RETURNING *',
+            'INSERT INTO shop_products(name,description,image_url,price,stock,active,detail_blocks,reward_plan,shipping_type,package_type,retail_price) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7::jsonb,\'[]\'::jsonb),COALESCE($8::jsonb,\'{"referral":"0","sponsor":"0","mom":"0","daily":"0","days":0,"lucky":0,"treasure":0}\'::jsonb),$9,COALESCE($10,\'none\'),$11) RETURNING *',
             values,
           );
       if (!result.rows[0])
@@ -72,6 +77,8 @@ export async function POST(request: Request) {
             rewardPlan: result.rows[0].reward_plan,
             shippingType: result.rows[0].shipping_type,
             packageType: result.rows[0].package_type,
+            price: result.rows[0].price,
+            retailPrice: result.rows[0].retail_price,
           }),
         ],
       );

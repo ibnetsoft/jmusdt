@@ -15,6 +15,7 @@ type Product = {
   detail_blocks: DetailBlock[];
   image_url: string;
   price: string;
+  retail_price?: string | null;
   stock: number;
   active: boolean;
   version: number;
@@ -65,6 +66,15 @@ function ProductImage({
   ) : (
     <div className="shop-placeholder">
       JM<span>EVERYDAY SHOP</span>
+    </div>
+  );
+}
+function ProductPrice({ product }: { product: Pick<Product, "price" | "retail_price"> }) {
+  const display = (value: string) => formatUsdt(value, BigInt(value) % 1_000_000n === 0n ? 0 : 6);
+  return (
+    <div className="shop-prices">
+      {product.retail_price && <span className="shop-muted">소비자가 <s>{display(product.retail_price)} P</s></span>}
+      <strong>{product.retail_price ? "회원가 " : ""}{display(product.price)} P</strong>
     </div>
   );
 }
@@ -184,7 +194,7 @@ export function Shop({ productId }: { productId?: string }) {
                 <div>
                   <h2>{p.name}</h2>
                   <p className="shop-muted">재고 {p.stock}개</p>
-                  <strong>{formatUsdt(p.price, 6)} 포인트</strong>
+                  <ProductPrice product={p} />
                   <a className="shop-primary" href={`/shop/${p.id}`}>
                     상품 상세 보기
                   </a>
@@ -212,10 +222,8 @@ export function Shop({ productId }: { productId?: string }) {
             description={selected.description}
             blocks={selected.detail_blocks}
           />
-          <p>
-            단가 {formatUsdt(selected.price, 6)} 포인트 · 재고 {selected.stock}
-            개
-          </p>
+          <ProductPrice product={selected} />
+          <p className="shop-muted">재고 {selected.stock}개</p>
           {!marketing.enabled && (
             <p className="shop-error">
               현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는
@@ -228,7 +236,7 @@ export function Shop({ productId }: { productId?: string }) {
               기한이 지난 회차가 지급됩니다.
             </p>
           )}
-          {marketing.enabled && selected.reward_plan && (
+          {marketing.enabled && selected.reward_plan && selected.reward_plan.days > 0 && (
             <p className="shop-muted">
               상품 1개당 데일리{" "}
               {formatUsdt(selected.reward_plan.daily, 6)} P ×{" "}
@@ -375,6 +383,7 @@ const empty = {
   description: "",
   imageUrl: "",
   price: "",
+  retailPrice: "",
   stock: 0,
   active: false,
   detailBlocks: [] as DetailBlock[],
@@ -390,6 +399,7 @@ export function ProductAdmin() {
       detailBlocks: DetailBlock[];
       imageUrl: string;
       price: string;
+      retailPrice: string;
       stock: number;
       active: boolean;
       shippingType: "" | "physical" | "none";
@@ -513,13 +523,22 @@ export function ProductAdmin() {
               }
             />
             <label>
-              가격 (포인트)
+              회원가 (실제 결제가 · P)
               <input
                 required
                 inputMode="decimal"
                 placeholder="10.000000"
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
+              />
+            </label>
+            <label>
+              소비자가 (비교 표시 · P · 선택)
+              <input
+                inputMode="decimal"
+                placeholder="회원가 이상, 비우면 표시하지 않음"
+                value={form.retailPrice}
+                onChange={(e) => setForm({ ...form, retailPrice: e.target.value })}
               />
             </label>
             <label>
@@ -663,7 +682,10 @@ export function ProductAdmin() {
               }}
             />
             <h2>{form.name || "상품명을 입력하세요"}</h2>
-            <strong>{form.price || "0"} P</strong>
+            <div className="shop-prices">
+              {form.retailPrice && <span className="shop-muted">소비자가 <s>{form.retailPrice} P</s></span>}
+              <strong>{form.retailPrice ? "회원가 " : ""}{form.price || "0"} P</strong>
+            </div>
             <p className="shop-muted">
               {form.active ? "판매 중으로 저장" : "비공개로 저장"} · 재고{" "}
               {form.stock}개
@@ -678,9 +700,8 @@ export function ProductAdmin() {
             <article className="shop-order" key={p.id}>
               <div>
                 <strong>{p.name}</strong>
-                <p>
-                  {formatUsdt(p.price, 6)} 포인트 · 재고 {p.stock}
-                </p>
+                <ProductPrice product={p} />
+                <p>재고 {p.stock}개</p>
                 <small>
                   {p.active ? "판매 중" : "비공개"} · 버전 {p.version}
                   {" · "}{p.shipping_type === "physical" ? "실물 배송" : p.shipping_type === "none" ? "배송 불필요" : "배송 유형 확인 필요 — 판매 목록에서 제외"}
@@ -697,6 +718,7 @@ export function ProductAdmin() {
                     detailBlocks: p.detail_blocks || [],
                     imageUrl: p.image_url,
                     price: decimalUsdt(BigInt(p.price)),
+                    retailPrice: p.retail_price == null ? "" : decimalUsdt(BigInt(p.retail_price)),
                     stock: p.stock,
                     active: p.active,
                     shippingType: p.shipping_type || "",
