@@ -1,22 +1,40 @@
 import { api, identity, checkOrigin, HttpError } from "@/lib/http";
 import { database, transaction } from "@/lib/db";
 import { orderInput, commerceError } from "@/lib/commerce";
+import { authClient, isDemo } from "@/lib/supabase";
+import { verifiedAuthSession } from "@/lib/auth-session";
+import { verifyExistingChainBinding } from "@/lib/chain-binding";
+
+async function catalogIdentity() {
+  if (isDemo()) return identity();
+  const session = await verifiedAuthSession(await authClient());
+  if (!session) throw new HttpError(401, "로그인이 필요합니다.");
+  const [profile] = await Promise.all([
+    database().query("SELECT status FROM profiles WHERE id=$1", [session.user.id]),
+    verifyExistingChainBinding(),
+  ]);
+  // Preserve account initialization for a newly created profile.
+  if (!profile.rows.length) return identity();
+  if (profile.rows[0].status !== "active") throw new HttpError(403, "이용이 제한된 계정입니다.");
+  return { user: session.user };
+}
 export async function GET(request: Request) {
   return api(async () => {
-    const { user } = await identity();
     const catalogOnly = new URL(request.url).searchParams.get("catalog") === "1";
-    const [products, orders, balance, marketing] = await Promise.all([
+    const userPromise = (catalogOnly ? catalogIdentity() : identity()).then(({ user }) => user);
+    const [user, products, orders, balance, marketing] = await Promise.all([
+      userPromise,
       database().query(
         "SELECT * FROM shop_products WHERE active AND shipping_type IS NOT NULL ORDER BY created_at DESC",
       ),
-      catalogOnly ? Promise.resolve({ rows: [] }) : database().query(
+      catalogOnly ? Promise.resolve({ rows: [] }) : userPromise.then(user => database().query(
         "SELECT o.*, CASE WHEN s.order_id IS NULL THEN NULL ELSE json_build_object('recipient',s.recipient,'phone',s.phone,'address',s.address,'note',s.note,'status',s.status,'carrier',s.carrier,'tracking_number',s.tracking_number) END AS shipping FROM shop_orders o LEFT JOIN shop_order_shipping s ON s.order_id=o.id WHERE o.user_id=$1 ORDER BY o.created_at DESC",
         [user.id],
-      ),
-      database().query(
+      )),
+      userPromise.then(user => database().query(
         "SELECT coalesce((SELECT available FROM point_balances WHERE user_id=$1),0)::text AS available",
         [user.id],
-      ),
+      )),
       database().query(
         "SELECT enabled,daily_paused,version FROM marketing_settings WHERE id=true",
       ),

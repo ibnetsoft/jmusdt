@@ -5,6 +5,7 @@ import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, Trash2 } from "lucide-react";
 import { formatUsdt, decimalUsdt } from "@/lib/money";
@@ -49,15 +50,25 @@ async function requestJson(url: string, body?: unknown) {
 }
 function ProductImage({
   product,
+  eager = false,
 }: {
   product: Pick<Product, "image_url" | "name">;
+  eager?: boolean;
 }) {
   const { tr } = useI18n();
+  const [fallback, setFallback] = useState(false);
+  let managed = false;
+  try {
+    const url = new URL(product.image_url);
+    const origin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "");
+    managed = url.protocol === "https:" && url.origin === origin.origin && !url.search && url.pathname.startsWith("/storage/v1/object/public/product-images/");
+  } catch { /* Other images use the original URL. */ }
+  if (product.image_url && managed && !fallback) return <Image src={product.image_url} alt={tr(product.name)} width={600} height={600} sizes="(max-width: 600px) 50vw, 300px" loading={eager ? "eager" : "lazy"} onError={() => setFallback(true)} />;
   return product.image_url ? (
     <img
       src={product.image_url}
       alt={tr(product.name)}
-      loading="lazy"
+      loading={eager ? "eager" : "lazy"}
       referrerPolicy="no-referrer"
     />
   ) : (
@@ -201,9 +212,9 @@ export function Shop({ productId }: { productId?: string }) {
         <section className="shop-grid" aria-label={tr("상품 목록")}>
           {products
             .filter(() => !productId)
-            .map((p) => (
+            .map((p, index) => (
               <article className="shop-card" key={p.id}>
-                <Link className="shop-image-link" href={`/shop/${p.id}`} aria-label={tr("{0} 상품 상세 보기", {"0": tr(p.name)})}><ProductImage product={p} /></Link>
+                <Link className="shop-image-link" href={`/shop/${p.id}`} aria-label={tr("{0} 상품 상세 보기", {"0": tr(p.name)})}><ProductImage product={p} eager={index < 2} /></Link>
                 <div className="shop-card-info">
                   <button type="button" className="shop-add-cart" disabled={p.stock < 1} onClick={() => { updateCart(cart.includes(p.id) ? cart : [...cart, p.id]); setCartOpen(true); }}><ShoppingBag size={17} />{tr("담기")}</button>
                   <strong className="shop-card-price">{formatUsdt(p.price, 0)} P</strong>
@@ -225,7 +236,7 @@ export function Shop({ productId }: { productId?: string }) {
               }}
             >{tr("닫기")}</button>
           </div>
-          <ProductImage product={selected} />
+          <ProductImage product={selected} eager />
           <DetailContent
             description={selected.description === "로그인한 모든 회원에게 회원가가 적용되는 실물 배송 상품입니다." ? "" : selected.description}
             blocks={selected.detail_blocks}
