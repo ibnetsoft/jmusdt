@@ -2609,5 +2609,6 @@ td em {
   line-height: 1.15;
 }
 .quick-actions button > svg { margin: 0; }
-html[lang="ko"] .quick-actions button { font-size: 24px; }
+html[lang="ko"] .quick-actions button { font-size: 16.8px; }
 .quick-actions button:focus-visible { outline: 2px solid #b9e3ce; outline-offset: 3px; }
+
