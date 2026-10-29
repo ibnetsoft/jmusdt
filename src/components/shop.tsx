@@ -5,6 +5,7 @@ import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingBag, Trash2 } from "lucide-react";
 import { formatUsdt, decimalUsdt } from "@/lib/money";
 import "./shop.css";
@@ -76,6 +77,7 @@ function ProductPrice({ product }: { product: Pick<Product, "price" | "retail_pr
 }
 export function Shop({ productId }: { productId?: string }) {
   const { tr } = useI18n();
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]),
     [available, setAvailable] = useState("0");
   const [selected, setSelected] = useState<Product | null>(null),
@@ -93,7 +95,6 @@ export function Shop({ productId }: { productId?: string }) {
     version: 0,
   });
   const locked = useRef(false);
-  const [shipping, setShipping] = useState({ recipient: "", phone: "", address: "", note: "" });
   async function load(openDetail = false) {
     const data = await requestJson("/api/shop");
     setProducts(data.products);
@@ -124,8 +125,8 @@ export function Shop({ productId }: { productId?: string }) {
     } catch { /* An unreadable cart starts empty. */ }
   }, []);
   function updateCart(ids: string[]) {
-    try { localStorage.setItem("jmusdt-cart", JSON.stringify(ids)); setCart(ids); }
-    catch { setError("장바구니를 저장하지 못했습니다."); }
+    try { localStorage.setItem("jmusdt-cart", JSON.stringify(ids)); setCart(ids); return true; }
+    catch { setError("장바구니를 저장하지 못했습니다."); return false; }
   }
   function choose(product: Product) {
     setSelected(product);
@@ -146,7 +147,6 @@ export function Shop({ productId }: { productId?: string }) {
         version: selected.version,
         requestKey: key.current,
         marketingVersion: marketing.version || undefined,
-        shipping: selected.shipping_type === "physical" ? shipping : undefined,
       });
       clearPreloadedData();
       setNotice(`구매가 완료되었습니다. 주문번호 ${result.id}`);
@@ -224,7 +224,7 @@ export function Shop({ productId }: { productId?: string }) {
           </div>
           <ProductImage product={selected} />
           <DetailContent
-            description=""
+            description={selected.description === "로그인한 모든 회원에게 회원가가 적용되는 실물 배송 상품입니다." ? "" : selected.description}
             blocks={selected.detail_blocks}
           />
           <ProductPrice product={selected} />
@@ -239,6 +239,12 @@ export function Shop({ productId }: { productId?: string }) {
               {formatUsdt(selected.reward_plan.daily, 0)} P ×{" "}
               {selected.reward_plan.days}{tr("일. 보상 운영이 켜진 구매에 적용되며 데일리는 구매 다음 날부터입니다.")}</p>
           )}
+          {selected.shipping_type === "physical" ? (
+            <button className="shop-primary" disabled={selected.stock < 1} onClick={() => {
+              const saved = cart.includes(selected.id) ? true : updateCart([...cart, selected.id]);
+              if (saved) router.push("/shop/cart");
+            }}>{selected.stock < 1 ? tr("품절") : tr("장바구니 결제")}</button>
+          ) : <>
           <label>{tr("수량")}<select aria-label={tr("수량")}
               disabled={busy}
               value={quantity}
@@ -254,14 +260,10 @@ export function Shop({ productId }: { productId?: string }) {
           </label>
           <div className="shop-total">{tr("결제금액 ")}<strong>{formatUsdt(total, 0)}{tr(" 포인트")}</strong>
           </div>
-          {selected.shipping_type === "physical" ? <div className="shop-editor">
-            <h3>{tr("배송 정보")}</h3>
-            {([['recipient','받는 분',100],['phone','연락처',40],['address','배송 주소',500],['note','배송 요청사항 (선택)',500]] as const).map(([field,label,max]) => <label key={field}>{tr(label)}<input maxLength={max} value={shipping[field]} disabled={busy} onChange={(e) => { setShipping({...shipping,[field]:e.target.value}); key.current = crypto.randomUUID(); }} /></label>)}
-          </div> : null}
           <button
             className="shop-primary"
             disabled={
-              busy || selected.stock < quantity || BigInt(available) < total || (selected.shipping_type === "physical" && (!shipping.recipient.trim() || !shipping.phone.trim() || !shipping.address.trim()))
+              busy || selected.stock < quantity || BigInt(available) < total
             }
             onClick={purchase}
           >
@@ -273,6 +275,7 @@ export function Shop({ productId }: { productId?: string }) {
                   ? tr("포인트 잔액 부족")
                   : tr("{0} 포인트 결제 확정", {"0": formatUsdt(total, 0)})}
           </button>
+          </>}
         </section>
       )}
     </main>
