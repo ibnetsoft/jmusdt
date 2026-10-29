@@ -1,5 +1,14 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "전환 방향과 정수 금액을 확인해 주세요.": ["Check the conversion direction and whole-number amount.", "交換方向と整数の金額を確認してください。"],
+  "← 관리자": ["← Admin", "← 管理画面"],
+  "저장": ["Save", "保存"],
+  "포인트 전환 비율": ["Point conversion rate", "ポイント交換レート"],
+  "전환 비율을 저장했습니다.": ["Conversion rate saved.", "交換レートを保存しました。"],
+  "전환 비율을 확인해 주세요.": ["Check the conversion rate.", "交換レートを確認してください。"],
+  "전환 비율이 변경됐습니다. 새로고침 후 다시 확인해 주세요.": ["The conversion rate changed. Refresh and review it again.", "交換レートが変更されました。更新して再確認してください。"],
+  "전환이 완료되었습니다.": ["Conversion completed.", "交換が完了しました。"],
+  "전환 확정": ["Confirm conversion", "交換を確定"],
   "결제를 요청한 계정으로 로그인해 주세요.": ["Sign in to the account that requested the payment.", "決済を申請したアカウントでログインしてください。"],
   "상품 가격을 확인할 수 없습니다. 관리자에게 문의해 주세요.": ["The product price cannot be confirmed. Contact an administrator.", "商品価格を確認できません。管理者にお問い合わせください。"],
   "장바구니 결제": ["Cart checkout", "カートの決済"],

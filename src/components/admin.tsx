@@ -303,6 +303,7 @@ export function AdminApp() {
               location.href = "/admin/sweeps";
             }}
           >{tr("USDT 모으기")}</button>
+          <button onClick={() => { location.href = "/admin/exchange-rate"; }}>{tr("포인트 전환 비율")}</button>
           <button
             onClick={() => {
               location.href = "/admin/marketing";

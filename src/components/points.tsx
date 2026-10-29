@@ -9,10 +9,13 @@ type Data = {
   usdt: string;
   points: string;
   debt: string;
+  rate: number;
+  rateVersion: number;
   history: {
     id: string;
     direction: string;
     amount: string;
+    received_amount: string;
     created_at: string;
   }[];
 };
@@ -39,7 +42,8 @@ export function Points() {
   let units = 0n;
   try { units = parseUsdt(submittedAmount); } catch { /* An empty or zero amount is not ready to convert. */ }
   const insufficient = !!data && units > BigInt(toPoints ? data.usdt : data.points);
-  const canReview = !!data && units > 0n && !insufficient && !busy;
+  const outputUnits = data ? (toPoints ? units * BigInt(data.rate) : units / BigInt(data.rate)) : 0n;
+  const canReview = !!data && units > 0n && outputUnits > 0n && outputUnits <= 9223372036854775807n && !insufficient && !busy;
   async function load(signal?: AbortSignal) {
     const r = await fetch("/api/points", { cache: "no-store", signal });
     if (r.status === 401) {
@@ -82,13 +86,16 @@ export function Points() {
       const r = await fetch("/api/points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction, amount: submittedAmount, requestKey: key.current }),
+        body: JSON.stringify({ direction, amount: submittedAmount, requestKey: key.current, rateVersion: data?.rateVersion }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) {
+        if (r.status === 409 && d.error === "전환 비율이 변경됐습니다. 새로고침 후 다시 확인해 주세요.") { setConfirm(false); await load(); }
+        throw new Error(d.error);
+      }
       setConfirm(false);
       setAmount("");
-      setNotice("1:1 전환이 완료되었습니다.");
+      setNotice("전환이 완료되었습니다.");
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "전환 실패");
@@ -117,7 +124,7 @@ export function Points() {
           <button type="button" aria-pressed={toPoints} disabled={busy || confirm} onClick={() => changeDirection("usdt_to_points")}>{tr("포인트로 전환")}</button>
           <button type="button" aria-pressed={!toPoints} disabled={busy || confirm} onClick={() => changeDirection("points_to_usdt")}>{tr("USDT로 전환")}</button>
         </div>
-        <div className="points-rate"><strong>1 USDT = 1 P</strong><span>{tr("수수료 0")}</span></div>
+        <div className="points-rate"><strong>1 USDT = {data ? data.rate.toLocaleString(localeTag) : "—"} P</strong><span>{tr("수수료 0")}</span></div>
         <div className="points-assets">
           <div className="points-asset points-source">
             <div className="points-asset-info">
@@ -135,7 +142,7 @@ export function Points() {
               <span className="points-asset-name"><span className="points-token" aria-hidden="true">{toPoints ? "P" : "₮"}</span>{toPoints ? tr("포인트") : "USDT"}</span>
               <p>{tr("잔액")} {data ? displayAmount(toPoints ? data.points : data.usdt, targetUnit) + " " + targetUnit : "—"}</p>
             </div>
-            <output className={`points-output ${amount.length > 12 ? "points-amount-long" : ""}`} aria-label={tr("전환 예상 금액")} aria-live="polite">{displayAmount(units, targetUnit)} <span>{targetUnit}</span></output>
+            <output className={`points-output ${amount.length > 12 ? "points-amount-long" : ""}`} aria-label={tr("전환 예상 금액")} aria-live="polite">{displayAmount(outputUnits, targetUnit)} <span>{targetUnit}</span></output>
           </div>
         </div>
         <p className="points-input-hint" id="points-input-hint">{tr("정수로 입력해 주세요.")}</p>
@@ -150,11 +157,11 @@ export function Points() {
       </form>
       <dialog ref={dialog} className="points-confirm" aria-labelledby="points-confirm-title" onCancel={e => { e.preventDefault(); if (!busy) setConfirm(false); }}>
         <h2 id="points-confirm-title">{tr("전환 최종 확인")}</h2>
-        <p className="points-confirm-amount">{displayAmount(units, sourceUnit)} {sourceUnit}<span aria-hidden="true">↓</span>{displayAmount(units, targetUnit)} {targetUnit}</p>
-        <p className="points-input-hint">{tr("1 USDT = 1 포인트 · 수수료 0")}</p>
+        <p className="points-confirm-amount">{displayAmount(units, sourceUnit)} {sourceUnit}<span aria-hidden="true">↓</span>{displayAmount(outputUnits, targetUnit)} {targetUnit}</p>
+        <p className="points-input-hint">1 USDT = {data?.rate.toLocaleString(localeTag)} P · {tr("수수료 0")}</p>
         {toPoints && BigInt(data?.debt || "0") > 0n && <p className="points-message points-warning">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt, 0)}{tr(" P가 있습니다. USDT → 포인트 전환 시 미수금이 우선 상계되므로 실제 사용 가능 포인트는 전환액보다 적을 수 있습니다.")}</p>}
         {error && <p className="points-message points-error" role="alert">{tr(error)}</p>}
-        <button className="points-primary" type="button" disabled={busy} onClick={swap}>{busy ? tr("처리 중…") : tr("1:1 전환 확정")}</button>
+        <button className="points-primary" type="button" disabled={busy} onClick={swap}>{busy ? tr("처리 중…") : tr("전환 확정")}</button>
         <button className="points-cancel" type="button" disabled={busy} onClick={() => { setConfirm(false); setError(""); }}>{tr("취소")}</button>
       </dialog>
       <section className="points-history" id="points-history" aria-labelledby="points-history-title">
@@ -162,7 +169,7 @@ export function Points() {
         {data?.history.map((h) => (
           <article className="points-history-item" key={h.id}>
             <div><strong>{h.direction === "usdt_to_points" ? tr("USDT → 포인트") : tr("포인트 → USDT")}</strong><time dateTime={h.created_at}>{new Date(h.created_at).toLocaleString(localeTag, { timeZone: "Asia/Seoul" })}</time></div>
-            <span>{displayAmount(h.amount, h.direction === "usdt_to_points" ? "P" : "USDT")} <small>{h.direction === "usdt_to_points" ? "P" : "USDT"}</small></span>
+            <span>{displayAmount(h.received_amount, h.direction === "usdt_to_points" ? "P" : "USDT")} <small>{h.direction === "usdt_to_points" ? "P" : "USDT"}</small></span>
           </article>
         ))}
         {data?.history.length === 0 && <p className="points-empty">{tr("아직 전환 내역이 없습니다.")}</p>}

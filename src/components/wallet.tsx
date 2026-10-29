@@ -144,7 +144,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             onClick={() => {
               location.href = "/points";
             }}
-          >{tr("포인트 · 1:1 전환")}</button>
+          >{tr("포인트 전환")}</button>
           {nav.map((n) => (
             <button
               key={n.view}
@@ -755,7 +755,7 @@ function Activity({
   const { tr } = useI18n();
   const { localeTag } = useI18n();
   const [filter, setFilter] = useState<"rewards" | "transactions" | "swaps" | "orders">("rewards");
-  const [history, setHistory] = useState<{ rewards: { id: string; type: string; amount: string; status: string; due_date: string; paid_at: string | null }[]; pools: { kind: string; cutoff: string; amount: string }[]; swaps: { id: string; direction: string; amount: string; created_at: string }[]; orders: { id: string; product_name: string; quantity: number; total: string; currency: string; status: string; created_at: string }[] } | null>(null);
+  const [history, setHistory] = useState<{ rewards: { id: string; type: string; amount: string; status: string; due_date: string; paid_at: string | null }[]; pools: { kind: string; cutoff: string; amount: string }[]; swaps: { id: string; direction: string; amount: string; received_amount: string; created_at: string }[]; orders: { id: string; product_name: string; quantity: number; total: string; currency: string; status: string; created_at: string }[] } | null>(null);
   const [loadError, setLoadError] = useState(""),
     [historyRevision, setHistoryRevision] = useState(0);
   useEffect(() => {
@@ -782,6 +782,6 @@ function Activity({
     {filter === "transactions" && <ActivityList transactions={transactions} onSelect={onSelect} />}
     {filter === "rewards" && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 0)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
     {filter === "orders" && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => setHistoryRevision(n => n + 1)} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
-    {filter === "swaps" && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
+    {filter === "swaps" && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.received_amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
   </>;
 }
