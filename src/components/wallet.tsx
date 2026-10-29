@@ -9,6 +9,9 @@ import {
   ArrowLeft,
   ArrowRight,
   House,
+  Network,
+  ShoppingBag,
+  ArrowLeftRight,
   History,
   Settings,
   Wallet as WalletIcon,
@@ -35,6 +38,7 @@ import {
   Spinner,
   TransactionModal,
 } from "./shared";
+import { SiteControls } from "./site-controls";
 import { SecuritySettings } from "./security";
 type View = "home" | "deposit" | "send" | "activity" | "settings";
 type InstallEvent = Event & {
@@ -45,6 +49,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
   const { tr } = useI18n();
   const [data, setData] = useState<WalletData | null>(null),
     [view, setView] = useState<View>(initialView),
+    [sendKind, setSendKind] = useState<"internal" | "external">("internal"),
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
     [hidden, setHidden] = useState(false),
@@ -113,7 +118,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
     { view: "settings" as View, label: "마이페이지", icon: Settings },
   ];
   return (
-    <div className="wallet-layout">
+    <div className={`wallet-layout ${view === "send" ? "wallet-layout-send" : ""}`}>
       <aside className="wallet-sidebar">
         <Brand />
         <div className="sidebar-description">
@@ -209,22 +214,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
           <>
             {view === "home" ? (
               <>
-                <div className="page-heading">
-                  <div>
-                    <p className="eyebrow">A LITTLE MORE FREEDOM</p>
-                    <h1>{tr("나의 일상,")}<br />{tr("하나의 지갑.")}</h1>
-                  </div>
-                  <span className="outline-token">
-                    <Token />
-                  </span>
-                </div>
-                <p>
-                  <a href="/points">{tr("포인트")}{" "}
-                    {hidden ? "••••••" : formatUsdt(data.points || "0", 6)}{tr(" P · USDT ↔ 포인트 전환")}</a>
-                </p>
-                <p>
-                  <a href="/rewards">{tr("리워드 · 주머니 보기 →")}</a>
-                </p>
+                <div className="page-heading compact"><h1>{tr("내 지갑")}</h1></div>
                 <section className="balance-card">
                   <div className="balance-title">
                     <span>{tr("사용 가능한 잔액")}</span>
@@ -249,17 +239,16 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                     </span>
                   </div>
                 </section>
+                <section className="balance-card points-balance">
+                  <div className="balance-title"><span>{tr("포인트")}</span></div>
+                  <div className="balance-value">{hidden ? "••••••" : formatUsdt(data.points || "0", 6)} <span>P</span></div>
+                </section>
                 <div className="quick-actions">
-                  <button onClick={() => setView("deposit")}>
-                    <span>
-                      <ArrowDownLeft size={24} />
-                    </span>{tr("입금하기")}<ArrowRight size={19} />
-                  </button>
-                  <button onClick={() => setView("send")}>
-                    <span>
-                      <ArrowUpRight size={24} />
-                    </span>{tr("송금하기")}<ArrowRight size={19} />
-                  </button>
+                  <button onClick={() => setView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
+                  <button onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowUpRight size={20} />{tr("송금")}</button>
+                  <button onClick={() => { setSendKind("external"); setView("send"); }}><ExternalLink size={20} />{tr("출금")}</button>
+                  <button onClick={() => { location.href = "/points"; }}><ArrowLeftRight size={20} />{tr("스왑")}</button>
+                  <button onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowRight size={20} />{tr("이체")}</button>
                 </div>
                 <div className="section-heading">
                   <h2>{tr("최근 거래")}</h2>
@@ -286,6 +275,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             ) : null}
             {view === "send" ? (
               <Send
+                initialKind={sendKind}
                 data={data}
                 onBack={() => setView("home")}
                 onUpdate={refresh}
@@ -298,7 +288,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
               <>
                 <div className="page-heading compact">
                   <div>
-                    <p className="eyebrow">MAKE IT YOURS</p>
+                    
                     <h1>{tr("마이페이지")}</h1>
                   </div>
                   <Settings className="muted" size={30} />
@@ -314,6 +304,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                     {data.mode === "demo" ? "DEMO ACCOUNT" : "VERIFIED ACCOUNT"}
                   </span>
                 </section>
+                <SiteControls />
                 <ReferralCard code={data.referralCode} onNotice={setToast} />
                 <SecuritySettings demo={data.mode === "demo"} />
                 <div className="settings-list">
@@ -372,39 +363,10 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
           </>
         ) : null}
         <nav className="bottom-nav" aria-label={tr("모바일 메뉴")}>
-          <button
-            onClick={() => {
-              location.href = "/organization";
-            }}
-          >
-            <House size={20} />
-            <span>{tr("조직도")}</span>
-          </button>
-          <button
-            onClick={() => {
-              location.href = "/shop";
-            }}
-          >
-            <Plus size={20} />
-            <span>{tr("쇼핑몰")}</span>
-          </button>
-          {nav.map((n) => (
-            <button
-              className={view === n.view ? "active" : ""}
-              key={n.view}
-              onClick={() => setView(n.view)}
-            >
-              <n.icon size={20} />
-              <span>{tr(n.label)}</span>
-            </button>
-          ))}
-          <button
-            className="send-nav"
-            aria-label={tr("송금하기")}
-            onClick={() => setView("send")}
-          >
-            <ArrowUpRight size={23} />
-          </button>
+          <button className={view === "home" ? "active" : ""} onClick={() => setView("home")}><WalletIcon size={20} /><span>{tr("지갑")}</span></button>
+          <button onClick={() => { location.href = "/shop"; }}><ShoppingBag size={20} /><span>{tr("쇼핑몰")}</span></button>
+          <button onClick={() => { location.href = "/organization"; }}><Network size={20} /><span>{tr("조직도")}</span></button>
+          <button className={view === "settings" ? "active" : ""} onClick={() => setView("settings")}><Settings size={20} /><span>{tr("설정")}</span></button>
         </nav>
       </main>
       <aside className="wallet-aside">
@@ -605,16 +567,18 @@ function Deposit({
   );
 }
 function Send({
+  initialKind,
   data,
   onBack,
   onUpdate,
 }: {
+  initialKind: "internal" | "external";
   data: WalletData;
   onBack: () => void;
   onUpdate: () => Promise<void>;
 }) {
   const { tr } = useI18n();
-  const [kind, setKind] = useState<"internal" | "external">("internal"),
+  const [kind, setKind] = useState<"internal" | "external">(initialKind),
     [recipient, setRecipient] = useState(""),
     [amount, setAmount] = useState(""),
     [stage, setStage] = useState<"form" | "review" | "done">("form"),
@@ -706,12 +670,7 @@ function Send({
   return (
     <section className="send-view">
       <Back onBack={onBack} />
-      <p className="eyebrow">MOVE MONEY, SIMPLY</p>
-      <h1>
-        {stage === "review"
-          ? tr("송금 정보를\n확인하세요.")
-          : tr("필요한 곳으로,\n간편하게 송금.")}
-      </h1>
+      <h1>{stage === "review" ? tr("송금 정보 확인") : tr("이체")}</h1>
       {stage === "form" ? (
         <>
           <div className="segmented">
@@ -779,22 +738,7 @@ function Send({
               }}
             >{tr("최대")}</button>
           </div>
-          <div className="keypad" aria-label={tr("금액 입력 키패드")}>
-            {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"].map(
-              (k) => (
-                <button
-                  key={k}
-                  aria-label={k === "⌫" ? tr("한 자리 지우기") : k}
-                  onClick={() => {
-                    const next = k === "⌫" ? amount.slice(0, -1) : amount + k;
-                    if (/^\d*(\.\d{0,6})?$/.test(next)) setAmount(next);
-                  }}
-                >
-                  {k}
-                </button>
-              ),
-            )}
-          </div>
+
         </>
       ) : (
         <div className="review-card">
@@ -885,7 +829,7 @@ function Activity({
     <>
       <div className="page-heading compact">
         <div>
-          <p className="eyebrow">EVERY MOVE, IN ONE PLACE</p>
+          
           <h1>{tr("거래 내역")}</h1>
         </div>
         <History size={30} className="muted" />

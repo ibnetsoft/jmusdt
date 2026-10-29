@@ -2,6 +2,7 @@
 import { useI18n } from "./i18n";
 
 import { useEffect, useRef, useState } from "react";
+import { Copy, RefreshCw } from "lucide-react";
 import { formatUsdt } from "@/lib/money";
 import "./shop.css";
 import "./organization.css";
@@ -138,9 +139,7 @@ export function Organization() {
         <a href="/">{tr("← 내 지갑")}</a>
         <a href="/shop">{tr("쇼핑몰")}</a>
       </header>
-      <p className="shop-kicker">JMUSDT / ORGANIZATION</p>
-      <h1>{tr("함께 만드는 조직.")}</h1>
-      <p className="shop-muted">{tr("정회원 등록 순서에 따라 후원 조직이 자동 배치됩니다. 3·6·9번째는 각각 1·2·3대 상위 추천인에게 연결됩니다.")}</p>
+      <h1>{tr("조직도")}</h1>
       {tr(error) && (
         <p role="alert" className="shop-error">
           {tr(error)}
@@ -155,9 +154,8 @@ export function Organization() {
         <section className="shop-editor">
           <p>{tr("내 추천 코드 ")}<strong>{data.code}</strong>
           </p>
-          <label>{tr("추천 가입 링크")}<input readOnly value={invite} />
-          </label>
-          <button
+          <label>{tr("추천 가입 링크")}</label><div className="org-invite"><input aria-label={tr("추천 가입 링크")} readOnly value={invite} />
+          <button aria-label={tr("추천 링크 복사")}
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(invite);
@@ -166,7 +164,7 @@ export function Organization() {
                 setNotice("위 추천 링크를 직접 복사해 주세요.");
               }
             }}
-          >{tr("추천 링크 복사")}</button>
+          ><Copy size={18} /></button></div>
         </section>
       )}
       <div className="org-controls">
@@ -195,7 +193,7 @@ export function Organization() {
             ))}
           </select>
         </label>
-        <button onClick={() => setRevision((n) => n + 1)}>{tr("새로고침")}</button>
+        <button aria-label={tr("새로고침")} onClick={() => setRevision((n) => n + 1)}><RefreshCw size={18} /></button>
       </div>
       {data && !data.eligible && <p role="status">{tr("조직도와 수당은 정회원부터 이용할 수 있습니다. 누적 구매 50,000 P 또는 관리자 지정으로 등록됩니다.")}</p>}
       {mode === "sponsor" && data && data.pending.length > 0 && (
@@ -221,9 +219,9 @@ export function Organization() {
       </nav>
       <section className={`org-board ${full ? "org-fullscreen" : ""}`}>
         <div className="org-board-toolbar">
-          <button onClick={() => setZoom((z) => clamp(z - 0.1))}>{tr("축소")}</button>
+          <button aria-label={tr("축소")} onClick={() => setZoom((z) => clamp(z - 0.1))}>−</button>
           <span>{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom((z) => clamp(z + 0.1))}>{tr("확대")}</button>
+          <button aria-label={tr("확대")} onClick={() => setZoom((z) => clamp(z + 0.1))}>+</button>
           <button
             onClick={() => {
               setZoom(1);
@@ -234,7 +232,6 @@ export function Organization() {
             {full ? tr("전체화면 닫기") : tr("전체화면")}
           </button>
         </div>
-        <p className="shop-muted">{tr("드래그 이동 · 두 손가락 확대/축소 · 회원을 누르면 하위 조직으로 이동")}</p>
         {loading && <p role="status">{tr("조직도를 불러오는 중…")}</p>}
         {data?.truncated && (
           <p role="status">{tr("조회 한도 500명까지 표시했습니다. 회원을 눌러 하위 조직을 확인하세요.")}</p>

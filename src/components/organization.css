@@ -115,3 +115,6 @@
     font-size: 12px;
   }
 }
+.org-invite { display: flex; gap: 8px; align-items: stretch; }
+.org-invite input { min-width: 0; flex: 1; margin: 0; }
+.org-invite button { width: 46px; min-width: 46px; padding: 0; display: grid; place-items: center; }

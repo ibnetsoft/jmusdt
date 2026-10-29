@@ -1,5 +1,12 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "지갑": ["Wallet", "ウォレット"],
+  "입금": ["Deposit", "入金"],
+  "송금": ["Send", "送金"],
+  "출금": ["Withdraw", "出金"],
+  "스왑": ["Swap", "交換"],
+  "이체": ["Transfer", "振替"],
+  "설정": ["Settings", "設定"],
   "포인트로 전환": ["To points", "ポイントに交換"],
   "USDT로 전환": ["To USDT", "USDTに交換"],
   "수수료 0": ["No fee", "手数料なし"],

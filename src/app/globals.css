@@ -30,7 +30,7 @@ html[data-theme="dark"] { color-scheme: dark; }
 .site-controls select { min-height:34px; padding:6px 8px; border:1px solid var(--line); border-radius:999px; color:var(--text); background:var(--panel); font:inherit; font-size:12px; cursor:pointer; }
 .site-controls button { white-space:nowrap; min-height:34px; }
 @media(max-width:480px) { .site-controls img { max-width:80px; max-height:32px; } .site-controls { gap:6px; } .site-controls button { padding:8px; } }
-body { padding-top: 52px; }
+
 html[data-theme="light"] .commerce { color:var(--text); }
 html[data-theme="light"] .shop-muted, html[data-theme="light"] .shop-kicker { color:var(--muted); }
 html[data-theme="light"] .commerce input, html[data-theme="light"] .commerce textarea, html[data-theme="light"] .commerce select { color:var(--text); background:var(--surface-1); border-color:var(--line); }
@@ -2533,3 +2533,34 @@ td em {
     scroll-behavior: auto !important;
   }
 }
+.site-controls { position: static; max-width: none; justify-content: center; margin: 20px 0; }
+.site-controls button { min-width: 42px; padding: 8px; font-size: 19px; }
+.site-controls button[aria-pressed="true"] { border-color: var(--red); }
+.points-balance { margin-top: 12px; }
+.points-balance .balance-value { margin-top: 12px; }
+.quick-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.quick-actions button, .quick-actions button:nth-child(2) { min-width: 0; height: auto; min-height: 68px; padding: 10px 2px; display: flex; flex-direction: column; justify-content: center; gap: 5px; font-size: 12px; }
+.quick-actions button > svg { display: block; }
+@media(max-width: 480px) {
+  .send-view h1 { font-size: 24px; margin: 8px 0 16px; }
+  .send-view .field, .send-view .amount-field { margin-top: 12px; }
+  .send-view .details { margin: 12px 0; }
+  .quick-actions { gap: 5px; }
+}
+
+@media (max-width: 700px) {
+  .wallet-layout-send .wallet-main { padding-top: 12px; padding-bottom: 18px; }
+  .wallet-layout-send .wallet-header { margin-bottom: 10px; }
+  .wallet-layout-send .demo-strip { margin-bottom: 12px; }
+  .wallet-layout-send .bottom-nav { display: none; }
+  .send-view h1 { font-size: 24px; margin: 8px 0 12px; }
+  .send-view .segmented { margin-bottom: 12px; }
+  .send-view .field { margin: 10px 0; gap: 6px; }
+  .send-view .field-hint { margin: 6px 0; }
+  .send-view .amount-field { margin: 10px 0; }
+  .send-view .amount-field > div { margin: 5px 0 2px; }
+  .send-view .amount-field input { font-size: 34px; }
+  .send-view .amount-presets { margin-bottom: 10px; }
+  .send-view .details { margin: 10px 0; gap: 6px; }
+}
+

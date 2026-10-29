@@ -159,9 +159,7 @@ export function Shop({ productId }: { productId?: string }) {
         <a href="/">{tr("← 내 지갑")}</a>
         <a href="/points">{tr("USDT ↔ 포인트 전환")}</a>
       </header>
-      <p className="shop-kicker">JMUSDT / EVERYDAY SHOP</p>
-      <h1>{tr("지갑에서 만나는")}<br />{tr("새로운 일상.")}</h1>
-      <p className="shop-muted">{tr("내 포인트로 간편하게 구매하세요.")}</p>
+      <h1>{tr("쇼핑몰")}</h1>
       <div className="shop-balance">{tr("사용 가능한 잔액 ")}<strong>{formatUsdt(available, 6)}{tr(" 포인트")}</strong>
       </div>
       {tr(error) && (
