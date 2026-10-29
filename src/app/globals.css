@@ -2599,3 +2599,15 @@ td em {
   .send-view .amount-field input { font-size: 28px; }
   .send-view .amount-presets { margin-bottom: 6px; }
 }
+.quick-actions button,
+.quick-actions button:nth-child(2) {
+  background: #233a30;
+  border: 1px solid #4a9c80;
+  color: #b9e3ce;
+  border-radius: 14px;
+  min-height: 88px;
+  line-height: 1.15;
+}
+.quick-actions button > svg { margin: 0; }
+html[lang="ko"] .quick-actions button { font-size: 24px; }
+.quick-actions button:focus-visible { outline: 2px solid #b9e3ce; outline-offset: 3px; }
