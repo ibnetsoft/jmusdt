@@ -154,11 +154,10 @@ export function Shop({ productId }: { productId?: string }) {
   }
   const total = selected ? BigInt(selected.price) * BigInt(quantity) : 0n;
   return (
-    <main className="commerce">
+    <main className="commerce" aria-label={tr("쇼핑몰")}>
       <header>
         <a href="/">{tr("← 내 지갑")}</a>
       </header>
-      <h1>{tr("쇼핑몰")}</h1>
       <div className="shop-balance">{tr("사용 가능한 잔액 ")}<strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong>
       </div>
       {tr(error) && (

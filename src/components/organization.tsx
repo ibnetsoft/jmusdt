@@ -129,11 +129,10 @@ export function Organization() {
     );
   }
   return (
-    <main className="commerce">
+    <main className="commerce" aria-label={tr("조직도")}>
       <header>
         <a href="/">{tr("← 내 지갑")}</a>
       </header>
-      <h1>{tr("조직도")}</h1>
       {tr(error) && (
         <p role="alert" className="shop-error">
           {tr(error)}

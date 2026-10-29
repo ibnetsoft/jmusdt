@@ -177,13 +177,9 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
         {data?.mode === "demo" ? (
           <div className="demo-strip">
             <span>
-              <i />{tr("데모 지갑 · 실제 자산이 아닙니다")}</span>
+              <i /> DEMO</span>
             <a href="/login">{tr("계정 연결 ")}<ArrowUpRight size={12} />
             </a>
-          </div>
-        ) : data?.network === "nile" ? (
-          <div className="demo-strip">
-            <span>{tr("Nile 테스트넷 · 실제 USDT가 아닙니다")}</span>
           </div>
         ) : null}
         {error ? (
@@ -246,13 +242,6 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             ) : null}
             {view === "settings" ? (
               <>
-                <div className="page-heading compact">
-                  <div>
-                    
-                    <h1>{tr("마이페이지")}</h1>
-                  </div>
-                  <Settings className="muted" size={30} />
-                </div>
                 <section className="settings-profile">
                   <span className="profile-avatar large">
                     {data.user.name.slice(0, 1)}
@@ -275,7 +264,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                       {data.mode === "demo"
                         ? tr("데모")
                         : data.network === "nile"
-                          ? tr("Nile 테스트넷")
+                          ? "TRON · Nile"
                           : tr("TRON 메인넷")}
                     </b>
                   </div>
@@ -469,7 +458,7 @@ function Deposit({
         <p className="network-warning">
           <ShieldCheck size={17} />
           <span>
-            <b>{data.network === "nile" ? tr("Nile 테스트넷") : "TRON(TRC20)"}</b>{tr("의 USDT만 입금해 주세요.")}<br />{tr("다른 네트워크나 자산을 보내면 복구가 어려울 수 있습니다.")}</span>
+            <b>{data.network === "nile" ? "TRON · Nile" : "TRON(TRC20)"}</b>{tr("의 USDT만 입금해 주세요.")}<br />{tr("다른 네트워크나 자산을 보내면 복구가 어려울 수 있습니다.")}</span>
         </p>
         <dl className="details">
           <div>
@@ -482,7 +471,7 @@ function Deposit({
               {data.mode === "demo"
                 ? tr("TRON · 데모")
                 : data.network === "nile"
-                  ? tr("Nile 테스트넷")
+                  ? "TRON · Nile"
                   : "TRON (TRC20)"}
             </dd>
           </div>
@@ -784,7 +773,6 @@ function Activity({
   const transactions = data.transactions.filter(t => ["deposit", "transfer_in", "transfer_out", "withdrawal"].includes(t.kind));
   const date = (value: string) => new Date(value).toLocaleDateString(localeTag, { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" });
   return <>
-    <div className="page-heading compact"><h1>{tr("내역")}</h1></div>
     <div className="filter-tabs history-tabs">
       {([ ["rewards", "수당내역"], ["transactions", "입출금·이체"], ["swaps", "전환내역"], ["orders", "구매내역"] ] as const).map(([key, label]) => <button key={key} className={filter === key ? "active" : ""} onClick={() => setFilter(key)}>{tr(label)}</button>)}
     </div>
