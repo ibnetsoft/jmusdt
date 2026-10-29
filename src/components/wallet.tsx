@@ -145,17 +145,17 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
         <nav aria-label={tr("주 메뉴")}>
           <button
             onClick={() => {
-              location.href = "/rewards";
+              router.push("/rewards");
             }}
           >{tr("리워드 · 주머니")}</button>
           <button
             onClick={() => {
-              location.href = "/organization";
+              router.push("/organization");
             }}
           >{tr("추천 · 후원 조직도")}</button>
           <button
             onClick={() => {
-              location.href = "/points";
+              router.push("/points");
             }}
           >{tr("포인트 전환")}</button>
           {nav.map((n) => (
@@ -753,28 +753,28 @@ function Activity({
   const { localeTag } = useI18n();
   const [filter, setFilter] = useState<"rewards" | "transactions" | "swaps" | "orders">("rewards");
   const [history, setHistory] = useState<{ rewards: { id: string; type: string; amount: string; status: string; due_date: string; paid_at: string | null }[]; pools: { kind: string; cutoff: string; amount: string }[]; swaps: { id: string; direction: string; amount: string; received_amount: string; created_at: string }[]; orders: { id: string; product_name: string; quantity: number; total: string; currency: string; status: string; created_at: string }[] } | null>(null);
+  const [loadedParts, setLoadedParts] = useState({ rewards: false, swaps: false, orders: false });
   const [loadError, setLoadError] = useState(""),
     [historyRevision, setHistoryRevision] = useState(0);
   useEffect(() => {
-    if (data.mode === "demo") { setHistory({ rewards: [], pools: [], swaps: [], orders: [] }); return; }
+    if (data.mode === "demo") { setHistory({ rewards: [], pools: [], swaps: [], orders: [] }); setLoadedParts({ rewards: true, swaps: true, orders: true }); return; }
     const controller = new AbortController();
-    let networkDone = false;
-    if (historyRevision === 0) {
-      void Promise.all([
-        readPreloadedData<{ rewards: NonNullable<typeof history>["rewards"]; pools: NonNullable<typeof history>["pools"] }>("/api/rewards"),
-        readPreloadedData<{ history: NonNullable<typeof history>["swaps"] }>("/api/points"),
-        readPreloadedData<{ orders: NonNullable<typeof history>["orders"] }>("/api/shop"),
-      ]).then(([rewards, points, shop]) => {
-        if (!controller.signal.aborted && !networkDone && rewards && points && shop)
-          setHistory({ rewards: rewards.rewards, pools: rewards.pools, swaps: points.history, orders: shop.orders });
+    const loadPart = <T,>(name: "rewards" | "swaps" | "orders", endpoint: string, toPart: (value: T) => Partial<NonNullable<typeof history>>) => {
+      let networkDone = false;
+      const apply = (value: T) => { setHistory(previous => ({ rewards: [], pools: [], swaps: [], orders: [], ...previous, ...toPart(value) })); setLoadedParts(previous => ({ ...previous, [name]: true })); };
+      if (historyRevision === 0) void readPreloadedData<T>(endpoint).then(cached => {
+        if (!controller.signal.aborted && !networkDone && cached) apply(cached);
       });
-    }
-    Promise.all([fetch("/api/rewards", { signal: controller.signal }), fetch("/api/points", { signal: controller.signal }), fetch("/api/shop", { signal: controller.signal })]).then(async ([rewards, points, shop]) => {
-      if (!rewards.ok || !points.ok || !shop.ok) throw new Error("내역을 불러오지 못했습니다.");
-      const [r, p, o] = await Promise.all([rewards.json(), points.json(), shop.json()]);
-      networkDone = true;
-      setHistory({ rewards: r.rewards, pools: r.pools, swaps: p.history, orders: o.orders });
-    }).catch(e => { networkDone = true; if (e.name !== "AbortError") setLoadError(e.message); });
+      void fetch(endpoint, { signal: controller.signal }).then(async response => {
+        if (!response.ok) throw new Error("내역을 불러오지 못했습니다.");
+        const value = await response.json() as T;
+        networkDone = true;
+        if (!controller.signal.aborted) apply(value);
+      }).catch(e => { networkDone = true; if (e.name !== "AbortError") setLoadError(e.message); });
+    };
+    loadPart<{ rewards: NonNullable<typeof history>["rewards"]; pools: NonNullable<typeof history>["pools"] }>("rewards", "/api/rewards", value => ({ rewards: value.rewards, pools: value.pools }));
+    loadPart<{ history: NonNullable<typeof history>["swaps"] }>("swaps", "/api/points", value => ({ swaps: value.history }));
+    loadPart<{ orders: NonNullable<typeof history>["orders"] }>("orders", "/api/shop", value => ({ orders: value.orders }));
     return () => controller.abort();
   }, [data.mode, historyRevision]);
   const rewards = [
@@ -789,8 +789,8 @@ function Activity({
     </div>
     {loadError && filter !== "transactions" && <p role="alert">{tr(loadError)}</p>}
     {filter === "transactions" && <ActivityList transactions={transactions} onSelect={onSelect} />}
-    {filter === "rewards" && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 0)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
-    {filter === "orders" && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => { clearPreloadedData(); setHistoryRevision(n => n + 1); }} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
-    {filter === "swaps" && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.received_amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
+    {filter === "rewards" && loadedParts.rewards && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 0)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
+    {filter === "orders" && loadedParts.orders && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => { clearPreloadedData(); setHistoryRevision(n => n + 1); }} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
+    {filter === "swaps" && loadedParts.swaps && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.received_amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
   </>;
 }

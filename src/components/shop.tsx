@@ -81,6 +81,7 @@ export function Shop({ productId }: { productId?: string }) {
   const [products, setProducts] = useState<Product[]>([]),
     [available, setAvailable] = useState("0");
   const [selected, setSelected] = useState<Product | null>(null),
+    [catalogFresh, setCatalogFresh] = useState(false),
     [quantity, setQuantity] = useState(1),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
@@ -97,6 +98,7 @@ export function Shop({ productId }: { productId?: string }) {
   const locked = useRef(false);
   async function load(openDetail = false) {
     const data = await requestJson("/api/shop?catalog=1");
+    setCatalogFresh(true);
     setProducts(data.products);
     setAvailable(data.available);
     setMarketing(
@@ -104,14 +106,17 @@ export function Shop({ productId }: { productId?: string }) {
     );
     if (productId && openDetail) {
       const product = data.products.find((p: Product) => p.id === productId);
-      if (product) choose(product);
+      if (product) { setSelected(product); if (!key.current) key.current = crypto.randomUUID(); }
       else setError("판매 중인 상품을 찾을 수 없습니다.");
     }
   }
   useEffect(() => {
     let active = true, fresh = false;
-    void readPreloadedData<{ products: Product[] }>("/api/shop?catalog=1").then(data => {
-      if (active && !fresh && data && !productId) { setProducts(data.products); setLoading(false); }
+    void readPreloadedData<{ products: Product[]; available: string; marketing: typeof marketing }>("/api/shop?catalog=1").then(data => {
+      if (active && !fresh && data) {
+        setProducts(data.products); setAvailable(data.available); setMarketing(data.marketing); setLoading(false);
+        if (productId) { const product = data.products.find(p => p.id === productId); if (product) choose(product); }
+      }
     });
     load(true).then(() => { fresh = true; })
       .catch((e) => { fresh = true; if (active) setError(e.message); })
@@ -170,7 +175,7 @@ export function Shop({ productId }: { productId?: string }) {
       {cartOpen && <section className="cart-panel" aria-label={tr("장바구니")}>
         {cart.length === 0 && <p>{tr("장바구니가 비어 있습니다.")}</p>}
         {cart.map(id => { const product = products.find(item => item.id === id); return <div className="cart-item" key={id}>
-          {product ? <a href={`/shop/${product.id}`}>{tr(product.name)} · {formatUsdt(product.price, 0)} P</a> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
+          {product ? <Link href={`/shop/${product.id}`}>{tr(product.name)} · {formatUsdt(product.price, 0)} P</Link> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
           <button type="button" aria-label={tr("장바구니에서 삭제")} onClick={() => updateCart(cart.filter(item => item !== id))}><Trash2 size={17} /></button>
         </div>; })}
         {cart.length > 0 && <Link className="shop-primary" href="/shop/cart">{tr("장바구니 결제")}</Link>}
@@ -216,7 +221,7 @@ export function Shop({ productId }: { productId?: string }) {
             <button
               disabled={busy}
               onClick={() => {
-                location.href = "/shop";
+                router.push("/shop");
               }}
             >{tr("닫기")}</button>
           </div>
@@ -261,7 +266,7 @@ export function Shop({ productId }: { productId?: string }) {
           <button
             className="shop-primary"
             disabled={
-              busy || selected.stock < quantity || BigInt(available) < total
+              !catalogFresh || busy || selected.stock < quantity || BigInt(available) < total
             }
             onClick={purchase}
           >

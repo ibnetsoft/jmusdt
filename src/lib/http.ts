@@ -44,16 +44,12 @@ export async function identity(admin = false, funds = false) {
         : user.email.split("@")[0],
     ],
   );
-  await database().query(
-    "INSERT INTO balances(user_id) VALUES($1) ON CONFLICT DO NOTHING",
-    [user.id],
-  );
   if (result.rows[0].status !== "active")
     throw new HttpError(403, "이용이 제한된 계정입니다.");
-  await database().query(
-    "SELECT network_activate($1)",
-    [user.id],
-  );
+  await Promise.all([
+    database().query("INSERT INTO balances(user_id) VALUES($1) ON CONFLICT DO NOTHING", [user.id]),
+    database().query("SELECT network_activate($1)", [user.id]),
+  ]);
   return { user, profile: result.rows[0] };
 }
 export function checkOrigin(request: Request) {

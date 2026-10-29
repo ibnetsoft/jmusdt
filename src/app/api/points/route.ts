@@ -11,19 +11,17 @@ const input = z.object({
 export async function GET() {
   return api(async () => {
     const { user } = await identity();
-    const balance = await database().query(
+    const db = database();
+    const [balance, history, debt, rate] = await Promise.all([db.query(
       "SELECT b.available AS usdt,coalesce(p.available,0)::text AS points FROM balances b LEFT JOIN point_balances p ON p.user_id=b.user_id WHERE b.user_id=$1",
       [user.id],
-    );
-    const history = await database().query(
+    ), db.query(
       "SELECT s.*, t.amount AS received_amount FROM point_swaps s JOIN transactions t ON t.id=s.credit_id WHERE s.user_id=$1 ORDER BY s.created_at DESC",
       [user.id],
-    );
-    const debt = await database().query(
+    ), db.query(
       "SELECT coalesce(sum(outstanding),0)::text AS debt FROM marketing_debts WHERE user_id=$1",
       [user.id],
-    );
-    const rate = await database().query("SELECT rate,version FROM exchange_rate_settings WHERE id=true");
+    ), db.query("SELECT rate,version FROM exchange_rate_settings WHERE id=true")]);
     return {
       accountId: user.id,
       rate: rate.rows[0].rate, rateVersion: rate.rows[0].version,
