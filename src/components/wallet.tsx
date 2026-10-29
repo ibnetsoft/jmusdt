@@ -42,6 +42,7 @@ import {
 } from "./shared";
 import { SiteControls } from "./site-controls";
 import { CancelOrder } from "./shop";
+import { BottomNav } from "./bottom-nav";
 import { SecuritySettings } from "./security";
 type View = "home" | "deposit" | "send" | "activity" | "settings";
 type InstallEvent = Event & {
@@ -312,13 +313,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             ) : null}
           </>
         ) : null}
-        <nav className="bottom-nav" aria-label={tr("모바일 메뉴")}>
-          <button className={view === "home" ? "active" : ""} onClick={() => setView("home")}><WalletIcon size={20} /><span>{tr("지갑")}</span></button>
-          <button onClick={() => { location.href = "/shop"; }}><ShoppingBag size={20} /><span>{tr("쇼핑몰")}</span></button>
-          <button onClick={() => { location.href = "/organization"; }}><Network size={20} /><span>{tr("조직도")}</span></button>
-          <button className={view === "activity" ? "active" : ""} onClick={() => setView("activity")}><History size={20} /><span>{tr("내역")}</span></button>
-          <button className={view === "settings" ? "active" : ""} onClick={() => setView("settings")}><Settings size={20} /><span>{tr("설정")}</span></button>
-        </nav>
+        <BottomNav active={view === "home" ? "wallet" : view === "activity" || view === "settings" ? view : undefined} onWalletView={setView} />
       </main>
       <aside className="wallet-aside">
         <div className="red-promo">

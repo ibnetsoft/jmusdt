@@ -1,5 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
+import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
 import { ShoppingBag, Trash2 } from "lucide-react";
@@ -153,6 +154,7 @@ export function Shop({ productId }: { productId?: string }) {
   }
   const total = selected ? BigInt(selected.price) * BigInt(quantity) : 0n;
   return (
+    <>
     <main className="commerce" aria-label={tr("쇼핑몰")}>
       <header>
         <a href="/">{tr("← 내 지갑")}</a>
@@ -267,6 +269,8 @@ export function Shop({ productId }: { productId?: string }) {
         </section>
       )}
     </main>
+    <BottomNav active="shop" />
+    </>
   );
 }
 export function CancelOrder({

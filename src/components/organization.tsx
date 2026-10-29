@@ -1,5 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
+import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -129,6 +130,7 @@ export function Organization() {
     );
   }
   return (
+    <>
     <main className="commerce" aria-label={tr("조직도")}>
       <header>
         <a href="/">{tr("← 내 지갑")}</a>
@@ -271,5 +273,7 @@ export function Organization() {
         </div>
       </section>
     </main>
+    <BottomNav active="organization" />
+    </>
   );
 }
