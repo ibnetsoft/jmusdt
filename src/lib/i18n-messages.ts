@@ -1,5 +1,11 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "담기": ["Add", "追加"],
+  "장바구니": ["Cart", "カート"],
+  "장바구니가 비어 있습니다.": ["Your cart is empty.", "カートは空です。"],
+  "장바구니에서 삭제": ["Remove from cart", "カートから削除"],
+  "장바구니를 저장하지 못했습니다.": ["Could not save your cart.", "カートを保存できませんでした。"],
+  "{0} 상품 상세 보기": ["View {0} details", "{0}の詳細を見る"],
   "구매내역": ["Purchases", "購入履歴"],
   "정수로 입력해 주세요.": ["Enter a whole number.", "整数を入力してください。"],
   "1 USDT = 1 포인트 · 수수료 0": ["1 USDT = 1 point · No fee", "1 USDT = 1ポイント · 手数料なし"],

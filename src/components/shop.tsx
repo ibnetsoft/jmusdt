@@ -2,6 +2,7 @@
 import { useI18n } from "./i18n";
 
 import { useEffect, useRef, useState } from "react";
+import { ShoppingBag, Trash2 } from "lucide-react";
 import { formatUsdt, decimalUsdt } from "@/lib/money";
 import "./shop.css";
 import type { DetailBlock } from "@/lib/product-content";
@@ -22,17 +23,6 @@ type Product = {
   active: boolean;
   version: number;
   reward_plan: RewardPlan;
-};
-type Order = {
-  shipping: { recipient: string; phone: string; address: string; note: string; status: string; carrier: string; tracking_number: string } | null;
-  status: string;
-  refund_reason: string;
-  currency: "USDT" | "POINT";
-  id: string;
-  product_name: string;
-  quantity: number;
-  total: string;
-  created_at: string;
 };
 async function requestJson(url: string, body?: unknown) {
   const response = await fetch(url, {
@@ -77,22 +67,22 @@ function ProductPrice({ product }: { product: Pick<Product, "price" | "retail_pr
   const display = (value: string) => formatUsdt(value, 0);
   return (
     <div className="shop-prices">
-      {product.retail_price && <span className="shop-muted">{tr("소비자가 ")}<s>{display(product.retail_price)} P</s></span>}
-      <strong>{product.retail_price ? tr("회원가 ") : ""}{display(product.price)} P</strong>
+      <strong>{display(product.price)} P</strong>
     </div>
   );
 }
 export function Shop({ productId }: { productId?: string }) {
-  const { tr, localeTag } = useI18n();
+  const { tr } = useI18n();
   const [products, setProducts] = useState<Product[]>([]),
-    [orders, setOrders] = useState<Order[]>([]),
     [available, setAvailable] = useState("0");
   const [selected, setSelected] = useState<Product | null>(null),
     [quantity, setQuantity] = useState(1),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [cart, setCart] = useState<string[]>([]),
+    [cartOpen, setCartOpen] = useState(false);
   const key = useRef("");
   const [marketing, setMarketing] = useState({
     enabled: false,
@@ -104,7 +94,6 @@ export function Shop({ productId }: { productId?: string }) {
   async function load(openDetail = false) {
     const data = await requestJson("/api/shop");
     setProducts(data.products);
-    setOrders(data.orders);
     setAvailable(data.available);
     setMarketing(
       data.marketing || { enabled: false, daily_paused: false, version: 0 },
@@ -120,6 +109,16 @@ export function Shop({ productId }: { productId?: string }) {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [productId]);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("jmusdt-cart") || "[]");
+      if (Array.isArray(saved)) setCart(saved.filter((id): id is string => typeof id === "string"));
+    } catch { /* An unreadable cart starts empty. */ }
+  }, []);
+  function updateCart(ids: string[]) {
+    try { localStorage.setItem("jmusdt-cart", JSON.stringify(ids)); setCart(ids); }
+    catch { setError("장바구니를 저장하지 못했습니다."); }
+  }
   function choose(product: Product) {
     setSelected(product);
     setQuantity(1);
@@ -157,9 +156,16 @@ export function Shop({ productId }: { productId?: string }) {
     <main className="commerce" aria-label={tr("쇼핑몰")}>
       <header>
         <a href="/">{tr("← 내 지갑")}</a>
+        <button type="button" className="cart-toggle" aria-expanded={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingBag size={18} /> {tr("장바구니")} ({cart.length})</button>
       </header>
-      <div className="shop-balance">{tr("사용 가능한 잔액 ")}<strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong>
-      </div>
+      {cartOpen && <section className="cart-panel" aria-label={tr("장바구니")}>
+        {cart.length === 0 && <p>{tr("장바구니가 비어 있습니다.")}</p>}
+        {cart.map(id => { const product = products.find(item => item.id === id); return <div className="cart-item" key={id}>
+          {product ? <a href={`/shop/${product.id}`}>{tr(product.name)} · {formatUsdt(product.price, 0)} P</a> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
+          <button type="button" aria-label={tr("장바구니에서 삭제")} onClick={() => updateCart(cart.filter(item => item !== id))}><Trash2 size={17} /></button>
+        </div>; })}
+      </section>}
+      <div className="shop-balance"><strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong></div>
       {tr(error) && (
         <p className="shop-error" role="alert">
           {tr(error)}{" "}
@@ -184,12 +190,11 @@ export function Shop({ productId }: { productId?: string }) {
             .filter(() => !productId)
             .map((p) => (
               <article className="shop-card" key={p.id}>
-                <ProductImage product={p} />
-                <div>
+                <a className="shop-image-link" href={`/shop/${p.id}`} aria-label={tr("{0} 상품 상세 보기", {"0": tr(p.name)})}><ProductImage product={p} /></a>
+                <div className="shop-card-info">
+                  <button type="button" className="shop-add-cart" disabled={p.stock < 1} onClick={() => { updateCart(cart.includes(p.id) ? cart : [...cart, p.id]); setCartOpen(true); }}><ShoppingBag size={17} />{tr("담기")}</button>
+                  <strong className="shop-card-price">{formatUsdt(p.price, 0)} P</strong>
                   <h2>{tr(p.name)}</h2>
-                  <p className="shop-muted">{tr("재고 ")}{p.stock}{tr("개")}</p>
-                  <ProductPrice product={p} />
-                  <a className="shop-primary" href={`/shop/${p.id}`}>{tr("상품 상세 보기")}</a>
                 </div>
               </article>
             ))}
@@ -213,7 +218,6 @@ export function Shop({ productId }: { productId?: string }) {
             blocks={selected.detail_blocks}
           />
           <ProductPrice product={selected} />
-          <p className="shop-muted">{tr("재고 ")}{selected.stock}{tr("개")}</p>
           {!marketing.enabled && (
             <p className="shop-error">{tr("현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는 추천·후원·맘 리워드와 데일리가 발생하지 않습니다. 일일 분배 적립금은 상품별로 적립됩니다.")}</p>
           )}
@@ -261,42 +265,10 @@ export function Shop({ productId }: { productId?: string }) {
           </button>
         </section>
       )}
-      <section id="orders">
-        <h2>{tr("구매 내역")}</h2>
-        {orders.map((o) => (
-          <article className="shop-order" key={o.id}>
-            <div>
-              <strong>
-                {tr(o.product_name)} × {o.quantity}
-              </strong>
-              <p className="shop-muted">
-                {new Date(o.created_at).toLocaleString(localeTag, { timeZone: 'Asia/Seoul' })} ·{" "}
-                {o.status === "cancelled"
-                  ? tr("취소·환불 완료")
-                  : o.status === "cancellation_requested"
-                    ? tr("취소 승인 대기")
-                    : tr("결제 완료")}
-              </p>
-              <small>{tr("주문번호 ")}{o.id}</small>
-              {o.shipping && <div><p>{tr("배송: ")}{tr(({preparing: "배송 준비", shipped: "배송 중", delivered: "배송 완료"} as Record<string,string>)[o.shipping.status])}</p><p>{tr("받는 분: ")}{o.shipping.recipient} · {o.shipping.phone}</p><p>{tr("주소: ")}{o.shipping.address}</p>{o.shipping.note && <p>{tr("요청사항: ")}{o.shipping.note}</p>}{o.shipping.tracking_number && <p>{o.shipping.carrier} · {o.shipping.tracking_number}</p>}</div>}
-              {o.status === "cancelled" && <p>{tr("환불 사유: ")}{o.refund_reason}</p>}
-              {o.status === "paid" && (
-                <CancelOrder orderId={o.id} onDone={load} />
-              )}
-            </div>
-            <strong>
-              {formatUsdt(o.total, o.currency === "USDT" ? 6 : 0)} {o.currency === "USDT" ? "USDT" : "P"}
-            </strong>
-          </article>
-        ))}
-        {!orders.length && (
-          <p className="shop-muted">{tr("아직 구매 내역이 없습니다.")}</p>
-        )}
-      </section>
     </main>
   );
 }
-function CancelOrder({
+export function CancelOrder({
   orderId,
   onDone,
 }: {

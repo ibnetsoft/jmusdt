@@ -41,6 +41,7 @@ import {
   TransactionModal,
 } from "./shared";
 import { SiteControls } from "./site-controls";
+import { CancelOrder } from "./shop";
 import { SecuritySettings } from "./security";
 type View = "home" | "deposit" | "send" | "activity" | "settings";
 type InstallEvent = Event & {
@@ -755,7 +756,8 @@ function Activity({
   const { localeTag } = useI18n();
   const [filter, setFilter] = useState<"rewards" | "transactions" | "swaps" | "orders">("rewards");
   const [history, setHistory] = useState<{ rewards: { id: string; type: string; amount: string; status: string; due_date: string; paid_at: string | null }[]; pools: { kind: string; cutoff: string; amount: string }[]; swaps: { id: string; direction: string; amount: string; created_at: string }[]; orders: { id: string; product_name: string; quantity: number; total: string; currency: string; status: string; created_at: string }[] } | null>(null);
-  const [loadError, setLoadError] = useState("");
+  const [loadError, setLoadError] = useState(""),
+    [historyRevision, setHistoryRevision] = useState(0);
   useEffect(() => {
     if (data.mode === "demo") { setHistory({ rewards: [], pools: [], swaps: [], orders: [] }); return; }
     const controller = new AbortController();
@@ -765,7 +767,7 @@ function Activity({
       setHistory({ rewards: r.rewards, pools: r.pools, swaps: p.history, orders: o.orders });
     }).catch(e => { if (e.name !== "AbortError") setLoadError(e.message); });
     return () => controller.abort();
-  }, [data.mode]);
+  }, [data.mode, historyRevision]);
   const rewards = [
     ...(history?.rewards || []).map(r => ({ id: r.id, date: r.paid_at || `${r.due_date}T00:00:00+09:00`, label: ({ referral: "추천리워드", sponsor: "후원리워드", mom: "맘리워드", daily: "데일리수당" } as Record<string, string>)[r.type] || r.type, amount: r.amount, status: ({ scheduled: "지급 예정", paid: "지급 완료", skipped: "미지급", reversed: "회수 완료", void: "권리 취소" } as Record<string, string>)[r.status] || r.status })),
     ...(history?.pools || []).map(p => ({ id: p.kind + p.cutoff, date: p.cutoff, label: p.kind === "lucky" ? "복주머니P" : "보물상자P", amount: p.amount, status: "지급 완료" })),
@@ -779,7 +781,7 @@ function Activity({
     {loadError && filter !== "transactions" && <p role="alert">{tr(loadError)}</p>}
     {filter === "transactions" && <ActivityList transactions={transactions} onSelect={onSelect} />}
     {filter === "rewards" && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 0)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
-    {filter === "orders" && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small></div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
+    {filter === "orders" && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => setHistoryRevision(n => n + 1)} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
     {filter === "swaps" && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
   </>;
 }
