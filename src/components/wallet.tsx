@@ -307,7 +307,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                     <ChevronRight size={16} />
                   </button>
                 </div>
-                <p className="version">JMUSDT / VERSION 0.1.0</p>
+                <p className="version">WU / VERSION 0.1.0</p>
               </>
             ) : null}
           </>
@@ -435,7 +435,7 @@ function Deposit({
         <h1>{tr("내 지갑에")}<br />{tr("USDT 입금하기.")}</h1>
         <div className="qr-wrap">
           <QRCodeSVG
-            value={data.address || "JMUSDT-DEMO-NOT-A-DEPOSIT-ADDRESS"}
+            value={data.address || "WU-DEMO-NOT-A-DEPOSIT-ADDRESS"}
             size={190}
             fgColor="#101010"
             bgColor="#17695a"

@@ -134,7 +134,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
         </a>
         {!admin && <a href="/organization">{tr("조직도")}</a>}
       </header>
-      <p className="shop-kicker">JMUSDT / MARKETING</p>
+      <p className="shop-kicker">WU / MARKETING</p>
       <h1>{admin ? tr("마케팅 관리") : tr("나의 리워드")}</h1>
       <p className="shop-muted">{tr("추천·후원·맘리워드는 실시간으로 지급됩니다. 데일리·복주머니·보물상자는 매일 한국시간 자정에 포인트로 배당됩니다. 데일리는 구매 다음 날부터, 복주머니·보물상자는 보유 패키지 수량에 비례해 지급됩니다.")}</p>
       {tr(error) && (

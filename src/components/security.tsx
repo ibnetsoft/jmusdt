@@ -38,7 +38,7 @@ export function SecuritySettings({ demo = false }: { demo?: boolean }) {
         await auth.auth.mfa.unenroll({ factorId: pending.id });
       const enrolled = await auth.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "JMUSDT Authenticator",
+        friendlyName: "WU Authenticator",
       });
       if (enrolled.error) throw enrolled.error;
       setFactor(enrolled.data.id);

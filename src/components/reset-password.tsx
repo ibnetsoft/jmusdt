@@ -68,10 +68,10 @@ export function ResetPassword() {
         <div>
           <h1>{tr("새로운 비밀번호.")}<br />{tr("안전한 내 지갑.")}</h1>
         </div>
-        <span>JMUSDT / ACCOUNT SECURITY</span>
+        <span>WU / ACCOUNT SECURITY</span>
       </section>
       <section className="login-form">
-        <p className="eyebrow">JMUSDT / PASSWORD RESET</p>
+        <p className="eyebrow">WU / PASSWORD RESET</p>
         <h2>{tr("비밀번호 재설정")}</h2>
         <p>{tr("12자 이상의 새 비밀번호를 입력하세요. 변경 후 모든 기기에서 다시 로그인해야 합니다.")}</p>
         {loading ? (

@@ -216,7 +216,7 @@ export function AdminApp() {
     );
     const link = document.createElement("a");
     link.href = url;
-    link.download = "jmusdt-transactions.csv";
+    link.download = "wu-transactions.csv";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -291,7 +291,7 @@ export function AdminApp() {
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <Brand admin />
-        <div className="console-label">WORKSPACE / JMUSDT</div>
+        <div className="console-label">WORKSPACE / WU</div>
         <nav aria-label={tr("관리자 메뉴")}>
           <button
             onClick={() => {
@@ -353,7 +353,7 @@ export function AdminApp() {
               <i />
               TRON {data?.operations.network === "mainnet" ? "MAINNET" : "NILE"}
             </span>
-            <span className="admin-avatar">JM</span>
+            <span className="admin-avatar">WU</span>
           </div>
         </header>
         <main className="admin-main">
@@ -849,7 +849,7 @@ export function AdminApp() {
             </>
           ) : null}
           <footer className="admin-footer">
-            JMUSDT ADMIN <span>{tr("TRON / TRC20 · 한국 표준시(KST)")}</span>
+            WU ADMIN <span>{tr("TRON / TRC20 · 한국 표준시(KST)")}</span>
           </footer>
         </main>
       </div>

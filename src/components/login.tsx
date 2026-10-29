@@ -94,10 +94,10 @@ export function Login({
           </h1>
           <p>{tr("당신의 일상을 위한")}<br />{tr("더 간편한 USDT 지갑.")}</p>
         </div>
-        <span>JMUSDT / TRON NETWORK</span>
+        <span>WU / TRON NETWORK</span>
       </section>
       <section className="login-form">
-        <p className="eyebrow">WELCOME TO JMUSDT</p>
+        <p className="eyebrow">WELCOME TO WU</p>
         <h2>
           {forgot
             ? tr("비밀번호 찾기.")

@@ -4,8 +4,8 @@ export const dynamic = "force-dynamic";
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const { tr, locale } = await serverI18n();
   return {
-    name: "JMUSDT Wallet",
-    short_name: "JMUSDT",
+    name: "WU Wallet",
+    short_name: "WU",
     description: tr("TRON USDT 지갑"),
     start_url: "/",
     scope: "/",

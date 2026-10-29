@@ -1,6 +1,6 @@
 // Cache only the public offline page and icons. Never cache sessions, APIs,
 // balances, authenticated HTML, Next RSC responses, or financial POSTs.
-const CACHE = "jmusdt-shell-v2-i18n";
+const CACHE = "jmusdt-shell-v3-wu";
 self.addEventListener("install", (event) =>
   event.waitUntil(
     caches

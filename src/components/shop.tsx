@@ -58,7 +58,7 @@ function ProductImage({
     />
   ) : (
     <div className="shop-placeholder">
-      JM<span>EVERYDAY SHOP</span>
+      WU<span>EVERYDAY SHOP</span>
     </div>
   );
 }

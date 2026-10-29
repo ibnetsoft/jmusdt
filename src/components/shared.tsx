@@ -29,13 +29,12 @@ export function Token({ small = false }: { small?: boolean }) {
 export function Brand({ admin = false }: { admin?: boolean }) {
   const { tr } = useI18n();
   return (
-    <a className="brand" href={admin ? "/admin" : "/"} aria-label={tr("JMUSDT 홈")}>
+    <a className="brand" href={admin ? "/admin" : "/"} aria-label={tr("WU 홈")}>
       <span className="brand-mark">
-        j<span>m</span>
-        <i />
+        W<span>U</span>
       </span>
       <span>
-        JM<span className="muted">USDT</span>
+        WU
         {admin ? <small>ADMIN CONSOLE</small> : null}
       </span>
     </a>

@@ -45,7 +45,7 @@ async function config(method = "GET", body?: unknown) {
 }
 const current = await config();
 const template = (recovery: boolean) =>
-  `<h2>JMUSDT ${recovery ? "비밀번호 재설정" : "이메일 인증"}</h2><p>${recovery ? "아래 버튼을 눌러 새 비밀번호를 설정하세요." : "아래 버튼을 눌러 이메일 인증을 완료하세요."}</p><p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=${recovery ? "recovery" : "signup"}">${recovery ? "비밀번호 재설정" : "이메일 인증"}</a></p><p>요청하지 않았다면 이 메일을 무시하세요.</p>`;
+  `<h2>WU ${recovery ? "비밀번호 재설정" : "이메일 인증"}</h2><p>${recovery ? "아래 버튼을 눌러 새 비밀번호를 설정하세요." : "아래 버튼을 눌러 이메일 인증을 완료하세요."}</p><p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=${recovery ? "recovery" : "signup"}">${recovery ? "비밀번호 재설정" : "이메일 인증"}</a></p><p>요청하지 않았다면 이 메일을 무시하세요.</p>`;
 const site = "https://www.jmusdt.com";
 const allowed = new Set<string>(
   (current.uri_allow_list || "").split(",").filter(Boolean),
@@ -60,11 +60,11 @@ const patch = {
   smtp_user: "resend",
   smtp_pass: password,
   smtp_admin_email: address,
-  smtp_sender_name: "JMUSDT",
+  smtp_sender_name: "WU",
   site_url: site,
   uri_allow_list: [...allowed].join(","),
-  mailer_subjects_confirmation: "[JMUSDT] 회원가입 이메일 인증",
-  mailer_subjects_recovery: "[JMUSDT] 비밀번호 재설정",
+  mailer_subjects_confirmation: "[WU] 회원가입 이메일 인증",
+  mailer_subjects_recovery: "[WU] 비밀번호 재설정",
   mailer_templates_confirmation_content: template(false),
   mailer_templates_recovery_content: template(true),
 };
