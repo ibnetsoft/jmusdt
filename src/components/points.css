@@ -60,3 +60,7 @@
 .points-empty { padding-block: 22px; color: var(--muted); font-size: 13px; }
 @media (min-width: 700px) { .points-exchange { min-height: min(900px, calc(100svh - 52px)); padding-inline: 32px; } .points-history { padding-inline: 32px; } }
 @media (max-width: 359px) { .points-exchange { padding-inline: 16px; } .points-asset { padding: 16px; gap: 8px; } .points-amount, .points-output { font-size: 21px; } .points-amount-long, .points-amount-long input { font-size: 12px; } .points-tabs button { font-size: 14px; } }
+@media (max-width: 700px) {
+  .points-exchange { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .points-history { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+}

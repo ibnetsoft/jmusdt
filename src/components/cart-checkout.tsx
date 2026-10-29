@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
+import { BottomNav } from "./bottom-nav";
 import { formatUsdt } from "@/lib/money";
 import "./shop.css";
 
@@ -51,7 +52,7 @@ export function CartCheckout() {
     } catch (e) { setError(e instanceof Error ? e.message : "결제에 실패했습니다."); }
     finally {lock.current = false; setBusy(false);}
   }
-  return <main className="commerce cart-checkout" aria-label={tr("장바구니 결제")}>
+  return <><main className="commerce cart-checkout" aria-label={tr("장바구니 결제")}>
     <header><a href="/shop">{tr("← 쇼핑몰")}</a></header>
     <h1>{tr("장바구니 결제")}</h1>
     {loading && <p role="status">{tr("상품을 불러오는 중…")}</p>}
@@ -74,5 +75,5 @@ export function CartCheckout() {
     {wrongUser && <p role="alert">{tr("결제를 요청한 계정으로 로그인해 주세요.")}</p>}
     {fractionalPrice && !pending && <p role="alert">{tr("상품 가격을 확인할 수 없습니다. 관리자에게 문의해 주세요.")}</p>}
     {!pending && !loading && ids.length > 0 && total > BigInt(available) && <p role="status">{tr("포인트 잔액 부족")}</p>}
-  </main>;
+  </main><BottomNav active="shop" /></>;
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
+import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownUp, ArrowLeft, ChevronLeft, Clock3 } from "lucide-react";
@@ -105,6 +106,7 @@ export function Points() {
     }
   }
   return (
+    <>
     <main className="points-page">
       <form className="points-exchange"
         onSubmit={(e) => {
@@ -175,5 +177,7 @@ export function Points() {
         {data?.history.length === 0 && <p className="points-empty">{tr("아직 전환 내역이 없습니다.")}</p>}
       </section>
     </main>
+    <BottomNav active="wallet" />
+    </>
   );
 }
