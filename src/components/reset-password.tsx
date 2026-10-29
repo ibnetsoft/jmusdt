@@ -74,10 +74,7 @@ export function ResetPassword() {
         <p className="eyebrow">WU / PASSWORD RESET</p>
         <h2>{tr("비밀번호 재설정")}</h2>
         <p>{tr("12자 이상의 새 비밀번호를 입력하세요. 변경 후 모든 기기에서 다시 로그인해야 합니다.")}</p>
-        {loading ? (
-          <p role="status">{tr("재설정 링크를 확인하는 중…")}</p>
-        ) : (
-          ready && (
+        {!loading && ready && (
             <form onSubmit={submit}>
               <fieldset
                 disabled={busy}
@@ -112,7 +109,6 @@ export function ResetPassword() {
                 </button>
               </fieldset>
             </form>
-          )
         )}
         {tr(message) && (
           <p role="status" className="form-error">

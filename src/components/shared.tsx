@@ -8,7 +8,6 @@ import {
   ArrowRightLeft,
   Clock3,
   Check,
-  LoaderCircle,
   X,
 } from "lucide-react";
 import { useDialogFocus } from "./dialog-focus";
@@ -144,15 +143,6 @@ export function Notice({ message }: { message: string }) {
     <div className="notice" role="status">
       <Check size={17} />
       {tr(message)}
-    </div>
-  );
-}
-export function Spinner() {
-  const { tr } = useI18n();
-  return (
-    <div className="loading">
-      <LoaderCircle className="spin" />
-      <p>{tr("지갑을 불러오는 중…")}</p>
     </div>
   );
 }

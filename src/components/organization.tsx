@@ -214,7 +214,6 @@ export function Organization() {
             {full ? tr("전체화면 닫기") : tr("전체화면")}
           </button>
         </div>
-        {loading && <p role="status">{tr("조직도를 불러오는 중…")}</p>}
         {data?.truncated && (
           <p role="status">{tr("조회 한도 500명까지 표시했습니다. 회원을 눌러 하위 조직을 확인하세요.")}</p>
         )}

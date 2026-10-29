@@ -57,11 +57,10 @@ export function CartCheckout() {
   return <><main className="commerce cart-checkout" aria-label={tr("장바구니 결제")}>
     <header><a href="/shop">{tr("← 쇼핑몰")}</a></header>
     <h1>{tr("장바구니 결제")}</h1>
-    {loading && <p role="status">{tr("상품을 불러오는 중…")}</p>}
     {done && <p className="shop-success" role="status">{tr("장바구니 결제가 완료되었습니다.")}</p>}
     {error && <p className="shop-error" role="alert">{tr(error)}</p>}
     {pending && <p role="status">{tr("결제 결과를 확인할 수 없습니다. 같은 요청으로 다시 확인해 주세요.")}</p>}
-    {!loading && ids.length === 0 && !pending && <p>{tr("장바구니가 비어 있습니다.")}</p>}
+    {!loading && !error && ids.length === 0 && !pending && <p>{tr("장바구니가 비어 있습니다.")}</p>}
     {!loading && ids.length > 0 && <>
       {marketing && !marketing.enabled && <p className="shop-error">{tr("현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는 추천·후원·맘 리워드와 데일리가 발생하지 않습니다. 일일 분배 적립금은 상품별로 적립됩니다.")}</p>}
       {marketing?.enabled && marketing.daily_paused && <p>{tr("데일리 지급이 일시정지 중입니다. 구매 권리는 생성되며 재개 후 기한이 지난 회차가 지급됩니다.")}</p>}

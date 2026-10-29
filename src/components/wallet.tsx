@@ -37,7 +37,6 @@ import {
   ActivityList,
   Brand,
   Token,
-  Spinner,
   TransactionModal,
 } from "./shared";
 import { SiteControls } from "./site-controls";
@@ -193,7 +192,6 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             <button onClick={() => void refresh()}>{tr("다시 시도")}</button>
           </div>
         ) : null}
-        {!data && !error ? <Spinner /> : null}
         {data ? (
           <>
             {view === "home" ? (

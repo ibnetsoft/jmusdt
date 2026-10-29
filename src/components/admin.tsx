@@ -25,7 +25,6 @@ import { readDemo, demoAdminAction } from "@/lib/demo-store";
 import {
   Brand,
   Status,
-  Spinner,
   txDate,
   kindLabels,
   TransactionModal,
@@ -409,7 +408,6 @@ export function AdminApp() {
               </button>
             </div>
           ) : null}
-          {!data && !error ? <Spinner /> : null}
           {data ? (
             <>
               {tab === "overview" ? (

@@ -289,9 +289,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
         </form>
       )}
       <h2>{tr("보상 내역 ")}{admin && data ? tr("({0}건)", {"0": data.count}) : tr("(최근 200건)")}</h2>
-      {loading ? (
-        <p role="status">{tr("불러오는 중…")}</p>
-      ) : (
+      {!loading && (
         data?.rewards.map((r) => (
           <article key={r.id} className="shop-order">
             <div>
@@ -320,7 +318,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
           </article>
         ))
       )}
-      {!loading && !data?.rewards.length && <p>{tr("보상 내역이 없습니다.")}</p>}
+      {!loading && data && !data.rewards.length && <p>{tr("보상 내역이 없습니다.")}</p>}
       {admin && (
         <div className="shop-section-head">
           <button

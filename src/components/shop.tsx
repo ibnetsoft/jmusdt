@@ -192,9 +192,7 @@ export function Shop({ productId }: { productId?: string }) {
           {tr(notice)}
         </p>
       )}
-      {loading ? (
-        <p>{tr("상품을 불러오는 중…")}</p>
-      ) : (
+      {!loading && (
         <section className="shop-grid" aria-label={tr("상품 목록")}>
           {products
             .filter(() => !productId)
@@ -208,7 +206,7 @@ export function Shop({ productId }: { productId?: string }) {
                 </div>
               </article>
             ))}
-          {!products.length && <p>{tr("판매 중인 상품이 없습니다.")}</p>}
+          {!products.length && !error && <p>{tr("판매 중인 상품이 없습니다.")}</p>}
         </section>
       )}
       {selected && (
