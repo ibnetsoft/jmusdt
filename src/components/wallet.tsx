@@ -13,7 +13,6 @@ import {
   Network,
   ShoppingBag,
   Award,
-  PackageOpen,
   ArrowLeftRight,
   History,
   Settings,
@@ -44,6 +43,7 @@ import {
 import { SiteControls } from "./site-controls";
 import { CancelOrder } from "./shop";
 import { BottomNav } from "./bottom-nav";
+import { LuckyBagIcon, TreasureChestIcon } from "./asset-icons";
 import { SecuritySettings } from "./security";
 type View = "home" | "deposit" | "send" | "activity" | "settings";
 type InstallEvent = Event & {
@@ -205,8 +205,8 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                   <div className="asset-value">{hidden ? "••••••" : formatUsdt(data.points || "0", 0)} <small>P</small></div>
                   <div className="asset-meta">
                     <span title={tr("회원등급")}><Award size={18} aria-label={tr("회원등급")} />{tr(data.user.gradeName || "일반회원")}</span>
-                    <span title={tr("복주머니")}><ShoppingBag size={18} aria-label={tr("복주머니")} />{data.packages?.lucky ?? "0"}</span>
-                    <span title={tr("보물상자")}><PackageOpen size={18} aria-label={tr("보물상자")} />{data.packages?.treasure ?? "0"}</span>
+                    <span title={tr("복주머니")}><LuckyBagIcon label={tr("복주머니")} />{data.packages?.lucky ?? "0"}</span>
+                    <span title={tr("보물상자")}><TreasureChestIcon label={tr("보물상자")} />{data.packages?.treasure ?? "0"}</span>
                   </div>
                 </section>
                 <div className="quick-actions">
@@ -701,13 +701,14 @@ function Send({
         </div>
       </dl>
       {kind === "external" ? (
-        <p className="field-hint">{tr("최소 ")}{formatUsdt(data.minimum)}{tr(" USDT · 관리자 승인 후 전송됩니다.")}</p>
+        <p className="field-hint">{tr("최소 ")}{formatUsdt(data.minimum)} USDT</p>
       ) : null}
       {error ? (
         <p className="form-error" role="alert">
           {tr(error)}
         </p>
       ) : null}
+      <div className="send-actions">
       <button
         className="primary"
         disabled={busy}
@@ -729,6 +730,7 @@ function Send({
           onClick={() => setStage("form")}
         >{tr("정보 수정")}</button>
       ) : null}
+      </div>
     </section>
   );
 }

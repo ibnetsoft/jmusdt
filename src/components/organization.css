@@ -126,3 +126,7 @@
 
 .org-board-toolbar { margin-bottom: 12px; }
 .org-controls > button:first-child { margin-right: -4px; }
+
+.org-controls { margin-bottom: 7px; }
+.org-breadcrumbs:empty { display: none; }
+.org-board { margin-top: 7px; }

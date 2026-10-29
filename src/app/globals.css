@@ -2612,3 +2612,8 @@ td em {
 html[lang="ko"] .quick-actions button { font-size: 16.8px; }
 .quick-actions button:focus-visible { outline: 2px solid #b9e3ce; outline-offset: 3px; }
 
+
+@media (max-width: 700px) {
+  .send-view { display: flex; flex-direction: column; min-height: calc(100dvh - 180px - env(safe-area-inset-bottom)); }
+  .send-actions { margin-top: auto; padding-top: 10px; }
+}
