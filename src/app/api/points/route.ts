@@ -25,6 +25,7 @@ export async function GET() {
     );
     const rate = await database().query("SELECT rate,version FROM exchange_rate_settings WHERE id=true");
     return {
+      accountId: user.id,
       rate: rate.rows[0].rate, rateVersion: rate.rows[0].version,
       ...balance.rows[0],
       history: history.rows,

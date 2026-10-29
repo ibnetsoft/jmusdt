@@ -1,7 +1,7 @@
 "use client";
 import { useI18n } from "./i18n";
 import { useRouter } from "next/navigation";
-import { clearPreloadedData, readPreloadedData } from "@/lib/preload-pages";
+import { clearPreloadedData, preloadPages, readPreloadedData } from "@/lib/preload-pages";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
@@ -70,6 +70,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
       }
       if (!response.ok) throw new Error(body.error);
       setData(body.mode === "demo" ? demoSnapshot() : body);
+      if (body.mode !== "demo") void preloadPages();
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "지갑을 불러오지 못했습니다.");

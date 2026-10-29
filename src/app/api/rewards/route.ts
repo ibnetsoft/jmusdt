@@ -21,6 +21,7 @@ export async function GET() {
       db.query("SELECT package_type,sum(quantity)::text AS quantity FROM shop_orders WHERE user_id=$1 AND package_type IN ('lucky','treasure') AND status IN ('paid','cancellation_requested') GROUP BY package_type",[user.id]),
     ]);
     return {
+      accountId: user.id,
       rewards: rewards.rows,
       totals: totals.rows,
       debt: debt.rows[0].amount,

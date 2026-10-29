@@ -96,7 +96,7 @@ export function Shop({ productId }: { productId?: string }) {
   });
   const locked = useRef(false);
   async function load(openDetail = false) {
-    const data = await requestJson("/api/shop");
+    const data = await requestJson("/api/shop?catalog=1");
     setProducts(data.products);
     setAvailable(data.available);
     setMarketing(
@@ -110,7 +110,7 @@ export function Shop({ productId }: { productId?: string }) {
   }
   useEffect(() => {
     let active = true, fresh = false;
-    void readPreloadedData<{ products: Product[] }>("/api/shop").then(data => {
+    void readPreloadedData<{ products: Product[] }>("/api/shop?catalog=1").then(data => {
       if (active && !fresh && data && !productId) { setProducts(data.products); setLoading(false); }
     });
     load(true).then(() => { fresh = true; })

@@ -17,12 +17,13 @@ export async function GET(request: Request) {
     });
     if (!p.success)
       throw new HttpError(400, "조직도 조회 조건을 확인해 주세요.");
-    return organizationTree(
+    const tree = await organizationTree(
       user.id,
       p.data.mode,
       p.data.root || user.id,
       p.data.depth,
     );
+    return { ...tree, accountId: user.id };
   });
 }
 // Placement is determined by qualification order; browser requests cannot override it.

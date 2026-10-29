@@ -52,8 +52,8 @@ export function Organization() {
     setLoading(true);
     setError("");
     let fresh = false;
-    if (mode === "sponsor" && depth === 3 && !root && revision === 0) {
-      void readPreloadedData<Data>("/api/organization?mode=sponsor&depth=3").then(cached => {
+    if (depth === 3 && !root && revision === 0) {
+      void readPreloadedData<Data>(`/api/organization?mode=${mode}&depth=3`).then(cached => {
         if (!abort.signal.aborted && !fresh && cached) { setData(cached); setLoading(false); }
       });
     }
