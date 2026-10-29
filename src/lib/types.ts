@@ -26,6 +26,7 @@ export type WalletData = {
   user: { id: string; email: string; name: string; status: string; gradeName?: string };
   available: string;
   points?: string;
+  packages?: { lucky: string; treasure: string };
   referralCode?: string;
   reserved: string;
   address: string | null;

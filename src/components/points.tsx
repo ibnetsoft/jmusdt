@@ -160,7 +160,7 @@ export function Points() {
         <button className="points-cancel" type="button" disabled={busy} onClick={() => { setConfirm(false); setError(""); }}>{tr("취소")}</button>
       </dialog>
       <section className="points-history" id="points-history" aria-labelledby="points-history-title">
-        <div className="points-history-heading"><h2 id="points-history-title">{tr("전환 내역")}</h2><a href="/shop">{tr("쇼핑몰 ↗")}</a></div>
+        <div className="points-history-heading"><h2 id="points-history-title">{tr("전환 내역")}</h2></div>
         {data?.history.map((h) => (
           <article className="points-history-item" key={h.id}>
             <div><strong>{h.direction === "usdt_to_points" ? tr("USDT → 포인트") : tr("포인트 → USDT")}</strong><time dateTime={h.created_at}>{new Date(h.created_at).toLocaleString(localeTag, { timeZone: "Asia/Seoul" })}</time></div>

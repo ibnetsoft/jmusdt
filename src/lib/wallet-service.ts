@@ -14,7 +14,7 @@ export async function walletSnapshot(profile: {
   status: string;
 }) {
   const pool = database();
-  const [balance, addresses, history, grade] = await Promise.all([
+  const [balance, addresses, history, packages, grade] = await Promise.all([
     pool.query(
       "SELECT b.*,coalesce(p.available,0)::text AS points FROM balances b LEFT JOIN point_balances p ON p.user_id=b.user_id WHERE b.user_id=$1",
       [profile.id],
@@ -24,9 +24,10 @@ export async function walletSnapshot(profile: {
       [profile.id],
     ),
     pool.query(
-      "SELECT * FROM transactions WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100",
+      "SELECT * FROM transactions WHERE user_id=$1 ORDER BY created_at DESC",
       [profile.id],
     ),
+    pool.query("SELECT package_type,sum(quantity)::text AS quantity FROM shop_orders WHERE user_id=$1 AND package_type IN ('lucky','treasure') AND status IN ('paid','cancellation_requested') GROUP BY package_type", [profile.id]),
     pool.query("SELECT g.name,n.referral_code FROM profiles p JOIN member_grades g ON g.code=p.grade_code LEFT JOIN member_network n ON n.user_id=p.id WHERE p.id=$1",[profile.id]),
   ]);
   const config = chainConfig();
@@ -39,6 +40,7 @@ export async function walletSnapshot(profile: {
     referralCode: grade.rows[0]?.referral_code || "",
     available: balance.rows[0]?.available || "0",
     points: balance.rows[0]?.points || "0",
+    packages: { lucky: packages.rows.find((p) => p.package_type === "lucky")?.quantity || "0", treasure: packages.rows.find((p) => p.package_type === "treasure")?.quantity || "0" },
     reserved: balance.rows[0]?.reserved || "0",
     address: address?.address || null,
     network: config.network,

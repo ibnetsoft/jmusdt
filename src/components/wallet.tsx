@@ -11,6 +11,8 @@ import {
   House,
   Network,
   ShoppingBag,
+  Award,
+  PackageOpen,
   ArrowLeftRight,
   History,
   Settings,
@@ -142,11 +144,6 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
               location.href = "/points";
             }}
           >{tr("포인트 · 1:1 전환")}</button>
-          <button
-            onClick={() => {
-              location.href = "/shop";
-            }}
-          >{tr("쇼핑몰")}</button>
           {nav.map((n) => (
             <button
               key={n.view}
@@ -175,7 +172,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             <Brand />
           </div>
           <span className="desktop-only eyebrow">PERSONAL WALLET</span>
-          <div className="profile">
+          {view !== "send" && <div className="profile">
             <span className="profile-avatar">
               {data?.user.name?.slice(0, 1) || "J"}
             </span>
@@ -189,7 +186,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             >
               <Settings size={18} />
             </button>
-          </div>
+          </div>}
         </header>
         {data?.mode === "demo" ? (
           <div className="demo-strip">
@@ -214,41 +211,22 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
           <>
             {view === "home" ? (
               <>
-                <div className="page-heading compact"><h1>{tr("내 지갑")}</h1></div>
-                <section className="balance-card">
-                  <div className="balance-title">
-                    <span>{tr("사용 가능한 잔액")}</span>
-                    <button
-                      aria-label={hidden ? tr("잔액 표시") : tr("잔액 숨기기")}
-                      onClick={() => setHidden(!hidden)}
-                    >
-                      {hidden ? <EyeOff size={17} /> : <Eye size={17} />}
-                    </button>
+                <section className="balance-card wallet-assets">
+                  <div className="balance-title"><span>USDT</span><button aria-label={hidden ? tr("잔액 표시") : tr("잔액 숨기기")} onClick={() => setHidden(!hidden)}>{hidden ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>
+                  <div className="asset-value">{hidden ? "••••••" : formatUsdt(data.available, 6)} <small>USDT</small></div>
+                  <div className="asset-label">{tr("포인트")}</div>
+                  <div className="asset-value">{hidden ? "••••••" : formatUsdt(data.points || "0", 0)} <small>P</small></div>
+                  <div className="asset-meta">
+                    <span title={tr("회원등급")}><Award size={18} aria-label={tr("회원등급")} />{tr(data.user.gradeName || "일반회원")}</span>
+                    <span title={tr("복주머니")}><ShoppingBag size={18} aria-label={tr("복주머니")} />{data.packages?.lucky ?? "0"}</span>
+                    <span title={tr("보물상자")}><PackageOpen size={18} aria-label={tr("보물상자")} />{data.packages?.treasure ?? "0"}</span>
                   </div>
-                  <div className="balance-value">
-                    {hidden ? "••••••" : formatUsdt(data.available)}
-                    <span>USDT</span>
-                  </div>
-                  <div className="balance-bottom">
-                    <span>
-                      <i />
-                      TRON · TRC20
-                    </span>
-                    <span>{tr("출금 예약")}{" "}
-                      <b>{hidden ? "••••" : formatUsdt(data.reserved)}</b>
-                    </span>
-                  </div>
-                </section>
-                <section className="balance-card points-balance">
-                  <div className="balance-title"><span>{tr("포인트")}</span></div>
-                  <div className="balance-value">{hidden ? "••••••" : formatUsdt(data.points || "0", 6)} <span>P</span></div>
                 </section>
                 <div className="quick-actions">
                   <button onClick={() => setView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
-                  <button onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowUpRight size={20} />{tr("송금")}</button>
-                  <button onClick={() => { setSendKind("external"); setView("send"); }}><ExternalLink size={20} />{tr("출금")}</button>
+                  <button onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowUpRight size={20} />{tr("이체")}</button>
                   <button onClick={() => { location.href = "/points"; }}><ArrowLeftRight size={20} />{tr("스왑")}</button>
-                  <button onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowRight size={20} />{tr("이체")}</button>
+                  <button onClick={() => { setSendKind("external"); setView("send"); }}><ExternalLink size={20} />{tr("출금")}</button>
                 </div>
                 <div className="section-heading">
                   <h2>{tr("최근 거래")}</h2>
@@ -366,6 +344,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
           <button className={view === "home" ? "active" : ""} onClick={() => setView("home")}><WalletIcon size={20} /><span>{tr("지갑")}</span></button>
           <button onClick={() => { location.href = "/shop"; }}><ShoppingBag size={20} /><span>{tr("쇼핑몰")}</span></button>
           <button onClick={() => { location.href = "/organization"; }}><Network size={20} /><span>{tr("조직도")}</span></button>
+          <button className={view === "activity" ? "active" : ""} onClick={() => setView("activity")}><History size={20} /><span>{tr("내역")}</span></button>
           <button className={view === "settings" ? "active" : ""} onClick={() => setView("settings")}><Settings size={20} /><span>{tr("설정")}</span></button>
         </nav>
       </main>
@@ -808,49 +787,34 @@ function Activity({
   onSelect: (t: Transaction) => void;
 }) {
   const { tr } = useI18n();
-  const [filter, setFilter] = useState("all");
-  const filtered = data.transactions.filter(
-    (t) =>
-      filter === "all" ||
-      (filter === "in"
-        ? t.kind === "deposit" ||
-          t.kind === "transfer_in" ||
-          t.kind === "swap_in" ||
-          t.kind === "refund" ||
-          t.kind === "reward"
-        : t.kind === "transfer_out" ||
-          t.kind === "withdrawal" ||
-          t.kind === "purchase" ||
-          t.kind === "swap_out" ||
-          t.kind === "reward_reversal" ||
-          t.kind === "reward_recovery"),
-  );
-  return (
-    <>
-      <div className="page-heading compact">
-        <div>
-          
-          <h1>{tr("거래 내역")}</h1>
-        </div>
-        <History size={30} className="muted" />
-      </div>
-      <div className="filter-tabs">
-        {[
-          ["all", "전체"],
-          ["in", "받은 내역"],
-          ["out", "보낸 내역"],
-        ].map(([key, label]) => (
-          <button
-            className={filter === key ? "active" : ""}
-            onClick={() => setFilter(key)}
-            key={key}
-          >
-            {tr(label)}
-          </button>
-        ))}
-      </div>
-      <ActivityList transactions={filtered} onSelect={onSelect} />
-      <p className="field-hint">{tr("최근 100건 · 시각은 한국 표준시(KST)입니다.")}</p>
-    </>
-  );
+  const { localeTag } = useI18n();
+  const [filter, setFilter] = useState<"rewards" | "transactions" | "swaps">("rewards");
+  const [history, setHistory] = useState<{ rewards: { id: string; type: string; amount: string; status: string; due_date: string; paid_at: string | null }[]; pools: { kind: string; cutoff: string; amount: string }[]; swaps: { id: string; direction: string; amount: string; created_at: string }[] } | null>(null);
+  const [loadError, setLoadError] = useState("");
+  useEffect(() => {
+    if (data.mode === "demo") { setHistory({ rewards: [], pools: [], swaps: [] }); return; }
+    const controller = new AbortController();
+    Promise.all([fetch("/api/rewards", { signal: controller.signal }), fetch("/api/points", { signal: controller.signal })]).then(async ([rewards, points]) => {
+      if (!rewards.ok || !points.ok) throw new Error("내역을 불러오지 못했습니다.");
+      const [r, p] = await Promise.all([rewards.json(), points.json()]);
+      setHistory({ rewards: r.rewards, pools: r.pools, swaps: p.history });
+    }).catch(e => { if (e.name !== "AbortError") setLoadError(e.message); });
+    return () => controller.abort();
+  }, [data.mode]);
+  const rewards = [
+    ...(history?.rewards || []).map(r => ({ id: r.id, date: r.paid_at || `${r.due_date}T00:00:00+09:00`, label: ({ referral: "추천리워드", sponsor: "후원리워드", mom: "맘리워드", daily: "데일리수당" } as Record<string, string>)[r.type] || r.type, amount: r.amount, status: ({ scheduled: "지급 예정", paid: "지급 완료", skipped: "미지급", reversed: "회수 완료", void: "권리 취소" } as Record<string, string>)[r.status] || r.status })),
+    ...(history?.pools || []).map(p => ({ id: p.kind + p.cutoff, date: p.cutoff, label: p.kind === "lucky" ? "복주머니P" : "보물상자P", amount: p.amount, status: "지급 완료" })),
+  ].sort((a, b) => b.date.localeCompare(a.date));
+  const transactions = data.transactions.filter(t => ["deposit", "transfer_in", "transfer_out", "withdrawal"].includes(t.kind));
+  const date = (value: string) => new Date(value).toLocaleDateString(localeTag, { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" });
+  return <>
+    <div className="page-heading compact"><h1>{tr("내역")}</h1></div>
+    <div className="filter-tabs history-tabs">
+      {([ ["rewards", "수당내역"], ["transactions", "입출금·이체"], ["swaps", "전환내역"] ] as const).map(([key, label]) => <button key={key} className={filter === key ? "active" : ""} onClick={() => setFilter(key)}>{tr(label)}</button>)}
+    </div>
+    {loadError && filter !== "transactions" && <p role="alert">{tr(loadError)}</p>}
+    {filter === "transactions" && <ActivityList transactions={transactions} onSelect={onSelect} />}
+    {filter === "rewards" && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 6)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
+    {filter === "swaps" && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.amount, 6)}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
+  </>;
 }

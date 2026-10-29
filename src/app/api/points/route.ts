@@ -15,7 +15,7 @@ export async function GET() {
       [user.id],
     );
     const history = await database().query(
-      "SELECT * FROM point_swaps WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50",
+      "SELECT * FROM point_swaps WHERE user_id=$1 ORDER BY created_at DESC",
       [user.id],
     );
     const debt = await database().query(

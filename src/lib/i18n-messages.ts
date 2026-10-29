@@ -1,5 +1,15 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "내역": ["History", "履歴"],
+  "수당내역": ["Rewards", "報酬履歴"],
+  "입출금·이체": ["Transfers", "入出金・送金"],
+  "전환내역": ["Swaps", "交換履歴"],
+  "회원등급": ["Membership level", "会員ランク"],
+  "추천": ["Referral", "紹介"],
+  "후원": ["Sponsor", "スポンサー"],
+  "수당 내역이 없습니다.": ["No rewards yet.", "報酬履歴はありません。"],
+  "전환 내역이 없습니다.": ["No swaps yet.", "交換履歴はありません。"],
+  "내역을 불러오지 못했습니다.": ["Could not load history.", "履歴を読み込めませんでした。"],
   "지갑": ["Wallet", "ウォレット"],
   "입금": ["Deposit", "入金"],
   "송금": ["Send", "送金"],

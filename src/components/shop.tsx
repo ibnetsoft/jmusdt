@@ -411,7 +411,7 @@ export function ProductAdmin() {
     <main className="commerce">
       <header>
         <a href="/admin">{tr("← 관리자 콘솔")}</a>
-        <a href="/shop">{tr("쇼핑몰 보기 ↗")}</a>
+
         <a href="/admin/marketing">{tr("마케팅 관리")}</a>
       </header>
       <p className="shop-kicker">ADMIN / COMMERCE</p>

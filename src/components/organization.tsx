@@ -2,7 +2,7 @@
 import { useI18n } from "./i18n";
 
 import { useEffect, useRef, useState } from "react";
-import { Copy, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { formatUsdt } from "@/lib/money";
 import "./shop.css";
 import "./organization.css";
@@ -40,15 +40,11 @@ export function Organization() {
     [notice, setNotice] = useState(""),
     [zoom, setZoom] = useState(1),
     [pan, setPan] = useState({ x: 0, y: 0 }),
-    [full, setFull] = useState(false),
-    [origin, setOrigin] = useState("");
+    [full, setFull] = useState(false);
   const viewport = useRef<HTMLDivElement>(null),
     tree = useRef<HTMLDivElement>(null),
     pointers = useRef(new Map<number, { x: number; y: number }>());
   const root = path.at(-1)?.id;
-  useEffect(() => {
-    setOrigin(location.origin);
-  }, []);
   useEffect(() => {
     const abort = new AbortController();
     setLoading(true);
@@ -132,12 +128,10 @@ export function Organization() {
       </div>
     );
   }
-  const invite = origin && data ? `${origin}/login?ref=${data.code}` : "";
   return (
     <main className="commerce">
       <header>
         <a href="/">{tr("← 내 지갑")}</a>
-        <a href="/shop">{tr("쇼핑몰")}</a>
       </header>
       <h1>{tr("조직도")}</h1>
       {tr(error) && (
@@ -150,23 +144,6 @@ export function Organization() {
           {tr(notice)}
         </p>
       )}
-      {data && (
-        <section className="shop-editor">
-          <p>{tr("내 추천 코드 ")}<strong>{data.code}</strong>
-          </p>
-          <label>{tr("추천 가입 링크")}</label><div className="org-invite"><input aria-label={tr("추천 가입 링크")} readOnly value={invite} />
-          <button aria-label={tr("추천 링크 복사")}
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(invite);
-                setNotice("추천 링크를 복사했습니다.");
-              } catch {
-                setNotice("위 추천 링크를 직접 복사해 주세요.");
-              }
-            }}
-          ><Copy size={18} /></button></div>
-        </section>
-      )}
       <div className="org-controls">
         <button
           aria-pressed={mode === "referral"}
@@ -174,15 +151,15 @@ export function Organization() {
             setMode("referral");
             setPath([]);
           }}
-        >{tr("추천 조직도")}</button>
+        >{tr("추천")}</button>
         <button
           aria-pressed={mode === "sponsor"}
           onClick={() => {
             setMode("sponsor");
             setPath([]);
           }}
-        >{tr("후원 조직도")}</button>
-        <label>{tr("표시 단계")}<select
+        >{tr("후원")}</button>
+        <label><select aria-label={tr("표시 단계")}
             value={depth}
             onChange={(e) => setDepth(Number(e.target.value))}
           >
@@ -195,7 +172,6 @@ export function Organization() {
         </label>
         <button aria-label={tr("새로고침")} onClick={() => setRevision((n) => n + 1)}><RefreshCw size={18} /></button>
       </div>
-      {data && !data.eligible && <p role="status">{tr("조직도와 수당은 정회원부터 이용할 수 있습니다. 누적 구매 50,000 P 또는 관리자 지정으로 등록됩니다.")}</p>}
       {mode === "sponsor" && data && data.pending.length > 0 && (
         <section className="shop-editor">
           <h2>{tr("자동 배치 대기 (")}{data.pending.length})</h2>
@@ -204,7 +180,7 @@ export function Organization() {
         </section>
       )}
       <nav className="org-breadcrumbs" aria-label={tr("조직 경로")}>
-        <button onClick={() => setPath([])}>{tr("내 조직")}</button>
+        {path.length > 0 && <button onClick={() => setPath([])}>{tr("내 조직")}</button>}
         {path.map((p, i) => (
           <button
             key={`${p.id}-${i}`}
