@@ -4,7 +4,7 @@ import { useI18n } from "./i18n";
 import { formatUsdt } from "@/lib/money";
 import "./shop.css";
 
-type Product = { id: string; name: string; price: string; stock: number; version: number; shipping_type: "physical" | "none" };
+type Product = { id: string; name: string; image_url: string; price: string; stock: number; version: number; shipping_type: "physical" | "none" };
 type Shipping = { recipient: string; phone: string; address: string; note: string };
 type Item = { productId: string; quantity: number; version: number; requestKey: string; marketingVersion?: number; shipping?: Shipping };
 type Pending = { userId: string; items: Item[] };
@@ -63,7 +63,7 @@ export function CartCheckout() {
       {marketing && !marketing.enabled && <p className="shop-error">{tr("현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는 추천·후원·맘 리워드와 데일리가 발생하지 않습니다. 일일 분배 적립금은 상품별로 적립됩니다.")}</p>}
       {marketing?.enabled && marketing.daily_paused && <p>{tr("데일리 지급이 일시정지 중입니다. 구매 권리는 생성되며 재개 후 기한이 지난 회차가 지급됩니다.")}</p>}
       {items.map((p, index) => <article className="checkout-item" key={ids[index]}>
-        {p ? <><div><strong>{tr(p.name)}</strong><p>{formatUsdt(p.price, 0)} P</p></div><label>{tr("수량")}<select value={quantities[p.id] || 1} disabled={busy || !!pending || p.stock < 1} onChange={e => setQuantities({...quantities,[p.id]:Number(e.target.value)})}>{Array.from({length:Math.min(99,p.stock)},(_,i)=><option key={i+1}>{i+1}</option>)}</select></label></> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
+        {p ? <>{p.image_url ? <img className="checkout-thumbnail" src={p.image_url} alt="" referrerPolicy="no-referrer" /> : <span className="checkout-thumbnail checkout-thumbnail-placeholder" aria-hidden="true">JM</span>}<div><strong>{tr(p.name)}</strong><p>{formatUsdt(p.price, 0)} P</p></div><label>{tr("수량")}<select value={quantities[p.id] || 1} disabled={busy || !!pending || p.stock < 1} onChange={e => setQuantities({...quantities,[p.id]:Number(e.target.value)})}>{Array.from({length:Math.min(99,p.stock)},(_,i)=><option key={i+1}>{i+1}</option>)}</select></label></> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
         <button type="button" disabled={busy || !!pending} onClick={() => remove(ids[index])}>{tr("삭제")}</button>
       </article>)}
       {physical && <section className="checkout-shipping"><h2>{tr("배송 정보")}</h2>{([ ["recipient","받는 분",100], ["phone","연락처",40], ["address","배송 주소",500], ["note","배송 요청사항 (선택)",500] ] as const).map(([field,label,max]) => <label key={field}>{tr(label)}<input maxLength={max} value={shipping[field]} disabled={busy || !!pending} onChange={e=>setShipping({...shipping,[field]:e.target.value})} /></label>)}</section>}
