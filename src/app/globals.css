@@ -2584,3 +2584,6 @@ td em {
 .referral-link-row { display: flex; align-items: stretch; gap: 8px; }
 .referral-link-row input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface-base); border-radius: 10px; color: var(--text); padding: 12px; }
 .referral-card .referral-copy { flex: 0 0 46px; border-radius: 10px; background: var(--surface-3); }
+.site-controls button[aria-pressed] { position: relative; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.site-controls button[aria-pressed="true"]::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: 2px; height: 2px; background: var(--red); }
+.site-controls button[aria-pressed]:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }

@@ -118,3 +118,8 @@
 .org-invite { display: flex; gap: 8px; align-items: stretch; }
 .org-invite input { min-width: 0; flex: 1; margin: 0; }
 .org-invite button { width: 46px; min-width: 46px; padding: 0; display: grid; place-items: center; }
+.org-controls { flex-wrap: nowrap; gap: 8px; }
+.org-controls label { flex: 1 1 auto; min-width: 0; }
+.org-controls select { width: 100%; margin: 0; }
+.commerce .org-controls button { flex: 0 0 auto; white-space: nowrap; padding: 12px; }
+.commerce .org-controls button:last-child { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
