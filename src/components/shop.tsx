@@ -164,6 +164,7 @@ export function Shop({ productId }: { productId?: string }) {
           {product ? <a href={`/shop/${product.id}`}>{tr(product.name)} · {formatUsdt(product.price, 0)} P</a> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
           <button type="button" aria-label={tr("장바구니에서 삭제")} onClick={() => updateCart(cart.filter(item => item !== id))}><Trash2 size={17} /></button>
         </div>; })}
+        {cart.length > 0 && <a className="shop-primary" href="/shop/cart">{tr("장바구니 결제")}</a>}
       </section>}
       <div className="shop-balance"><strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong></div>
       {tr(error) && (

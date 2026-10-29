@@ -1,5 +1,16 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "결제를 요청한 계정으로 로그인해 주세요.": ["Sign in to the account that requested the payment.", "決済を申請したアカウントでログインしてください。"],
+  "상품 가격을 확인할 수 없습니다. 관리자에게 문의해 주세요.": ["The product price cannot be confirmed. Contact an administrator.", "商品価格を確認できません。管理者にお問い合わせください。"],
+  "장바구니 결제": ["Cart checkout", "カートの決済"],
+  "← 쇼핑몰": ["← Shop", "← ショップ"],
+  "장바구니 결제가 완료되었습니다.": ["Your cart payment is complete.", "カートの決済が完了しました。"],
+  "장바구니를 불러오지 못했습니다.": ["Could not load your cart.", "カートを読み込めませんでした。"],
+  "상품을 불러오지 못했습니다.": ["Could not load products.", "商品を読み込めませんでした。"],
+  "결제 결과를 확인할 수 없습니다. 같은 요청으로 다시 확인해 주세요.": ["The payment result is unknown. Retry the same request.", "決済結果を確認できません。同じリクエストで再確認してください。"],
+  "결제 다시 확인": ["Check payment again", "決済を再確認"],
+  "포인트 결제": ["Pay with points", "ポイントで支払う"],
+  "보유 포인트": ["Points balance", "保有ポイント"],
   "담기": ["Add", "追加"],
   "장바구니": ["Cart", "カート"],
   "장바구니가 비어 있습니다.": ["Your cart is empty.", "カートは空です。"],

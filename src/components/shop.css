@@ -299,3 +299,10 @@
   .shop-grid .shop-card-price { font-size: 14px; }
   .shop-grid .shop-card-info h2 { font-size: 14px; }
 }
+.checkout-item { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding: 16px 0; }
+.checkout-item > div { flex: 1; min-width: 0; }
+.checkout-item p { margin: 6px 0 0; }
+.commerce .checkout-item label { margin: 0; font-size: 12px; }
+.commerce .checkout-item select { width: 65px; margin-top: 4px; padding: 8px; }
+.commerce .checkout-item button { padding: 9px; }
+.checkout-shipping { margin-top: 24px; }
