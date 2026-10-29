@@ -1,5 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
+import { readPreloadedData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useState, useRef } from "react";
@@ -70,6 +71,10 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
     const controller = new AbortController();
     setLoading(true);
     setError("");
+    let networkDone = false;
+    if (!admin && revision === 0) void readPreloadedData<Data>("/api/rewards").then(cached => {
+      if (!controller.signal.aborted && !networkDone && cached) { setData(cached); setLoading(false); }
+    });
     const endpoint = admin
       ? "/api/admin/marketing?" +
         new URLSearchParams({ type, status, q: query, page: String(page) })
@@ -82,10 +87,12 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
         }
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
+        networkDone = true;
         setData(d);
         if (d.settings) setSettings(d.settings);
       })
       .catch((e) => {
+        networkDone = true;
         if (e.name !== "AbortError") setError(e.message);
       })
       .finally(() => {

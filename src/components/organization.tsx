@@ -1,5 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
+import { readPreloadedData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
@@ -50,6 +51,12 @@ export function Organization() {
     const abort = new AbortController();
     setLoading(true);
     setError("");
+    let fresh = false;
+    if (mode === "sponsor" && depth === 3 && !root && revision === 0) {
+      void readPreloadedData<Data>("/api/organization?mode=sponsor&depth=3").then(cached => {
+        if (!abort.signal.aborted && !fresh && cached) { setData(cached); setLoading(false); }
+      });
+    }
     fetch(
       "/api/organization?" +
         new URLSearchParams({
@@ -66,10 +73,11 @@ export function Organization() {
         }
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
+        fresh = true;
         setData(d);
       })
       .catch((e) => {
-        if (e.name !== "AbortError") setError(e.message);
+        if (e.name !== "AbortError") { fresh = true; setError(e.message); }
       })
       .finally(() => {
         if (!abort.signal.aborted) setLoading(false);

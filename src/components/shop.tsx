@@ -1,8 +1,10 @@
 "use client";
 import { useI18n } from "./i18n";
+import { readPreloadedData, clearPreloadedData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ShoppingBag, Trash2 } from "lucide-react";
 import { formatUsdt, decimalUsdt } from "@/lib/money";
 import "./shop.css";
@@ -106,9 +108,14 @@ export function Shop({ productId }: { productId?: string }) {
     }
   }
   useEffect(() => {
-    load(true)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    let active = true, fresh = false;
+    void readPreloadedData<{ products: Product[] }>("/api/shop").then(data => {
+      if (active && !fresh && data && !productId) { setProducts(data.products); setLoading(false); }
+    });
+    load(true).then(() => { fresh = true; })
+      .catch((e) => { fresh = true; if (active) setError(e.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [productId]);
   useEffect(() => {
     try {
@@ -141,6 +148,7 @@ export function Shop({ productId }: { productId?: string }) {
         marketingVersion: marketing.version || undefined,
         shipping: selected.shipping_type === "physical" ? shipping : undefined,
       });
+      clearPreloadedData();
       setNotice(`구매가 완료되었습니다. 주문번호 ${result.id}`);
       setSelected(null);
       key.current = "";
@@ -165,7 +173,7 @@ export function Shop({ productId }: { productId?: string }) {
           {product ? <a href={`/shop/${product.id}`}>{tr(product.name)} · {formatUsdt(product.price, 0)} P</a> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
           <button type="button" aria-label={tr("장바구니에서 삭제")} onClick={() => updateCart(cart.filter(item => item !== id))}><Trash2 size={17} /></button>
         </div>; })}
-        {cart.length > 0 && <a className="shop-primary" href="/shop/cart">{tr("장바구니 결제")}</a>}
+        {cart.length > 0 && <Link className="shop-primary" href="/shop/cart">{tr("장바구니 결제")}</Link>}
       </section>}
       <div className="shop-balance"><strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong></div>
       {tr(error) && (
@@ -192,7 +200,7 @@ export function Shop({ productId }: { productId?: string }) {
             .filter(() => !productId)
             .map((p) => (
               <article className="shop-card" key={p.id}>
-                <a className="shop-image-link" href={`/shop/${p.id}`} aria-label={tr("{0} 상품 상세 보기", {"0": tr(p.name)})}><ProductImage product={p} /></a>
+                <Link className="shop-image-link" href={`/shop/${p.id}`} aria-label={tr("{0} 상품 상세 보기", {"0": tr(p.name)})}><ProductImage product={p} /></Link>
                 <div className="shop-card-info">
                   <button type="button" className="shop-add-cart" disabled={p.stock < 1} onClick={() => { updateCart(cart.includes(p.id) ? cart : [...cart, p.id]); setCartOpen(true); }}><ShoppingBag size={17} />{tr("담기")}</button>
                   <strong className="shop-card-price">{formatUsdt(p.price, 0)} P</strong>

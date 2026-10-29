@@ -1,5 +1,7 @@
 "use client";
 import { useI18n } from "./i18n";
+import { useRouter } from "next/navigation";
+import { clearPreloadedData, readPreloadedData } from "@/lib/preload-pages";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
@@ -50,6 +52,7 @@ type InstallEvent = Event & {
 };
 export function WalletApp({initialView = "home"}: {initialView?: View}) {
   const { tr } = useI18n();
+  const router = useRouter();
   const [data, setData] = useState<WalletData | null>(null),
     [view, setView] = useState<View>(initialView),
     [sendKind, setSendKind] = useState<"internal" | "external">("internal"),
@@ -108,6 +111,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
   async function logout() {
+    clearPreloadedData();
     if (data?.mode === "demo") {
       location.href = "/login";
       return;
@@ -208,7 +212,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                 <div className="quick-actions">
                   <button onClick={() => setView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
                   <button onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowUpRight size={20} />{tr("이체")}</button>
-                  <button onClick={() => { location.href = "/points"; }}><ArrowLeftRight size={20} />{tr("스왑")}</button>
+                  <button onClick={() => { router.push("/points"); }}><ArrowLeftRight size={20} />{tr("스왑")}</button>
                   <button onClick={() => { setSendKind("external"); setView("send"); }}><ExternalLink size={20} />{tr("출금")}</button>
                 </div>
                 <div className="section-heading">
@@ -565,6 +569,7 @@ function Send({
         const body = await response.json();
         if (!response.ok) throw new Error(body.error);
       }
+      clearPreloadedData();
       await onUpdate();
       setStage("done");
     } catch (e) {
@@ -743,11 +748,23 @@ function Activity({
   useEffect(() => {
     if (data.mode === "demo") { setHistory({ rewards: [], pools: [], swaps: [], orders: [] }); return; }
     const controller = new AbortController();
+    let networkDone = false;
+    if (historyRevision === 0) {
+      void Promise.all([
+        readPreloadedData<{ rewards: NonNullable<typeof history>["rewards"]; pools: NonNullable<typeof history>["pools"] }>("/api/rewards"),
+        readPreloadedData<{ history: NonNullable<typeof history>["swaps"] }>("/api/points"),
+        readPreloadedData<{ orders: NonNullable<typeof history>["orders"] }>("/api/shop"),
+      ]).then(([rewards, points, shop]) => {
+        if (!controller.signal.aborted && !networkDone && rewards && points && shop)
+          setHistory({ rewards: rewards.rewards, pools: rewards.pools, swaps: points.history, orders: shop.orders });
+      });
+    }
     Promise.all([fetch("/api/rewards", { signal: controller.signal }), fetch("/api/points", { signal: controller.signal }), fetch("/api/shop", { signal: controller.signal })]).then(async ([rewards, points, shop]) => {
       if (!rewards.ok || !points.ok || !shop.ok) throw new Error("내역을 불러오지 못했습니다.");
       const [r, p, o] = await Promise.all([rewards.json(), points.json(), shop.json()]);
+      networkDone = true;
       setHistory({ rewards: r.rewards, pools: r.pools, swaps: p.history, orders: o.orders });
-    }).catch(e => { if (e.name !== "AbortError") setLoadError(e.message); });
+    }).catch(e => { networkDone = true; if (e.name !== "AbortError") setLoadError(e.message); });
     return () => controller.abort();
   }, [data.mode, historyRevision]);
   const rewards = [
@@ -763,7 +780,7 @@ function Activity({
     {loadError && filter !== "transactions" && <p role="alert">{tr(loadError)}</p>}
     {filter === "transactions" && <ActivityList transactions={transactions} onSelect={onSelect} />}
     {filter === "rewards" && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 0)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
-    {filter === "orders" && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => setHistoryRevision(n => n + 1)} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
+    {filter === "orders" && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => { clearPreloadedData(); setHistoryRevision(n => n + 1); }} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
     {filter === "swaps" && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.received_amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
   </>;
 }

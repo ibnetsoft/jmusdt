@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { History, Network, Settings, ShoppingBag, Wallet } from "lucide-react";
 import { useI18n } from "./i18n";
 
@@ -13,10 +14,10 @@ const items = [
 export function BottomNav({ active, onWalletView }: { active?: Menu; onWalletView?: (view: "home" | "activity" | "settings") => void }) {
   const { tr } = useI18n();
   return <nav className="bottom-nav" aria-label={tr("모바일 메뉴")}>
-    {items.map(item => <a key={item.id} href={item.href} className={active === item.id ? "active" : ""} aria-current={active === item.id ? "page" : undefined} onClick={event => {
-      if (onWalletView && (item.id === "wallet" || item.id === "activity" || item.id === "settings")) {
+    {items.map(item => <Link key={item.id} href={item.href} className={active === item.id ? "active" : ""} aria-current={active === item.id ? "page" : undefined} onClick={event => {
+      if (onWalletView && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && (item.id === "wallet" || item.id === "activity" || item.id === "settings")) {
         event.preventDefault(); onWalletView(item.id === "wallet" ? "home" : item.id);
       }
-    }}><item.icon size={20} /><span>{tr(item.label)}</span></a>)}
+    }}><item.icon size={20} /><span>{tr(item.label)}</span></Link>)}
   </nav>;
 }

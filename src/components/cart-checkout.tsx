@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
+import { clearPreloadedData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 import { formatUsdt } from "@/lib/money";
 import "./shop.css";
@@ -46,6 +47,7 @@ export function CartCheckout() {
       const response = await fetch("/api/shop/checkout", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({items:body.items})});
       const result = await response.json();
       if (!response.ok) { if (response.status >= 400 && response.status < 500) {sessionStorage.removeItem(pendingKey); setPending(null);} throw new Error(result.error || "결제에 실패했습니다."); }
+      clearPreloadedData();
       const purchased = new Set(body.items.map(item => item.productId));
       const remaining = ids.filter(id => !purchased.has(id));
       localStorage.setItem("jmusdt-cart", JSON.stringify(remaining)); sessionStorage.removeItem(pendingKey); setPending(null); setIds(remaining); setDone(true);

@@ -1,5 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
+import { readPreloadedData, clearPreloadedData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
@@ -31,6 +32,7 @@ export function Points() {
     [direction, setDirection] = useState<Direction>("usdt_to_points"),
     [amount, setAmount] = useState(""),
     [busy, setBusy] = useState(false),
+    [fresh, setFresh] = useState(false),
     [confirm, setConfirm] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
@@ -44,7 +46,7 @@ export function Points() {
   try { units = parseUsdt(submittedAmount); } catch { /* An empty or zero amount is not ready to convert. */ }
   const insufficient = !!data && units > BigInt(toPoints ? data.usdt : data.points);
   const outputUnits = data ? (toPoints ? units * BigInt(data.rate) : units / BigInt(data.rate)) : 0n;
-  const canReview = !!data && units > 0n && outputUnits > 0n && outputUnits <= 9223372036854775807n && !insufficient && !busy;
+  const canReview = fresh && !!data && units > 0n && outputUnits > 0n && outputUnits <= 9223372036854775807n && !insufficient && !busy;
   async function load(signal?: AbortSignal) {
     const r = await fetch("/api/points", { cache: "no-store", signal });
     if (r.status === 401) {
@@ -53,11 +55,15 @@ export function Points() {
     }
     const d = await r.json();
     if (!r.ok) throw new Error(d.error);
-    setData(d);
+    if (!signal?.aborted) { setData(d); setFresh(true); }
   }
   useEffect(() => {
     const controller = new AbortController();
-    load(controller.signal).catch((e) => { if (e.name !== "AbortError") setError(e.message); });
+    let networkDone = false;
+    void readPreloadedData<Data>("/api/points").then(cached => {
+      if (!controller.signal.aborted && !networkDone && cached) setData(cached);
+    });
+    load(controller.signal).then(() => { networkDone = true; }).catch((e) => { networkDone = true; if (e.name !== "AbortError") setError(e.message); });
     return () => controller.abort();
   }, []);
   useEffect(() => {
@@ -94,6 +100,7 @@ export function Points() {
         if (r.status === 409 && d.error === "전환 비율이 변경됐습니다. 새로고침 후 다시 확인해 주세요.") { setConfirm(false); await load(); }
         throw new Error(d.error);
       }
+      clearPreloadedData();
       setConfirm(false);
       setAmount("");
       setNotice("전환이 완료되었습니다.");
@@ -134,7 +141,7 @@ export function Points() {
               <p>{tr("잔액")} {data ? displayAmount(toPoints ? data.usdt : data.points, sourceUnit) + " " + sourceUnit : "—"}</p>
             </div>
             <label className={`points-amount ${amount.length > 12 ? "points-amount-long" : amount.length > 8 ? "points-amount-medium" : ""}`}>
-              <input aria-label={tr("전환 금액")} aria-describedby="points-input-hint" inputMode="none" autoComplete="off" spellCheck={false} placeholder="0" value={amount} disabled={!data || busy || confirm} onChange={e => editAmount(e.target.value)} />
+              <input aria-label={tr("전환 금액")} aria-describedby="points-input-hint" inputMode="none" autoComplete="off" spellCheck={false} placeholder="0" value={amount} disabled={!data || !fresh || busy || confirm} onChange={e => editAmount(e.target.value)} />
               <span>{sourceUnit}</span>
             </label>
           </div>
@@ -153,7 +160,7 @@ export function Points() {
         {error && !confirm && <p role="alert" className="points-message points-error">{tr(error)} {!data && <button type="button" onClick={() => { setError(""); load().catch(e => setError(e.message)); }}>{tr("새로고침")}</button>}</p>}
         {notice && <p role="status" className="points-message points-success">{tr(notice)}</p>}
         <div className="points-keypad" role="group" aria-label={tr("숫자 키패드")}>
-          {keypad.map(value => <button key={value} type="button" disabled={!data || busy || confirm} aria-label={value === "backspace" ? tr("마지막 숫자 지우기") : value === "." ? tr("소수점") : value} onClick={() => editAmount(value === "backspace" ? amount.slice(0, -1) : amount + value)}>{value === "backspace" ? <ArrowLeft aria-hidden="true" size={29} strokeWidth={1.8} /> : value}</button>)}
+          {keypad.map(value => <button key={value} type="button" disabled={!data || !fresh || busy || confirm} aria-label={value === "backspace" ? tr("마지막 숫자 지우기") : value === "." ? tr("소수점") : value} onClick={() => editAmount(value === "backspace" ? amount.slice(0, -1) : amount + value)}>{value === "backspace" ? <ArrowLeft aria-hidden="true" size={29} strokeWidth={1.8} /> : value}</button>)}
         </div>
         <button className="points-primary points-review" type="submit" aria-label={tr("전환 내용 확인")} disabled={!canReview || confirm}>{tr("확인")}</button>
       </form>
