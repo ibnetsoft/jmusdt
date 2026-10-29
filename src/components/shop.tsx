@@ -81,7 +81,7 @@ function ProductPrice({ product }: { product: Pick<Product, "price" | "retail_pr
     </div>
   );
 }
-export function Shop({ productId }: { productId?: string }) {
+export function Shop({ productId, preview = false }: { productId?: string; preview?: boolean }) {
   const { tr } = useI18n();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]),
@@ -176,7 +176,7 @@ export function Shop({ productId }: { productId?: string }) {
     <>
     <main className="commerce" aria-label={tr("쇼핑몰")}>
       <header className="shop-header">
-        <button type="button" className="cart-toggle" aria-expanded={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingBag size={18} /> {tr("장바구니")} ({cart.length})</button>
+        <button type="button" className="cart-toggle" disabled={preview} aria-expanded={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingBag size={18} /> {tr("장바구니")} ({cart.length})</button>
       </header>
       {cartOpen && <section className="cart-panel" aria-label={tr("장바구니")}>
         {cart.length === 0 && <p>{tr("장바구니가 비어 있습니다.")}</p>}
@@ -211,7 +211,7 @@ export function Shop({ productId }: { productId?: string }) {
               <article className="shop-card" key={p.id}>
                 <Link className="shop-image-link" href={`/shop/${p.id}`} aria-label={tr("{0} 상품 상세 보기", {"0": tr(p.name)})}><ProductImage product={p} eager={index < 2} /></Link>
                 <div className="shop-card-info">
-                  <button type="button" className="shop-add-cart" disabled={p.stock < 1} onClick={() => { updateCart(cart.includes(p.id) ? cart : [...cart, p.id]); setCartOpen(true); }}><ShoppingBag size={17} />{tr("담기")}</button>
+                  <button type="button" className="shop-add-cart" disabled={preview || p.stock < 1} onClick={() => { updateCart(cart.includes(p.id) ? cart : [...cart, p.id]); setCartOpen(true); }}><ShoppingBag size={17} />{tr("담기")}</button>
                   <strong className="shop-card-price">{formatUsdt(p.price, 0)} P</strong>
                   <h2>{tr(p.name)}</h2>
                 </div>
