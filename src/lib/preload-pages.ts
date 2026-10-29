@@ -2,6 +2,7 @@ type Cached = { userId: string; value: unknown; expires: number };
 type Account = { id: string } | { invalid: true } | null;
 const entries = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<void>>();
+const sharedRequests = new Map<string, Promise<Response>>();
 const endpoints = ["/api/shop?catalog=1", "/api/organization?mode=sponsor&depth=3", "/api/organization?mode=referral&depth=3", "/api/points", "/api/rewards", "/api/shop"];
 const cacheableEndpoints = [...endpoints, "/api/wallet"];
 const storageKey = "wu-page-cache-v1";
@@ -39,8 +40,23 @@ async function currentAccount(): Promise<Account> {
   return validation;
 }
 export function clearPreloadedData() {
-  generation++; userId = ""; lastWarm = 0; entries.clear(); inFlight.clear(); warming = null; scheduling = null; restored = true;
+  generation++; userId = ""; lastWarm = 0; entries.clear(); inFlight.clear(); sharedRequests.clear(); warming = null; scheduling = null; restored = true;
   try { if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(storageKey); } catch { /* Ignore unavailable storage. */ }
+}
+// Share only concurrent reads. Each consumer receives its own response body and
+// can abandon its result without cancelling requests needed by other screens.
+export async function fetchPageData(endpoint: string, signal?: AbortSignal): Promise<Response> {
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+  let request = sharedRequests.get(endpoint);
+  if (!request) {
+    request = fetch(endpoint, { cache: "no-store" });
+    sharedRequests.set(endpoint, request);
+    const active = request;
+    void request.finally(() => { if (sharedRequests.get(endpoint) === active) sharedRequests.delete(endpoint); }).catch(() => {});
+  }
+  const response = await request;
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+  return response.clone();
 }
 export async function cacheWalletData(value: { mode: string; user: { id: string } }) {
   if (value.mode !== "live") return;
@@ -77,7 +93,7 @@ export function preloadPages(): Promise<void> {
           const endpoint = remaining.shift()!;
           const request = (async () => {
             try {
-              const response = await fetch(endpoint, { cache: "no-store" });
+              const response = await fetchPageData(endpoint);
               if (!response.ok) return;
               const value = await response.json();
               // The endpoint identifies the account that produced its response.

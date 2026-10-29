@@ -1,6 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
-import { readPreloadedData, clearPreloadedData } from "@/lib/preload-pages";
+import { readPreloadedData, clearPreloadedData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
@@ -29,7 +29,7 @@ type Product = {
   reward_plan: RewardPlan;
 };
 async function requestJson(url: string, body?: unknown) {
-  const response = await fetch(url, {
+  const response = body ? await fetch(url, {
     cache: "no-store",
     ...(body
       ? {
@@ -38,7 +38,7 @@ async function requestJson(url: string, body?: unknown) {
           body: JSON.stringify(body),
         }
       : {}),
-  });
+  }) : await fetchPageData(url);
   const data = await response.json();
   if (response.status === 401) {
     location.href = "/login";

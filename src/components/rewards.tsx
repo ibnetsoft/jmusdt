@@ -1,6 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
-import { readPreloadedData } from "@/lib/preload-pages";
+import { readPreloadedData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useState, useRef } from "react";
@@ -79,7 +79,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
       ? "/api/admin/marketing?" +
         new URLSearchParams({ type, status, q: query, page: String(page) })
       : "/api/rewards";
-    fetch(endpoint, { cache: "no-store", signal: controller.signal })
+    (admin ? fetch(endpoint, { cache: "no-store", signal: controller.signal }) : fetchPageData(endpoint, controller.signal))
       .then(async (r) => {
         if (r.status === 401) {
           location.href = "/login";

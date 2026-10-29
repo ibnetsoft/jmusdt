@@ -1,7 +1,7 @@
 "use client";
 import { useI18n } from "./i18n";
 import { useRouter } from "next/navigation";
-import { cacheWalletData, clearPreloadedData, preloadPages, readPreloadedData } from "@/lib/preload-pages";
+import { cacheWalletData, clearPreloadedData, preloadPages, readPreloadedData, fetchPageData } from "@/lib/preload-pages";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
@@ -765,7 +765,7 @@ function Activity({
       if (historyRevision === 0) void readPreloadedData<T>(endpoint).then(cached => {
         if (!controller.signal.aborted && !networkDone && cached) apply(cached);
       });
-      void fetch(endpoint, { signal: controller.signal }).then(async response => {
+      void fetchPageData(endpoint, controller.signal).then(async response => {
         if (!response.ok) throw new Error("내역을 불러오지 못했습니다.");
         const value = await response.json() as T;
         networkDone = true;

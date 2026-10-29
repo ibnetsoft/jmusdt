@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
-import { clearPreloadedData, readPreloadedData } from "@/lib/preload-pages";
+import { clearPreloadedData, readPreloadedData, fetchPageData } from "@/lib/preload-pages";
 import Link from "next/link";
 import { BottomNav } from "./bottom-nav";
 import { formatUsdt } from "@/lib/money";
@@ -28,7 +28,7 @@ export function CartCheckout() {
     void readPreloadedData<{ products: Product[] }>("/api/shop?catalog=1").then(cached => {
       if (!controller.signal.aborted && !networkDone && cached) setProducts(cached.products);
     });
-    fetch("/api/shop?catalog=1", {cache:"no-store", signal:controller.signal}).then(async r => {
+    fetchPageData("/api/shop?catalog=1", controller.signal).then(async r => {
       if (r.status === 401) { location.href="/login"; return; }
       const data = await r.json(); if (!r.ok) throw new Error(data.error);
       networkDone = true;

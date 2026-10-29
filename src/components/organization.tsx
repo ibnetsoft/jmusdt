@@ -1,6 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
-import { readPreloadedData } from "@/lib/preload-pages";
+import { readPreloadedData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
@@ -57,14 +57,14 @@ export function Organization() {
         if (!abort.signal.aborted && !fresh && cached) { setData(cached); setLoading(false); }
       });
     }
-    fetch(
+    fetchPageData(
       "/api/organization?" +
         new URLSearchParams({
           mode,
           depth: String(depth),
           ...(root ? { root } : {}),
         }),
-      { cache: "no-store", signal: abort.signal },
+      abort.signal,
     )
       .then(async (r) => {
         if (r.status === 401) {

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cacheWalletData, clearPreloadedData, preloadPages, readPreloadedData } from "../src/lib/preload-pages";
+import { cacheWalletData, clearPreloadedData, fetchPageData, preloadPages, readPreloadedData } from "../src/lib/preload-pages";
 
 test("preloaded pages are session-scoped and discarded after an account change", async () => {
   const originalFetch = globalThis.fetch; let account = "first"; const requests: string[] = [];
@@ -66,5 +66,26 @@ test("shop and organization become available before a slow unrelated page", asyn
     assert.deepEqual(await readPreloadedData("/api/shop?catalog=1"), { accountId: "first", url: "/api/shop?catalog=1" });
     assert.deepEqual(await readPreloadedData("/api/organization?mode=sponsor&depth=3"), { accountId: "first", url: "/api/organization?mode=sponsor&depth=3" });
     release(); await warming;
+  } finally { release(); clearPreloadedData(); globalThis.fetch = originalFetch; }
+});
+
+test("concurrent page requests share one fetch without sharing response bodies or cancellation", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0, release!: () => void;
+  const wait = new Promise<void>(resolve => { release = resolve; });
+  globalThis.fetch = (async () => { calls++; await wait; return Response.json({ value: 1 }); }) as typeof fetch;
+  try {
+    clearPreloadedData();
+    const controller = new AbortController();
+    const cancelled = fetchPageData("/api/shop?catalog=1", controller.signal);
+    const first = fetchPageData("/api/shop?catalog=1");
+    const second = fetchPageData("/api/shop?catalog=1");
+    controller.abort(); release();
+    await assert.rejects(cancelled, { name: "AbortError" });
+    assert.deepEqual(await (await first).json(), { value: 1 });
+    assert.deepEqual(await (await second).json(), { value: 1 });
+    assert.equal(calls, 1);
+    await fetchPageData("/api/shop?catalog=1");
+    assert.equal(calls, 2);
   } finally { release(); clearPreloadedData(); globalThis.fetch = originalFetch; }
 });

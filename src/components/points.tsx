@@ -1,6 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
-import { readPreloadedData, clearPreloadedData } from "@/lib/preload-pages";
+import { readPreloadedData, clearPreloadedData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
@@ -48,7 +48,7 @@ export function Points() {
   const outputUnits = data ? (toPoints ? units * BigInt(data.rate) : units / BigInt(data.rate)) : 0n;
   const canReview = fresh && !!data && units > 0n && outputUnits > 0n && outputUnits <= 9223372036854775807n && !insufficient && !busy;
   async function load(signal?: AbortSignal) {
-    const r = await fetch("/api/points", { cache: "no-store", signal });
+    const r = await fetchPageData("/api/points", signal);
     if (r.status === 401) {
       location.href = "/login";
       return;
