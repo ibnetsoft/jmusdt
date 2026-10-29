@@ -312,3 +312,5 @@
 @media (max-width: 700px) {
   .cart-checkout { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
 }
+
+.commerce .shop-header { justify-content: flex-end; }

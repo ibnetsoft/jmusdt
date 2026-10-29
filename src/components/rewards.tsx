@@ -1,5 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
+import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useState, useRef } from "react";
 import { rewardLabels } from "@/lib/marketing-plan";
@@ -124,11 +125,10 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
   }
   const totals = data?.totals || data?.summary || [];
   return (
+    <>
     <main className="commerce marketing-rewards">
       <header>
-        <a href={admin ? "/admin" : "/"}>
-          ← {admin ? tr("관리자 콘솔") : tr("내 지갑")}
-        </a>
+        {admin && <a href="/admin">← {tr("관리자 콘솔")}</a>}
         <a href={admin ? "/admin/shop" : "/shop"}>
           {admin ? tr("상품별 보상 설정") : tr("쇼핑몰")}
         </a>
@@ -328,5 +328,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
         </div>
       )}
     </main>
+    {!admin && <BottomNav />}
+    </>
   );
 }

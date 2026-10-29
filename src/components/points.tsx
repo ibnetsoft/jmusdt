@@ -3,7 +3,7 @@ import { useI18n } from "./i18n";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDownUp, ArrowLeft, ChevronLeft, Clock3 } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, Clock3 } from "lucide-react";
 import { formatUsdt, parseUsdt } from "@/lib/money";
 import "./points.css";
 type Data = {
@@ -118,7 +118,7 @@ export function Points() {
         }}
       >
         <header className="points-header">
-          <a className="points-icon-button" href="/" aria-label={tr("내 지갑으로 돌아가기")}><ChevronLeft aria-hidden="true" size={28} /></a>
+          <span aria-hidden="true" />
           <h1>{tr("포인트 전환")}</h1>
           <a className="points-icon-button" href="#points-history" aria-label={tr("전환 내역")}><Clock3 aria-hidden="true" size={21} /></a>
         </header>

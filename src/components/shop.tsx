@@ -156,8 +156,7 @@ export function Shop({ productId }: { productId?: string }) {
   return (
     <>
     <main className="commerce" aria-label={tr("쇼핑몰")}>
-      <header>
-        <a href="/">{tr("← 내 지갑")}</a>
+      <header className="shop-header">
         <button type="button" className="cart-toggle" aria-expanded={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingBag size={18} /> {tr("장바구니")} ({cart.length})</button>
       </header>
       {cartOpen && <section className="cart-panel" aria-label={tr("장바구니")}>

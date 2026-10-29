@@ -6,7 +6,6 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowUpRight,
   ArrowDownLeft,
-  ArrowLeft,
   ArrowRight,
   House,
   Network,
@@ -226,7 +225,6 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             {view === "deposit" ? (
               <Deposit
                 data={data}
-                onBack={() => setView("home")}
                 onUpdate={refresh}
                 notify={setToast}
               />
@@ -379,21 +377,12 @@ function ReferralCard({code,onNotice}: {code?: string;onNotice:(text:string)=>vo
     </div>
   </section>;
 }
-function Back({ onBack }: { onBack: () => void }) {
-  const { tr } = useI18n();
-  return (
-    <button className="back-button" onClick={onBack}>
-      <ArrowLeft size={18} />{tr("내 지갑")}</button>
-  );
-}
 function Deposit({
   data,
-  onBack,
   onUpdate,
   notify,
 }: {
   data: WalletData;
-  onBack: () => void;
   onUpdate: () => Promise<void>;
   notify: (value: string) => void;
 }) {
@@ -420,7 +409,6 @@ function Deposit({
   }
   return (
     <div className="deposit-view">
-      <Back onBack={onBack} />
       <section className="deposit-card">
         <div className="deposit-heading">
           <Token small />
@@ -609,7 +597,6 @@ function Send({
     );
   return (
     <section className="send-view">
-      <Back onBack={onBack} />
       <h1>{stage === "review" ? tr("송금 정보 확인") : tr("이체")}</h1>
       {stage === "form" ? (
         <>
