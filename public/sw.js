@@ -1,6 +1,6 @@
 // Cache only the public offline page and icons. Never cache sessions, APIs,
 // balances, authenticated HTML, Next RSC responses, or financial POSTs.
-const CACHE = "jmusdt-shell-v3-wu";
+const CACHE = "jmusdt-shell-v4-wu";
 self.addEventListener("install", (event) =>
   event.waitUntil(
     caches
@@ -22,9 +22,20 @@ self.addEventListener("activate", (event) =>
   ),
 );
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET" || event.request.mode !== "navigate")
+  if (event.request.method !== "GET") return;
+  const url = new URL(event.request.url);
+  if (event.request.mode === "navigate") {
+    event.respondWith(fetch(event.request).catch(() => caches.match("/offline.html")));
     return;
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match("/offline.html")),
-  );
+  }
+  // Next.js content-hashed build assets are public and immutable. Never cache API or account data here.
+  if (url.origin === self.location.origin && url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(caches.open(CACHE).then(async cache => {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+      const response = await fetch(event.request);
+      if (response.ok && response.type === "basic" && response.headers.get("Cache-Control")?.includes("immutable")) await cache.put(event.request, response.clone());
+      return response;
+    }));
+  }
 });

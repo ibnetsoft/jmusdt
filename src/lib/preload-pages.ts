@@ -1,6 +1,28 @@
 type Cached = { userId: string; value: unknown; expires: number };
 const entries = new Map<string, Cached>();
 const endpoints = ["/api/shop", "/api/organization?mode=sponsor&depth=3", "/api/points", "/api/rewards"];
+const storageKey = "wu-page-cache-v1";
+const cacheLifetime = 30 * 60 * 1000;
+let restored = false;
+function restoreEntries() {
+  if (restored) return;
+  restored = true;
+  try {
+    if (typeof sessionStorage === "undefined") return;
+    const saved: unknown = JSON.parse(sessionStorage.getItem(storageKey) || "[]");
+    if (!Array.isArray(saved)) return;
+    for (const pair of saved) {
+      if (!Array.isArray(pair) || pair.length !== 2 || !endpoints.includes(pair[0])) continue;
+      const entry = pair[1];
+      if (entry && typeof entry.userId === "string" && typeof entry.expires === "number" && entry.expires > Date.now() && entry.expires <= Date.now() + cacheLifetime && entry.value && typeof entry.value === "object") entries.set(pair[0], entry);
+    }
+  } catch { /* Storage may be unavailable; live requests remain available. */ }
+}
+function persistEntries() {
+  try {
+    if (typeof sessionStorage !== "undefined") sessionStorage.setItem(storageKey, JSON.stringify([...entries]));
+  } catch { /* Storage is optional and may be full or disabled. */ }
+}
 let userId = "", generation = 0, lastWarm = 0;
 let validation: Promise<{ id?: string; mode?: string } | null> | null = null;
 async function currentAccount() {
@@ -13,7 +35,10 @@ async function currentAccount() {
   }
   return validation;
 }
-export function clearPreloadedData() { generation++; userId = ""; lastWarm = 0; entries.clear(); }
+export function clearPreloadedData() {
+  generation++; userId = ""; lastWarm = 0; entries.clear(); restored = true;
+  try { if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(storageKey); } catch { /* Ignore unavailable storage. */ }
+}
 export async function preloadPages() {
   try {
     const wallet = await fetch("/api/wallet", { cache: "no-store" });
@@ -21,7 +46,12 @@ export async function preloadPages() {
     const account = await wallet.json();
     const id = account?.user?.id;
     if (typeof id !== "string" || account.mode === "demo") { clearPreloadedData(); return; }
-    if (userId !== id) { clearPreloadedData(); userId = id; }
+    restoreEntries();
+    if (userId && userId !== id) { clearPreloadedData(); }
+    userId = id;
+    let removedOtherAccount = false;
+    for (const [endpoint, entry] of entries) if (entry.userId !== id) { entries.delete(endpoint); removedOtherAccount = true; }
+    if (removedOtherAccount) persistEntries();
     if (Date.now() - lastWarm < 30000) return;
     lastWarm = Date.now(); const current = generation;
     const results = await Promise.allSettled(endpoints.map(async endpoint => {
@@ -35,10 +65,12 @@ export async function preloadPages() {
     if (current !== generation || userId !== id) return;
     if (confirmed?.user?.id !== id || confirmed.mode === "demo") { clearPreloadedData(); return; }
     for (const result of results) if (result.status === "fulfilled" && result.value)
-      entries.set(result.value.endpoint, { userId: id, value: result.value.value, expires: Date.now() + 30000 });
+      entries.set(result.value.endpoint, { userId: id, value: result.value.value, expires: Date.now() + cacheLifetime });
+    persistEntries();
   } catch { /* Prefetch is optional; each page still loads directly. */ }
 }
 export async function readPreloadedData<T>(endpoint: string): Promise<T | null> {
+  restoreEntries();
   const entry = entries.get(endpoint);
   if (!entry || entry.expires < Date.now()) return null;
   try {
