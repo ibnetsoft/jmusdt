@@ -166,7 +166,7 @@ export function OrderAdmin() {
             </small>
           </div>
           <strong>
-            {formatUsdt(o.total, 6)} {o.currency === "POINT" ? "P" : "USDT"}
+            {formatUsdt(o.total, o.currency === "POINT" ? 0 : 6)} {o.currency === "POINT" ? "P" : "USDT"}
           </strong>
           <button
             disabled={busy}
@@ -192,7 +192,7 @@ export function OrderAdmin() {
           </p>
           <p>
             {tr(orderStatus[selected.status])}{tr(" · 수량 ")}{selected.quantity}{tr(" · 단가")}{" "}
-            {formatUsdt(selected.unit_price, 6)}{" "}
+            {formatUsdt(selected.unit_price, selected.currency === "POINT" ? 0 : 6)}{" "}
             {selected.currency === "POINT" ? "P" : "USDT"}
           </p>
           <DetailContent
@@ -234,7 +234,7 @@ export function OrderAdmin() {
               {confirmation ? (
                 <>
                   <p role="alert">
-                    {formatUsdt(selected.total, 6)}{" "}
+                    {formatUsdt(selected.total, selected.currency === "POINT" ? 0 : 6)}{" "}
                     {selected.currency === "POINT" ? "P" : "USDT"}{tr("를 반환하고 재고 ")}{selected.quantity}{tr("개를 복구합니다.")}</p>
                   <button
                     className="shop-primary"

@@ -74,7 +74,7 @@ function ProductImage({
 }
 function ProductPrice({ product }: { product: Pick<Product, "price" | "retail_price"> }) {
   const { tr } = useI18n();
-  const display = (value: string) => formatUsdt(value, BigInt(value) % 1_000_000n === 0n ? 0 : 6);
+  const display = (value: string) => formatUsdt(value, 0);
   return (
     <div className="shop-prices">
       {product.retail_price && <span className="shop-muted">{tr("소비자가 ")}<s>{display(product.retail_price)} P</s></span>}
@@ -157,10 +157,9 @@ export function Shop({ productId }: { productId?: string }) {
     <main className="commerce">
       <header>
         <a href="/">{tr("← 내 지갑")}</a>
-        <a href="/points">{tr("USDT ↔ 포인트 전환")}</a>
       </header>
       <h1>{tr("쇼핑몰")}</h1>
-      <div className="shop-balance">{tr("사용 가능한 잔액 ")}<strong>{formatUsdt(available, 6)}{tr(" 포인트")}</strong>
+      <div className="shop-balance">{tr("사용 가능한 잔액 ")}<strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong>
       </div>
       {tr(error) && (
         <p className="shop-error" role="alert">
@@ -211,7 +210,7 @@ export function Shop({ productId }: { productId?: string }) {
           </div>
           <ProductImage product={selected} />
           <DetailContent
-            description={selected.description}
+            description=""
             blocks={selected.detail_blocks}
           />
           <ProductPrice product={selected} />
@@ -224,10 +223,9 @@ export function Shop({ productId }: { productId?: string }) {
           )}
           {marketing.enabled && selected.reward_plan && selected.reward_plan.days > 0 && (
             <p className="shop-muted">{tr("상품 1개당 데일리")}{" "}
-              {formatUsdt(selected.reward_plan.daily, 6)} P ×{" "}
+              {formatUsdt(selected.reward_plan.daily, 0)} P ×{" "}
               {selected.reward_plan.days}{tr("일. 보상 운영이 켜진 구매에 적용되며 데일리는 구매 다음 날부터입니다.")}</p>
           )}
-          {selected.reward_plan && <p className="shop-muted">{tr("상품 1개당 회사 적립: 복주머니P ")}{selected.reward_plan.lucky}{tr(" P · 보물상자P ")}{selected.reward_plan.treasure} P</p>}
           <label>{tr("수량")}<select aria-label={tr("수량")}
               disabled={busy}
               value={quantity}
@@ -241,13 +239,12 @@ export function Shop({ productId }: { productId?: string }) {
               ))}
             </select>
           </label>
-          <div className="shop-total">{tr("결제금액 ")}<strong>{formatUsdt(total, 6)}{tr(" 포인트")}</strong>
+          <div className="shop-total">{tr("결제금액 ")}<strong>{formatUsdt(total, 0)}{tr(" 포인트")}</strong>
           </div>
           {selected.shipping_type === "physical" ? <div className="shop-editor">
             <h3>{tr("배송 정보")}</h3>
             {([['recipient','받는 분',100],['phone','연락처',40],['address','배송 주소',500],['note','배송 요청사항 (선택)',500]] as const).map(([field,label,max]) => <label key={field}>{tr(label)}<input maxLength={max} value={shipping[field]} disabled={busy} onChange={(e) => { setShipping({...shipping,[field]:e.target.value}); key.current = crypto.randomUUID(); }} /></label>)}
-          </div> : <p>{tr("배송이 필요 없는 상품입니다.")}</p>}
-          <p className="shop-muted">{tr("결제 확정 시 지갑 잔액에서 차감됩니다. 상품·가격이 변경되면 결제가 중단됩니다.")}</p>
+          </div> : null}
           <button
             className="shop-primary"
             disabled={
@@ -261,7 +258,7 @@ export function Shop({ productId }: { productId?: string }) {
                 ? tr("품절")
                 : BigInt(available) < total
                   ? tr("포인트 잔액 부족")
-                  : tr("{0} 포인트 결제 확정", {"0": formatUsdt(total, 6)})}
+                  : tr("{0} 포인트 결제 확정", {"0": formatUsdt(total, 0)})}
           </button>
         </section>
       )}
@@ -289,7 +286,7 @@ export function Shop({ productId }: { productId?: string }) {
               )}
             </div>
             <strong>
-              {formatUsdt(o.total, 6)} {o.currency === "USDT" ? "USDT" : "P"}
+              {formatUsdt(o.total, o.currency === "USDT" ? 6 : 0)} {o.currency === "USDT" ? "USDT" : "P"}
             </strong>
           </article>
         ))}

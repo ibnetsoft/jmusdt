@@ -1,5 +1,8 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "구매내역": ["Purchases", "購入履歴"],
+  "정수로 입력해 주세요.": ["Enter a whole number.", "整数を入力してください。"],
+  "1 USDT = 1 포인트 · 수수료 0": ["1 USDT = 1 point · No fee", "1 USDT = 1ポイント · 手数料なし"],
   "내역": ["History", "履歴"],
   "수당내역": ["Rewards", "報酬履歴"],
   "입출금·이체": ["Transfers", "入出金・送金"],

@@ -172,21 +172,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
             <Brand />
           </div>
           <span className="desktop-only eyebrow">PERSONAL WALLET</span>
-          {view !== "send" && <div className="profile">
-            <span className="profile-avatar">
-              {data?.user.name?.slice(0, 1) || "J"}
-            </span>
-            <span className="desktop-only">
-              {data?.user.name || "My wallet"}
-            </span>
-            <button
-              className="icon-button"
-              aria-label={tr("마이페이지")}
-              onClick={() => setView("settings")}
-            >
-              <Settings size={18} />
-            </button>
-          </div>}
+
         </header>
         {data?.mode === "demo" ? (
           <div className="demo-strip">
@@ -237,10 +223,6 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                   transactions={data.transactions.slice(0, 4)}
                   onSelect={setSelected}
                 />
-                <div className="secure-note">
-                  <ShieldCheck size={16} />
-                  <span>{tr("안전한 원장 관리 · USDT 전용 지갑")}</span>
-                </div>
               </>
             ) : null}
             {view === "deposit" ? (
@@ -403,14 +385,13 @@ function ReferralCard({code,onNotice}: {code?: string;onNotice:(text:string)=>vo
     try {await navigator.clipboard.writeText(value);onNotice(`${label}를 복사했습니다.`);}
     catch {onNotice("복사하지 못했습니다. 입력란의 내용을 직접 복사해 주세요.");}
   }
-  return <section className="referral-card" aria-labelledby="referral-title">
-    <h2 id="referral-title">{tr("내 추천 정보")}</h2>
-    {code ? <>
-      <label className="field">{tr("자동 생성된 추천코드")}<input value={code} readOnly /></label>
-      <button className="secondary-button" onClick={()=>void copy(code,"추천코드")}><Copy size={16}/>{tr(" 추천코드 복사")}</button>
-      <label className="field">{tr("추천 가입 링크")}<input value={link} readOnly onFocus={e=>e.currentTarget.select()} /></label>
-      <button className="secondary-button" disabled={!link} onClick={()=>void copy(link,"추천링크")}><Copy size={16}/>{tr(" 추천링크 복사")}</button>
-    </> : <p className="muted">{tr("실제 회원 계정으로 로그인하면 자동 생성된 추천 정보를 확인할 수 있습니다.")}</p>}
+  if (!code) return null;
+  return <section className="referral-card" aria-label={tr("추천 가입 링크")}>
+    <label htmlFor="referral-link">{tr("추천 가입 링크")}</label>
+    <div className="referral-link-row">
+      <input id="referral-link" value={link} readOnly onFocus={e => e.currentTarget.select()} />
+      <button type="button" className="referral-copy" aria-label={tr("추천링크 복사")} disabled={!link} onClick={() => void copy(link, "추천링크")}><Copy size={18} /></button>
+    </div>
   </section>;
 }
 function Back({ onBack }: { onBack: () => void }) {
@@ -480,11 +461,6 @@ function Deposit({
             </span>
           ) : null}
         </div>
-        <p className="qr-caption">
-          {data.address
-            ? tr("아래 주소로 USDT를 보내 주세요.")
-            : tr("전용 입금 주소로 간편하게")}
-        </p>
         <div className="deposit-address">
           {data.address || tr("계정 연결 후 주소가 표시됩니다.")}
         </div>
@@ -788,16 +764,16 @@ function Activity({
 }) {
   const { tr } = useI18n();
   const { localeTag } = useI18n();
-  const [filter, setFilter] = useState<"rewards" | "transactions" | "swaps">("rewards");
-  const [history, setHistory] = useState<{ rewards: { id: string; type: string; amount: string; status: string; due_date: string; paid_at: string | null }[]; pools: { kind: string; cutoff: string; amount: string }[]; swaps: { id: string; direction: string; amount: string; created_at: string }[] } | null>(null);
+  const [filter, setFilter] = useState<"rewards" | "transactions" | "swaps" | "orders">("rewards");
+  const [history, setHistory] = useState<{ rewards: { id: string; type: string; amount: string; status: string; due_date: string; paid_at: string | null }[]; pools: { kind: string; cutoff: string; amount: string }[]; swaps: { id: string; direction: string; amount: string; created_at: string }[]; orders: { id: string; product_name: string; quantity: number; total: string; currency: string; status: string; created_at: string }[] } | null>(null);
   const [loadError, setLoadError] = useState("");
   useEffect(() => {
-    if (data.mode === "demo") { setHistory({ rewards: [], pools: [], swaps: [] }); return; }
+    if (data.mode === "demo") { setHistory({ rewards: [], pools: [], swaps: [], orders: [] }); return; }
     const controller = new AbortController();
-    Promise.all([fetch("/api/rewards", { signal: controller.signal }), fetch("/api/points", { signal: controller.signal })]).then(async ([rewards, points]) => {
-      if (!rewards.ok || !points.ok) throw new Error("내역을 불러오지 못했습니다.");
-      const [r, p] = await Promise.all([rewards.json(), points.json()]);
-      setHistory({ rewards: r.rewards, pools: r.pools, swaps: p.history });
+    Promise.all([fetch("/api/rewards", { signal: controller.signal }), fetch("/api/points", { signal: controller.signal }), fetch("/api/shop", { signal: controller.signal })]).then(async ([rewards, points, shop]) => {
+      if (!rewards.ok || !points.ok || !shop.ok) throw new Error("내역을 불러오지 못했습니다.");
+      const [r, p, o] = await Promise.all([rewards.json(), points.json(), shop.json()]);
+      setHistory({ rewards: r.rewards, pools: r.pools, swaps: p.history, orders: o.orders });
     }).catch(e => { if (e.name !== "AbortError") setLoadError(e.message); });
     return () => controller.abort();
   }, [data.mode]);
@@ -810,11 +786,12 @@ function Activity({
   return <>
     <div className="page-heading compact"><h1>{tr("내역")}</h1></div>
     <div className="filter-tabs history-tabs">
-      {([ ["rewards", "수당내역"], ["transactions", "입출금·이체"], ["swaps", "전환내역"] ] as const).map(([key, label]) => <button key={key} className={filter === key ? "active" : ""} onClick={() => setFilter(key)}>{tr(label)}</button>)}
+      {([ ["rewards", "수당내역"], ["transactions", "입출금·이체"], ["swaps", "전환내역"], ["orders", "구매내역"] ] as const).map(([key, label]) => <button key={key} className={filter === key ? "active" : ""} onClick={() => setFilter(key)}>{tr(label)}</button>)}
     </div>
     {loadError && filter !== "transactions" && <p role="alert">{tr(loadError)}</p>}
     {filter === "transactions" && <ActivityList transactions={transactions} onSelect={onSelect} />}
-    {filter === "rewards" && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 6)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
-    {filter === "swaps" && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.amount, 6)}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
+    {filter === "rewards" && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 0)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
+    {filter === "orders" && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small></div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
+    {filter === "swaps" && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
   </>;
 }

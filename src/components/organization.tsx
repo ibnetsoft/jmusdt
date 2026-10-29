@@ -113,7 +113,7 @@ export function Organization() {
           <span>ID {node.code}</span>
           <span>{tr("가입 ")}{new Date(node.created_at).toLocaleDateString(localeTag, { timeZone: 'Asia/Seoul' })}
           </span>
-          <span>{tr("순구매 ")}{formatUsdt(node.sales)} P</span>
+          <span>{tr("순구매 ")}{formatUsdt(node.sales, 0)} P</span>
           {node.referral_ordinal && <span>{tr("정회원 등록 ")}{node.referral_ordinal}{tr("번째 · ")}{node.rollup_generation ? tr("{0}대 롤업", {"0": node.rollup_generation}) : tr("직접 후원")}</span>}
           {node.status !== "active" && <span>{tr("이용 제한")}</span>}
           {node.has_children && !children.length && (

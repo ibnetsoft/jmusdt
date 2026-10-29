@@ -47,7 +47,7 @@ type Data = {
   poolRuns?: {kind:"lucky"|"treasure";cutoff:string;total:string;distributed:string;retained:string;package_count:string}[];
 };
 function amount(units: string) {
-  return `${formatUsdt(units, 6)} P`;
+  return `${formatUsdt(units, 0)} P`;
 }
 export function Rewards({ admin = false }: { admin?: boolean }) {
   const { tr, localeTag } = useI18n();
@@ -147,7 +147,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
           {tr(notice)}
         </p>
       )}
-      {admin ? <section className="shop-editor"><h2>{tr("회사 일일 적립 및 마감")}</h2>{data?.poolBalances?.map(p=><p key={p.kind+p.cutoff}>{p.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(p.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})}{tr(" 마감 · ")}{formatUsdt(p.amount,6)} P</p>)}{data?.poolRuns?.map(r=><p key={r.kind+r.cutoff}>{r.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(r.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})}{tr(" · 적립 ")}{formatUsdt(r.total,6)}{tr(" P · 지급 ")}{formatUsdt(r.distributed,6)}{tr(" P · 회사 잔여 ")}{formatUsdt(r.retained,6)}{tr(" P · 패키지 ")}{r.package_count}{tr("개")}</p>)}</section> : <section className="shop-editor"><h2>{tr("일일 패키지와 분배")}</h2><p>{tr("복주머니패키지 ")}{data?.packages?.find(p=>p.package_type==='lucky')?.quantity || '0'}{tr("개 · 보물상자패키지 ")}{data?.packages?.find(p=>p.package_type==='treasure')?.quantity || '0'}{tr("개")}</p>{data?.pools?.map(w=><p key={w.kind+w.cutoff}>{w.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(w.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})} · {w.quantity}{tr("개 기준 · ")}{formatUsdt(w.amount,6)}{tr(" P 지급")}</p>)}</section>}
+      {admin ? <section className="shop-editor"><h2>{tr("회사 일일 적립 및 마감")}</h2>{data?.poolBalances?.map(p=><p key={p.kind+p.cutoff}>{p.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(p.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})}{tr(" 마감 · ")}{formatUsdt(p.amount, 0)} P</p>)}{data?.poolRuns?.map(r=><p key={r.kind+r.cutoff}>{r.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(r.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})}{tr(" · 적립 ")}{formatUsdt(r.total, 0)}{tr(" P · 지급 ")}{formatUsdt(r.distributed, 0)}{tr(" P · 회사 잔여 ")}{formatUsdt(r.retained, 0)}{tr(" P · 패키지 ")}{r.package_count}{tr("개")}</p>)}</section> : <section className="shop-editor"><h2>{tr("일일 패키지와 분배")}</h2><p>{tr("복주머니패키지 ")}{data?.packages?.find(p=>p.package_type==='lucky')?.quantity || '0'}{tr("개 · 보물상자패키지 ")}{data?.packages?.find(p=>p.package_type==='treasure')?.quantity || '0'}{tr("개")}</p>{data?.pools?.map(w=><p key={w.kind+w.cutoff}>{w.kind==='lucky'?tr("복주머니P"):tr("보물상자P")} · {new Date(w.cutoff).toLocaleString(localeTag,{timeZone:'Asia/Seoul'})} · {w.quantity}{tr("개 기준 · ")}{formatUsdt(w.amount, 0)}{tr(" P 지급")}</p>)}</section>}
       <button
         disabled={busy || loading}
         onClick={() => setRevision((n) => n + 1)}
@@ -220,14 +220,14 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
         ))}
       </section>
       {!admin && BigInt(data?.debt || "0") > 0n && (
-        <p className="shop-error">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt!, 6)}{tr(" P. 이후 포인트 유입에서 자동 상계됩니다. 전환·환불 시 사용 가능 잔액에 반영됩니다.")}</p>
+        <p className="shop-error">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt!, 0)}{tr(" P. 이후 포인트 유입에서 자동 상계됩니다. 전환·환불 시 사용 가능 잔액에 반영됩니다.")}</p>
       )}
       {admin && !!data?.debts?.length && (
         <section className="shop-editor">
           <h2>{tr("회수 미수금 (상위 100명)")}</h2>
           {data.debts.map((d) => (
             <p key={d.user_id}>
-              {d.name} · {d.email} — {formatUsdt(d.amount, 6)} P
+              {d.name} · {d.email} — {formatUsdt(d.amount, 0)} P
             </p>
           ))}
         </section>

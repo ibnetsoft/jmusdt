@@ -2577,3 +2577,10 @@ td em {
 .history-entry div { display: grid; gap: 6px; }
 .history-entry small, .history-empty { color: var(--muted); }
 @media (max-width: 700px) { .bottom-nav { width: min(370px, calc(100vw - 24px)); padding: 7px; gap: 0; } .bottom-nav button { min-width: 0; flex: 1; } }
+.history-tabs { gap: 0; }
+.history-tabs button { min-width: 0; font-size: 11px; padding-left: 3px; padding-right: 3px; }
+.site-controls img.language-flag { display: block; width: 26px; height: 18px; object-fit: cover; border-radius: 2px; }
+.referral-card > label { display: block; font-size: 13px; margin-bottom: 8px; }
+.referral-link-row { display: flex; align-items: stretch; gap: 8px; }
+.referral-link-row input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface-base); border-radius: 10px; color: var(--text); padding: 12px; }
+.referral-card .referral-copy { flex: 0 0 46px; border-radius: 10px; background: var(--surface-3); }

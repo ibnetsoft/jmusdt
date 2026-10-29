@@ -14,7 +14,7 @@ export function SiteControls() {
     setTheme(next);
   }
   return <div className="site-controls" aria-label={tr("설정")}>
-    {([ ["ko", "🇰🇷", "한국어"], ["en", "🇺🇸", "English"], ["ja", "🇯🇵", "日本語"] ] as const).map(([code, flag, name]) => <button key={code} type="button" aria-label={name} aria-pressed={locale === code} onClick={() => setLocale(code)}>{flag}</button>)}
+    {([ ["ko", "한국어"], ["en", "English"], ["ja", "日本語"] ] as const).map(([code, name]) => <button key={code} type="button" aria-label={name} aria-pressed={locale === code} onClick={() => setLocale(code)}><img className="language-flag" src={`/flags/${code}.svg`} alt="" /></button>)}
     <button type="button" onClick={toggle} aria-label={theme === "dark" ? tr("브라이트 모드로 전환") : tr("다크 모드로 전환")}>{theme === "dark" ? "☀" : "☾"}</button>
   </div>;
 }

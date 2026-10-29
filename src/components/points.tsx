@@ -17,9 +17,9 @@ type Data = {
   }[];
 };
 type Direction = "usdt_to_points" | "points_to_usdt";
-const keypad = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"];
-function displayAmount(units: string | bigint) {
-  return formatUsdt(units, 6).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+const keypad = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "backspace"];
+function displayAmount(units: string | bigint, unit: string) {
+  return unit === "P" ? formatUsdt(units, 0) : formatUsdt(units, 6).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }
 export function Points() {
   const { tr, localeTag } = useI18n();
@@ -61,10 +61,8 @@ export function Points() {
   }, [confirm]);
   function editAmount(value: string) {
     let next = value.replace(/,/g, "").trim();
-    if (next.startsWith(".")) next = "0" + next;
     next = next.replace(/^0+(?=\d)/, "");
-    // Match the checkout API's 10 whole digits and six fractional digits.
-    if (!/^\d{0,10}(\.\d{0,6})?$/.test(next)) return;
+    if (!/^\d{0,10}$/.test(next)) return;
     setAmount(next);
     setNotice("");
     setError("");
@@ -124,7 +122,7 @@ export function Points() {
           <div className="points-asset points-source">
             <div className="points-asset-info">
               <span className="points-asset-name"><span className="points-token" aria-hidden="true">{toPoints ? "₮" : "P"}</span>{toPoints ? "USDT" : tr("포인트")}</span>
-              <p>{tr("잔액")} {data ? displayAmount(toPoints ? data.usdt : data.points) + " " + sourceUnit : "—"}</p>
+              <p>{tr("잔액")} {data ? displayAmount(toPoints ? data.usdt : data.points, sourceUnit) + " " + sourceUnit : "—"}</p>
             </div>
             <label className={`points-amount ${amount.length > 12 ? "points-amount-long" : amount.length > 8 ? "points-amount-medium" : ""}`}>
               <input aria-label={tr("전환 금액")} aria-describedby="points-input-hint" inputMode="none" autoComplete="off" spellCheck={false} placeholder="0" value={amount} disabled={!data || busy || confirm} onChange={e => editAmount(e.target.value)} />
@@ -135,13 +133,13 @@ export function Points() {
           <div className="points-asset points-target">
             <div className="points-asset-info">
               <span className="points-asset-name"><span className="points-token" aria-hidden="true">{toPoints ? "P" : "₮"}</span>{toPoints ? tr("포인트") : "USDT"}</span>
-              <p>{tr("잔액")} {data ? displayAmount(toPoints ? data.points : data.usdt) + " " + targetUnit : "—"}</p>
+              <p>{tr("잔액")} {data ? displayAmount(toPoints ? data.points : data.usdt, targetUnit) + " " + targetUnit : "—"}</p>
             </div>
-            <output className={`points-output ${amount.length > 12 ? "points-amount-long" : ""}`} aria-label={tr("전환 예상 금액")} aria-live="polite">{displayAmount(units)} <span>{targetUnit}</span></output>
+            <output className={`points-output ${amount.length > 12 ? "points-amount-long" : ""}`} aria-label={tr("전환 예상 금액")} aria-live="polite">{displayAmount(units, targetUnit)} <span>{targetUnit}</span></output>
           </div>
         </div>
-        <p className="points-input-hint" id="points-input-hint">{tr("소수점 6자리까지 입력할 수 있어요.")}</p>
-        {BigInt(data?.debt || "0") > 0n && <p className="points-message points-warning">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt, 6)}{tr(" P가 있습니다. USDT → 포인트 전환 시 미수금이 우선 상계되므로 실제 사용 가능 포인트는 전환액보다 적을 수 있습니다.")}</p>}
+        <p className="points-input-hint" id="points-input-hint">{tr("정수로 입력해 주세요.")}</p>
+        {BigInt(data?.debt || "0") > 0n && <p className="points-message points-warning">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt, 0)}{tr(" P가 있습니다. USDT → 포인트 전환 시 미수금이 우선 상계되므로 실제 사용 가능 포인트는 전환액보다 적을 수 있습니다.")}</p>}
         {insufficient && <p role="alert" className="points-message points-error">{tr("전환할 잔액이 부족합니다.")}</p>}
         {error && !confirm && <p role="alert" className="points-message points-error">{tr(error)} {!data && <button type="button" onClick={() => { setError(""); load().catch(e => setError(e.message)); }}>{tr("새로고침")}</button>}</p>}
         {notice && <p role="status" className="points-message points-success">{tr(notice)}</p>}
@@ -152,9 +150,9 @@ export function Points() {
       </form>
       <dialog ref={dialog} className="points-confirm" aria-labelledby="points-confirm-title" onCancel={e => { e.preventDefault(); if (!busy) setConfirm(false); }}>
         <h2 id="points-confirm-title">{tr("전환 최종 확인")}</h2>
-        <p className="points-confirm-amount">{displayAmount(units)} {sourceUnit}<span aria-hidden="true">↓</span>{displayAmount(units)} {targetUnit}</p>
-        <p className="points-input-hint">{tr("1 USDT = 1 포인트 · 수수료 0 · 소수점 6자리")}</p>
-        {toPoints && BigInt(data?.debt || "0") > 0n && <p className="points-message points-warning">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt, 6)}{tr(" P가 있습니다. USDT → 포인트 전환 시 미수금이 우선 상계되므로 실제 사용 가능 포인트는 전환액보다 적을 수 있습니다.")}</p>}
+        <p className="points-confirm-amount">{displayAmount(units, sourceUnit)} {sourceUnit}<span aria-hidden="true">↓</span>{displayAmount(units, targetUnit)} {targetUnit}</p>
+        <p className="points-input-hint">{tr("1 USDT = 1 포인트 · 수수료 0")}</p>
+        {toPoints && BigInt(data?.debt || "0") > 0n && <p className="points-message points-warning">{tr("취소 보상 미수금 ")}{formatUsdt(data!.debt, 0)}{tr(" P가 있습니다. USDT → 포인트 전환 시 미수금이 우선 상계되므로 실제 사용 가능 포인트는 전환액보다 적을 수 있습니다.")}</p>}
         {error && <p className="points-message points-error" role="alert">{tr(error)}</p>}
         <button className="points-primary" type="button" disabled={busy} onClick={swap}>{busy ? tr("처리 중…") : tr("1:1 전환 확정")}</button>
         <button className="points-cancel" type="button" disabled={busy} onClick={() => { setConfirm(false); setError(""); }}>{tr("취소")}</button>
@@ -164,7 +162,7 @@ export function Points() {
         {data?.history.map((h) => (
           <article className="points-history-item" key={h.id}>
             <div><strong>{h.direction === "usdt_to_points" ? tr("USDT → 포인트") : tr("포인트 → USDT")}</strong><time dateTime={h.created_at}>{new Date(h.created_at).toLocaleString(localeTag, { timeZone: "Asia/Seoul" })}</time></div>
-            <span>{displayAmount(h.amount)} <small>{h.direction === "usdt_to_points" ? "P" : "USDT"}</small></span>
+            <span>{displayAmount(h.amount, h.direction === "usdt_to_points" ? "P" : "USDT")} <small>{h.direction === "usdt_to_points" ? "P" : "USDT"}</small></span>
           </article>
         ))}
         {data?.history.length === 0 && <p className="points-empty">{tr("아직 전환 내역이 없습니다.")}</p>}

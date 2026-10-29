@@ -9,7 +9,7 @@ export async function GET() {
         "SELECT * FROM shop_products WHERE active AND shipping_type IS NOT NULL ORDER BY created_at DESC",
       ),
       database().query(
-        "SELECT o.*, CASE WHEN s.order_id IS NULL THEN NULL ELSE json_build_object('recipient',s.recipient,'phone',s.phone,'address',s.address,'note',s.note,'status',s.status,'carrier',s.carrier,'tracking_number',s.tracking_number) END AS shipping FROM shop_orders o LEFT JOIN shop_order_shipping s ON s.order_id=o.id WHERE o.user_id=$1 ORDER BY o.created_at DESC LIMIT 100",
+        "SELECT o.*, CASE WHEN s.order_id IS NULL THEN NULL ELSE json_build_object('recipient',s.recipient,'phone',s.phone,'address',s.address,'note',s.note,'status',s.status,'carrier',s.carrier,'tracking_number',s.tracking_number) END AS shipping FROM shop_orders o LEFT JOIN shop_order_shipping s ON s.order_id=o.id WHERE o.user_id=$1 ORDER BY o.created_at DESC",
         [user.id],
       ),
       database().query(

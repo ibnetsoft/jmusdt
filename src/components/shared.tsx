@@ -123,7 +123,7 @@ export function ActivityList({
             <span className={`tx-amount ${incoming ? "incoming" : ""}`}>
               <strong>
                 {incoming ? "+" : "−"}
-                {formatUsdt(t.amount)}
+                {formatUsdt(t.amount, t.asset === "POINT" ? 0 : 2)}
               </strong>
               <small>{t.asset === "POINT" ? "P" : "USDT"}</small>
             </span>
@@ -188,7 +188,7 @@ export function TransactionModal({
         <p className="eyebrow">TRANSACTION</p>
         <h2 id="tx-title">{tr(kindLabels[transaction.kind])}</h2>
         <div className="detail-amount">
-          {formatUsdt(transaction.amount, 6)}{" "}
+          {formatUsdt(transaction.amount, transaction.asset === "POINT" ? 0 : 6)}{" "}
           <small>{transaction.asset === "POINT" ? "P" : "USDT"}</small>
         </div>
         <Status value={transaction.status} />
