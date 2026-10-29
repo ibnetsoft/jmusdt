@@ -1,5 +1,16 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "포인트로 전환": ["To points", "ポイントに交換"],
+  "USDT로 전환": ["To USDT", "USDTに交換"],
+  "수수료 0": ["No fee", "手数料なし"],
+  "잔액": ["Balance", "残高"],
+  "전환 방향 바꾸기": ["Reverse conversion direction", "交換方向を切り替え"],
+  "전환 예상 금액": ["Estimated conversion amount", "交換予定額"],
+  "소수점 6자리까지 입력할 수 있어요.": ["Enter up to 6 decimal places.", "小数点以下6桁まで入力できます。"],
+  "숫자 키패드": ["Number keypad", "数字キーパッド"],
+  "마지막 숫자 지우기": ["Delete last digit", "最後の数字を削除"],
+  "소수점": ["Decimal point", "小数点"],
+  "확인": ["Continue", "確認"],
   "언어 선택": ["Language", "言語"],
   "JMUSDT 홈": ["JMUSDT home", "JMUSDT ホーム"],
   "JMUSDT 로고": ["JMUSDT logo", "JMUSDT ロゴ"],

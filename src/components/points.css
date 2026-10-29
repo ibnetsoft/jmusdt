@@ -1,0 +1,62 @@
+.points-page { width: min(100%, 560px); margin-inline: auto; color: var(--text); }
+.points-exchange { min-height: calc(100svh - 52px); display: flex; flex-direction: column; padding: 10px 22px max(22px, env(safe-area-inset-bottom)); }
+.points-header { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; min-height: 44px; margin-bottom: 20px; }
+.points-header h1 { font-size: 16px; font-weight: 600; letter-spacing: -.5px; text-align: center; }
+.points-icon-button { display: grid; place-items: center; width: 42px; height: 44px; border-radius: 12px; }
+.points-tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); padding: 4px; border-radius: 13px; }
+.points-tabs button { min-height: 42px; padding: 8px; border-radius: 10px; color: var(--muted); font-size: 16px; line-height: 1.4; }
+.points-tabs button[aria-pressed="true"] { background: var(--panel); color: var(--text); box-shadow: 0 1px 5px #0002; font-weight: 600; }
+.points-rate { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 27px 6px 24px; }
+.points-rate strong { font-size: 17px; font-weight: 600; letter-spacing: -.4px; }
+.points-rate > span { color: var(--muted); font-size: 13px; }
+.points-assets { position: relative; display: grid; gap: 12px; }
+.points-asset { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; align-items: center; min-height: 94px; padding: 20px; border-radius: 20px; background: var(--surface-1); }
+.points-asset-name { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; }
+.points-token { display: inline-grid; flex-shrink: 0; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: var(--surface-3); color: var(--text); font-size: 17px; }
+.points-asset-info { min-width: 0; }
+.points-asset-info p { margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.points-amount { display: flex; align-items: baseline; gap: 5px; min-width: 0; font-size: 25px; font-variant-numeric: tabular-nums; }
+.points-amount input { display: block; min-width: 0; width: 100%; padding: 6px 0; border: 0; border-radius: 0; outline-offset: 3px; color: var(--text); background: transparent; text-align: right; caret-color: var(--red); font: inherit; }
+.points-amount input::placeholder { color: var(--muted); }
+.points-amount > span { font-size: 18px; }
+.points-amount-medium { font-size: 18px; }
+.points-amount-medium > span { font-size: 14px; }
+.points-output { min-width: 0; text-align: right; font-size: 25px; color: var(--muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.points-output span { font-size: 18px; white-space: nowrap; }
+.points-amount-long, .points-amount-long input { font-size: 14px; }
+.points-amount-long > span { font-size: 14px; }
+.points-asset:has(.points-amount-long) { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.points-asset:has(.points-amount-long) .points-amount-long, .points-asset:has(.points-amount-long) .points-amount-long input { font-size: 16px; }
+.points-switch { position: absolute; z-index: 1; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); color: var(--muted); box-shadow: 0 2px 6px #0002; border: 3px solid var(--bg); }
+.points-input-hint { font-size: 11px; line-height: 1.6; color: var(--muted); margin-top: 12px; text-align: center; }
+.points-keypad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 14px; padding-top: 28px; margin-top: auto; }
+.points-keypad button { display: grid; place-items: center; min-height: clamp(48px, 6.5svh, 76px); border-radius: 16px; font-size: 30px; font-weight: 400; font-variant-numeric: tabular-nums; touch-action: manipulation; }
+.points-keypad button:active:not(:disabled), .points-icon-button:hover { background: var(--surface-2); }
+.points-primary { display: block; width: 100%; min-height: 56px; padding: 16px; background: var(--red); color: #fff; border-radius: 18px; font-size: 17px; font-weight: 600; }
+.points-review { margin-top: 22px; }
+.points-page button:disabled { cursor: not-allowed; }
+.points-review:disabled { opacity: .4; }
+.points-message { margin-top: 14px; padding: 12px 14px; border-radius: 12px; font-size: 12px; line-height: 1.6; background: var(--surface-2); overflow-wrap: anywhere; }
+.points-error, .points-warning { border: 1px solid var(--line); }
+.points-error { font-weight: 600; }
+.points-success { border-inline-start: 3px solid var(--red); }
+.points-message button { margin-inline-start: 8px; text-decoration: underline; }
+.points-confirm { position: fixed; width: min(420px, calc(100vw - 36px)); margin: auto; padding: 28px 22px 18px; border: 1px solid var(--line); border-radius: 24px; background: var(--panel); color: var(--text); max-height: calc(100svh - 40px); overflow: auto; }
+.points-confirm::backdrop { background: #0009; backdrop-filter: blur(3px); }
+.points-confirm h2 { font-size: 19px; text-align: center; }
+.points-confirm-amount { display: grid; justify-items: center; gap: 12px; padding-top: 28px; font-size: clamp(18px, 5vw, 28px); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.points-confirm-amount span { font-size: 18px; color: var(--muted); }
+.points-confirm .points-primary { margin-top: 24px; }
+.points-cancel { width: 100%; min-height: 48px; margin-top: 6px; color: var(--muted); }
+.points-history { padding: 32px 22px 64px; border-top: 1px solid var(--line); scroll-margin-top: 64px; }
+.points-history-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.points-history h2 { font-size: 18px; }
+.points-history-heading a { color: var(--muted); font-size: 12px; }
+.points-history-item { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-block: 18px; border-bottom: 1px solid var(--line); }
+.points-history-item strong { font-size: 13px; font-weight: 500; }
+.points-history-item time { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; }
+.points-history-item > span { font-size: 15px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.points-history-item small { color: var(--muted); }
+.points-empty { padding-block: 22px; color: var(--muted); font-size: 13px; }
+@media (min-width: 700px) { .points-exchange { min-height: min(900px, calc(100svh - 52px)); padding-inline: 32px; } .points-history { padding-inline: 32px; } }
+@media (max-width: 359px) { .points-exchange { padding-inline: 16px; } .points-asset { padding: 16px; gap: 8px; } .points-amount, .points-output { font-size: 21px; } .points-amount-long, .points-amount-long input { font-size: 12px; } .points-tabs button { font-size: 14px; } }
