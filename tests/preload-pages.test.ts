@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cacheWalletData, clearPreloadedData, fetchPageData, preloadPages, readPreloadedData } from "../src/lib/preload-pages";
+import { preloadProductImages, productImageSizes } from "../src/lib/shop-images";
 
 test("preloaded pages are session-scoped and discarded after an account change", async () => {
   const originalFetch = globalThis.fetch; let account = "first"; const requests: string[] = [];
@@ -88,4 +89,31 @@ test("concurrent page requests share one fetch without sharing response bodies o
     await fetchPageData("/api/shop?catalog=1");
     assert.equal(calls, 2);
   } finally { release(); clearPreloadedData(); globalThis.fetch = originalFetch; }
+});
+
+test("product images are prepared with the same responsive source as the shop", () => {
+  const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const originalOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const originalNodeEnv = process.env.NODE_ENV;
+  const images: { src: string; srcset: string; sizes: string; referrerPolicy: string }[] = [];
+  class FakeImage {
+    src = ""; srcset = ""; sizes = ""; referrerPolicy = "";
+    constructor() { images.push(this); }
+  }
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { Image: FakeImage } });
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+  Object.defineProperty(process.env, "NODE_ENV", { configurable: true, writable: true, enumerable: true, value: "production" });
+  try {
+    const managed = "https://example.supabase.co/storage/v1/object/public/product-images/a.webp";
+    preloadProductImages([{ image_url: managed }, { image_url: managed }, { image_url: "https://other.example/item.webp" }, { image_url: "javascript:bad" }]);
+    assert.equal(images.length, 2);
+    assert.equal(images[0].sizes, productImageSizes);
+    assert.match(images[0].srcset, /_next\/image\?/);
+    assert.equal(images[1].src, "https://other.example/item.webp");
+    assert.equal(images[1].referrerPolicy, "no-referrer");
+  } finally {
+    if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow); else Reflect.deleteProperty(globalThis, "window");
+    if (originalOrigin === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = originalOrigin;
+    if (originalNodeEnv === undefined) Reflect.deleteProperty(process.env, "NODE_ENV"); else Object.defineProperty(process.env, "NODE_ENV", { configurable: true, writable: true, enumerable: true, value: originalNodeEnv });
+  }
 });

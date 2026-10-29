@@ -14,6 +14,7 @@ import type { DetailBlock } from "@/lib/product-content";
 import { DetailContent } from "./product-content";
 import { DetailEditor, ImageUpload } from "./product-editor";
 import { zeroPlan, rewardLabels, type RewardPlan } from "@/lib/marketing-plan";
+import { isManagedProductImage, productImageSizes } from "@/lib/shop-images";
 type Product = {
   package_type: "none" | "lucky" | "treasure";
   shipping_type: "physical" | "none" | null;
@@ -57,13 +58,7 @@ function ProductImage({
 }) {
   const { tr } = useI18n();
   const [fallback, setFallback] = useState(false);
-  let managed = false;
-  try {
-    const url = new URL(product.image_url);
-    const origin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "");
-    managed = url.protocol === "https:" && url.origin === origin.origin && !url.search && url.pathname.startsWith("/storage/v1/object/public/product-images/");
-  } catch { /* Other images use the original URL. */ }
-  if (product.image_url && managed && !fallback) return <Image src={product.image_url} alt={tr(product.name)} width={600} height={600} sizes="(max-width: 600px) 50vw, 300px" loading={eager ? "eager" : "lazy"} onError={() => setFallback(true)} />;
+  if (product.image_url && isManagedProductImage(product.image_url) && !fallback) return <Image src={product.image_url} alt={tr(product.name)} width={600} height={600} sizes={productImageSizes} loading={eager ? "eager" : "lazy"} onError={() => setFallback(true)} />;
   return product.image_url ? (
     <img
       src={product.image_url}

@@ -1,3 +1,4 @@
+import { preloadProductImages } from "./shop-images";
 type Cached = { userId: string; value: unknown; expires: number };
 type Account = { id: string } | { invalid: true } | null;
 const entries = new Map<string, Cached>();
@@ -85,6 +86,8 @@ export function preloadPages(): Promise<void> {
       let removedOtherAccount = false;
       for (const [endpoint, entry] of entries) if (entry.userId !== id) { entries.delete(endpoint); removedOtherAccount = true; }
       if (removedOtherAccount) persistEntries();
+      const catalog = entries.get("/api/shop?catalog=1");
+      if (catalog?.userId === id && catalog.expires > Date.now()) preloadProductImages((catalog.value as { products?: unknown }).products);
       if (Date.now() - lastWarm < 30000) return;
       lastWarm = Date.now(); const current = generation;
       const remaining = [...endpoints];
@@ -100,6 +103,7 @@ export function preloadPages(): Promise<void> {
               if (current === generation && userId === id && value?.accountId === id) {
                 entries.set(endpoint, { userId: id, value, expires: Date.now() + cacheLifetime });
                 persistEntries();
+                if (endpoint === "/api/shop?catalog=1") preloadProductImages(value.products);
               }
             } catch { /* Individual pages still load directly on navigation. */ }
           })();
