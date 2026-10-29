@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { clearPreloadedData, preloadPages, readPreloadedData } from "../src/lib/preload-pages";
+import { cacheWalletData, clearPreloadedData, preloadPages, readPreloadedData } from "../src/lib/preload-pages";
 
 test("preloaded pages are session-scoped and discarded after an account change", async () => {
   const originalFetch = globalThis.fetch; let account = "first"; const requests: string[] = [];
@@ -31,6 +31,22 @@ test("preloaded pages are session-scoped and discarded after an account change",
     assert.deepEqual(await readPreloadedData("/api/shop"), { accountId: "second", owner: "second", url: "/api/shop" });
     clearPreloadedData(); assert.equal(await readPreloadedData("/api/shop"), null);
   } finally { clearPreloadedData(); globalThis.fetch = originalFetch; if (originalStorage) Object.defineProperty(globalThis, "sessionStorage", originalStorage); else Reflect.deleteProperty(globalThis, "sessionStorage"); }
+});
+
+test("wallet cache only exposes the verified account and ignores demo data", async () => {
+  const originalFetch = globalThis.fetch;
+  let account = "first";
+  globalThis.fetch = (async () => Response.json({ userId: account })) as typeof fetch;
+  try {
+    clearPreloadedData();
+    const wallet = { mode: "live", user: { id: "first" }, available: "100" };
+    await cacheWalletData(wallet);
+    assert.deepEqual(await readPreloadedData("/api/wallet"), wallet);
+    await cacheWalletData({ mode: "demo", user: { id: "first" } });
+    assert.deepEqual(await readPreloadedData("/api/wallet"), wallet);
+    account = "second";
+    assert.equal(await readPreloadedData("/api/wallet"), null);
+  } finally { clearPreloadedData(); globalThis.fetch = originalFetch; }
 });
 
 test("shop and organization become available before a slow unrelated page", async () => {

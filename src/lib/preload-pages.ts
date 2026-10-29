@@ -3,6 +3,7 @@ type Account = { id: string } | { invalid: true } | null;
 const entries = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<void>>();
 const endpoints = ["/api/shop?catalog=1", "/api/organization?mode=sponsor&depth=3", "/api/organization?mode=referral&depth=3", "/api/points", "/api/rewards", "/api/shop"];
+const cacheableEndpoints = [...endpoints, "/api/wallet"];
 const storageKey = "wu-page-cache-v1";
 const cacheLifetime = 30 * 60 * 1000;
 let restored = false;
@@ -14,7 +15,7 @@ function restoreEntries() {
     const saved: unknown = JSON.parse(sessionStorage.getItem(storageKey) || "[]");
     if (!Array.isArray(saved)) return;
     for (const pair of saved) {
-      if (!Array.isArray(pair) || pair.length !== 2 || !endpoints.includes(pair[0])) continue;
+      if (!Array.isArray(pair) || pair.length !== 2 || !cacheableEndpoints.includes(pair[0])) continue;
       const entry = pair[1];
       if (entry && typeof entry.userId === "string" && typeof entry.expires === "number" && entry.expires > Date.now() && entry.expires <= Date.now() + cacheLifetime && entry.value && typeof entry.value === "object") entries.set(pair[0], entry);
     }
@@ -40,6 +41,15 @@ async function currentAccount(): Promise<Account> {
 export function clearPreloadedData() {
   generation++; userId = ""; lastWarm = 0; entries.clear(); inFlight.clear(); warming = null; scheduling = null; restored = true;
   try { if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(storageKey); } catch { /* Ignore unavailable storage. */ }
+}
+export async function cacheWalletData(value: { mode: string; user: { id: string } }) {
+  if (value.mode !== "live") return;
+  const started = generation;
+  const account = await currentAccount();
+  if (started !== generation || !account || "invalid" in account || account.id !== value.user.id) return;
+  restoreEntries();
+  entries.set("/api/wallet", { userId: account.id, value, expires: Date.now() + cacheLifetime });
+  persistEntries();
 }
 export function preloadPages(): Promise<void> {
   if (warming) return warming;

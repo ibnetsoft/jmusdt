@@ -1,7 +1,7 @@
 "use client";
 import { useI18n } from "./i18n";
 import { useRouter } from "next/navigation";
-import { clearPreloadedData, preloadPages, readPreloadedData } from "@/lib/preload-pages";
+import { cacheWalletData, clearPreloadedData, preloadPages, readPreloadedData } from "@/lib/preload-pages";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
@@ -53,6 +53,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
   const { tr } = useI18n();
   const router = useRouter();
   const [data, setData] = useState<WalletData | null>(null),
+    [fresh, setFresh] = useState(false),
     [view, setView] = useState<View>(initialView),
     [sendKind, setSendKind] = useState<"internal" | "external">("internal"),
     [error, setError] = useState(""),
@@ -60,6 +61,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
     [hidden, setHidden] = useState(false),
     [selected, setSelected] = useState<Transaction | null>(null),
     [install, setInstall] = useState<InstallEvent | null>(null);
+  const latestLoaded = useRef(false);
   const refresh = useCallback(async () => {
     try {
       const response = await fetch("/api/wallet", { cache: "no-store" });
@@ -69,20 +71,27 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
         return;
       }
       if (!response.ok) throw new Error(body.error);
+      latestLoaded.current = true;
       setData(body.mode === "demo" ? demoSnapshot() : body);
-      if (body.mode !== "demo") void preloadPages();
+      setFresh(true);
+      if (body.mode !== "demo") { void cacheWalletData(body); void preloadPages(); }
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "지갑을 불러오지 못했습니다.");
     }
   }, []);
   useEffect(() => {
+    let mounted = true;
+    void readPreloadedData<WalletData>("/api/wallet").then(cached => {
+      if (mounted && cached && !latestLoaded.current) setData(cached);
+    });
     void refresh();
     const update = () => void refresh();
     window.addEventListener("jmusdt-demo", update);
     window.addEventListener("storage", update);
     const timer = setInterval(update, 30000);
     return () => {
+      mounted = false;
       clearInterval(timer);
       window.removeEventListener("jmusdt-demo", update);
       window.removeEventListener("storage", update);
@@ -209,10 +218,10 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                   </div>
                 </section>
                 <div className="quick-actions">
-                  <button onClick={() => setView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
-                  <button onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowUpRight size={20} />{tr("이체")}</button>
+                  <button disabled={!fresh} onClick={() => setView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
+                  <button disabled={!fresh} onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowUpRight size={20} />{tr("이체")}</button>
                   <button onClick={() => { router.push("/points"); }}><ArrowLeftRight size={20} />{tr("스왑")}</button>
-                  <button onClick={() => { setSendKind("external"); setView("send"); }}><ExternalLink size={20} />{tr("출금")}</button>
+                  <button disabled={!fresh} onClick={() => { setSendKind("external"); setView("send"); }}><ExternalLink size={20} />{tr("출금")}</button>
                 </div>
                 <div className="section-heading">
                   <h2>{tr("최근 거래")}</h2>
@@ -225,14 +234,14 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                 />
               </>
             ) : null}
-            {view === "deposit" ? (
+            {view === "deposit" && fresh ? (
               <Deposit
                 data={data}
                 onUpdate={refresh}
                 notify={setToast}
               />
             ) : null}
-            {view === "send" ? (
+            {view === "send" && fresh ? (
               <Send
                 initialKind={sendKind}
                 data={data}
