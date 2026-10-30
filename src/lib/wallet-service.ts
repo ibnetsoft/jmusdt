@@ -4,6 +4,7 @@ import { parseUsdt } from "./money";
 import { chainConfig, custody, validTronAddress } from "./tron";
 import { HttpError } from "./http";
 import { ensureChainBinding } from "./chain-binding";
+import { initializeDepositCursor } from "./deposit-monitor";
 export function feeUnits() {
   const value = process.env.WITHDRAWAL_FEE_USDT || "1";
   return value === "0" ? 0n : parseUsdt(value);
@@ -51,7 +52,7 @@ export async function walletSnapshot(profile: {
   };
 }
 export async function provisionAddress(userId: string) {
-  await ensureChainBinding();
+  await initializeDepositCursor();
   const { network } = chainConfig();
   const entry = await database().query(
     `INSERT INTO deposit_addresses(user_id,network) VALUES($1,$2)

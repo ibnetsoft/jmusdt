@@ -17,6 +17,7 @@ import {
 } from "../src/lib/tron-transaction";
 import { ensureChainBinding } from "../src/lib/chain-binding";
 import { advanceSweep } from "../src/lib/sweep-worker";
+import { runDepositScan } from "../src/lib/deposit-monitor";
 import { getTronGridKey } from "../src/lib/tron-api-settings";
 const pool = database(),
   config = chainConfig();
@@ -47,85 +48,7 @@ async function rpc<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 async function scan() {
-  const head = await rpc<{ block_header: { raw_data: { number: number } } }>(
-    "walletsolidity/getnowblock",
-    {},
-  );
-  const safe = head.block_header?.raw_data?.number;
-  if (!Number.isSafeInteger(safe)) throw new Error("Invalid solid head");
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
-      "tron-scan:" + config.network,
-    ]);
-    let cursor = (
-      await client.query(
-        "SELECT block_number FROM chain_cursor WHERE network=$1",
-        [config.network],
-      )
-    ).rows[0]?.block_number;
-    if (cursor === undefined) {
-      const start = Number(process.env.TRON_START_BLOCK);
-      if (
-        !process.env.TRON_START_BLOCK ||
-        !Number.isSafeInteger(start) ||
-        start < 1 ||
-        start > safe
-      )
-        throw new Error(
-          "Set TRON_START_BLOCK to an existing solid block before first scan",
-        );
-      cursor = String(start - 1);
-    }
-    const end = Math.min(Number(cursor) + 10, safe);
-    for (let block = Number(cursor) + 1; block <= end; block++) {
-      const receipts = await rpc<Receipt[]>(
-        "walletsolidity/gettransactioninfobyblocknum",
-        { num: block },
-      );
-      if (!Array.isArray(receipts))
-        throw new Error("Invalid block receipt response; cursor not advanced");
-      for (const info of receipts) {
-        if (info.blockNumber !== block)
-          throw new Error("Receipt block mismatch");
-        for (const event of decodeDeposits(info, contract)) {
-          const owner = (
-            await client.query(
-              "SELECT user_id,created_at FROM deposit_addresses WHERE address=$1 AND network=$2",
-              [event.address, config.network],
-            )
-          ).rows[0];
-          if (
-            !owner ||
-            new Date(owner.created_at).getTime() > info.blockTimeStamp
-          )
-            continue;
-          await client.query(
-            "SELECT wallet_credit_deposit($1,$2,$3,$4,$5,$6)",
-            [
-              owner.user_id,
-              event.amount,
-              config.network,
-              info.id,
-              event.index,
-              block,
-            ],
-          );
-        }
-      }
-      await client.query(
-        "INSERT INTO chain_cursor(network,block_number) VALUES($1,$2) ON CONFLICT(network) DO UPDATE SET block_number=EXCLUDED.block_number,updated_at=now()",
-        [config.network, block],
-      );
-    }
-    await client.query("COMMIT");
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
-  }
+  await runDepositScan();
 }
 function feeLimit() {
   const value = Number(process.env.TRON_FEE_LIMIT_SUN || 100000000);
@@ -133,6 +56,7 @@ function feeLimit() {
     throw new Error("Invalid fee limit");
   return value;
 }
+
 async function build(
   owner: string,
   to: string,
