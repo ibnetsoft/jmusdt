@@ -16,6 +16,9 @@
 .org-controls [aria-pressed="true"] {
   background: var(--red);
 }
+html[data-theme="light"] .commerce .org-controls [aria-pressed="true"] {
+  color: #fff;
+}
 .org-board {
   border: 1px solid var(--line);
   border-radius: 18px;

@@ -16,11 +16,9 @@ import {
   ArrowLeftRight,
   History,
   Settings,
-  Wallet as WalletIcon,
   Copy,
   ShieldCheck,
   ChevronRight,
-  Globe,
   LogOut,
   Eye,
   EyeOff,
@@ -295,22 +293,6 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
                 <ReferralCard code={data.referralCode} onNotice={setToast} />
                 <SecuritySettings demo={data.mode === "demo"} /></>}
                 <div className="settings-list">
-                  <div>
-                    <Globe size={19} />
-                    <span>{tr("네트워크")}</span>
-                    <b>
-                      {data.mode === "demo"
-                        ? tr("데모")
-                        : data.network === "nile"
-                          ? "TRON · Nile"
-                          : tr("TRON 메인넷")}
-                    </b>
-                  </div>
-                  <div>
-                    <WalletIcon size={19} />
-                    <span>{tr("지원 자산")}</span>
-                    <b>USDT · TRC20</b>
-                  </div>
                   <button
                     disabled={preview}
                     onClick={async () => {

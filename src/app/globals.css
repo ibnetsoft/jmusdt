@@ -190,7 +190,7 @@ small {
 }
 .wallet-sidebar nav button.active {
   background: var(--surface-2);
-  color: white;
+  color: var(--text);
 }
 .nav-dot {
   margin-left: auto;
@@ -798,7 +798,7 @@ small {
 }
 .segmented button.active {
   background: var(--surface-3);
-  color: #fff;
+  color: var(--text);
 }
 .field {
   display: flex;
@@ -968,7 +968,7 @@ small {
   color: #777;
 }
 .filter-tabs button.active {
-  color: white;
+  color: var(--text);
   border-bottom: 2px solid var(--red);
 }
 .referral-card {
