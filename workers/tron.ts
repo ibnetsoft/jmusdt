@@ -17,8 +17,8 @@ import {
 } from "../src/lib/tron-transaction";
 import { ensureChainBinding } from "../src/lib/chain-binding";
 import { advanceSweep } from "../src/lib/sweep-worker";
+import { getTronGridKey } from "../src/lib/tron-api-settings";
 const pool = database(),
-  tron = tronClient(),
   config = chainConfig();
 if (!config.contract || !validTronAddress(config.contract))
   throw new Error("TRON_USDT_CONTRACT is required on Nile");
@@ -31,12 +31,13 @@ process.on("SIGTERM", () => {
   stopped = true;
 });
 async function rpc<T>(path: string, body: unknown): Promise<T> {
+  const apiKey = await getTronGridKey();
   const response = await fetch(`${config.host}/${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(process.env.TRONGRID_API_KEY
-        ? { "TRON-PRO-API-KEY": process.env.TRONGRID_API_KEY }
+      ...(apiKey
+        ? { "TRON-PRO-API-KEY": apiKey }
         : {}),
     },
     body: JSON.stringify(body),
@@ -137,7 +138,7 @@ async function build(
   to: string,
   amount: string,
 ): Promise<Unsigned> {
-  const result = await tron.transactionBuilder.triggerSmartContract(
+  const result = await (await tronClient()).transactionBuilder.triggerSmartContract(
     contract,
     "transfer(address,uint256)",
     { feeLimit: feeLimit(), callValue: 0 },
@@ -251,7 +252,7 @@ async function sendWithdrawal() {
       await client.query("COMMIT");
       return; // Persist signature BEFORE broadcasting.
     }
-    const response = await tron.trx.sendRawTransaction(payload);
+    const response = await (await tronClient()).trx.sendRawTransaction(payload);
     if (!response.result && String(response.code) !== "DUP_TRANSACTION_ERROR")
       throw new Error(
         "Broadcast rejected; retain reservation for investigation",
@@ -273,7 +274,7 @@ async function sweep() {
 }
 // Fail on incorrect token decimals before touching any ledger.
 await ensureChainBinding();
-const decimals = await tron.transactionBuilder.triggerConstantContract(
+const decimals = await (await tronClient()).transactionBuilder.triggerConstantContract(
   contract,
   "decimals()",
   {},

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { preloadAdminData, clearAdminData } from "@/lib/admin-preload";
 import { authChangeKey } from "@/lib/preload-pages";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { Activity, ArrowUpRight, BadgePercent, ClipboardList, Coins, Image, LayoutDashboard, ShieldCheck, ShoppingBag, Users, Wallet } from "lucide-react";
+import { Activity, ArrowUpRight, BadgePercent, ClipboardList, Coins, Image, KeyRound, LayoutDashboard, ShieldCheck, ShoppingBag, Users, Wallet } from "lucide-react";
 import { Brand } from "./shared";
 import { useI18n } from "./i18n";
 
@@ -23,6 +23,7 @@ const items = [
   { href: "/admin/shop", label: "상품 관리", icon: ShoppingBag },
   { href: "/admin/grades", label: "회원등급 관리", icon: Users },
   { href: "/admin/branding", label: "로고 설정", icon: Image },
+  { href: "/admin/tron-api", label: "TRON API 설정", icon: KeyRound },
 ];
 
 export function AdminSidebar() {

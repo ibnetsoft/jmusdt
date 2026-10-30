@@ -6,7 +6,7 @@ import { HDNodeWallet } from "ethers";
 import { TronWeb, type Types } from "tronweb";
 import { z } from "zod";
 import { database } from "../src/lib/db";
-import { chainConfig, tronClient } from "../src/lib/tron";
+import { chainConfig } from "../src/lib/tron";
 import {
   validateTransfer,
   validateNative,
@@ -27,7 +27,7 @@ if (config.network !== "nile")
     "Reference signer is restricted to Nile; use HSM/MPC service for mainnet",
   );
 const pool = database(),
-  tron = tronClient();
+  tron = new TronWeb({ fullHost: config.host });
 await ensureChainBinding();
 const hot = TronWeb.address.fromPrivateKey(hotKey);
 if (!hot || hot !== process.env.TRON_HOT_WALLET_ADDRESS)

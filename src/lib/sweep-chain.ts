@@ -1,6 +1,7 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { TronWeb, type Types } from "tronweb";
-import { chainConfig, tronClient, validTronAddress } from "./tron";
+import { getTronGridKey } from "./tron-api-settings";
+import { chainConfig, validTronAddress } from "./tron";
 import {
   transferCalldata,
   validateTransfer,
@@ -34,17 +35,18 @@ export function gasBudget(
 }
 export class SweepChain {
   config = chainConfig();
-  tron = tronClient();
+  tron = new TronWeb({ fullHost: this.config.host });
   private tail: Promise<unknown> = Promise.resolve();
   private last = 0;
   rpc<T>(method: string, body: unknown): Promise<T> {
     const run = this.tail
       .catch(() => {})
       .then(async () => {
+        const apiKey = await getTronGridKey();
         await delay(
           Math.max(
             0,
-            (process.env.TRONGRID_API_KEY ? 150 : 1100) -
+            (apiKey ? 150 : 1100) -
               (Date.now() - this.last),
           ),
         );
@@ -55,8 +57,8 @@ export class SweepChain {
           signal: AbortSignal.timeout(8000),
           headers: {
             "Content-Type": "application/json",
-            ...(process.env.TRONGRID_API_KEY
-              ? { "TRON-PRO-API-KEY": process.env.TRONGRID_API_KEY }
+            ...(apiKey
+              ? { "TRON-PRO-API-KEY": apiKey }
               : {}),
           },
           body: JSON.stringify(body),

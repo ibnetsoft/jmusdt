@@ -5,7 +5,7 @@ export async function GET() {
   return api(async () => {
     await identity(true);
     const pool = database(),
-      tron = tronClient(),
+      tron = await tronClient(),
       { network, contract } = chainConfig();
     const hot = process.env.TRON_HOT_WALLET_ADDRESS;
     if (!contract || !hot || !validTronAddress(hot))

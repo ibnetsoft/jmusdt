@@ -1,4 +1,5 @@
 import { TronWeb } from "tronweb";
+import { getTronGridKey } from "./tron-api-settings";
 export const MAINNET_USDT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 export function chainConfig() {
   const network = process.env.TRON_NETWORK || "nile";
@@ -15,12 +16,13 @@ export function chainConfig() {
         : "https://nile.trongrid.io",
   };
 }
-export function tronClient() {
+export async function tronClient() {
   const { host } = chainConfig();
+  const apiKey = await getTronGridKey();
   return new TronWeb({
     fullHost: host,
-    headers: process.env.TRONGRID_API_KEY
-      ? { "TRON-PRO-API-KEY": process.env.TRONGRID_API_KEY }
+    headers: apiKey
+      ? { "TRON-PRO-API-KEY": apiKey }
       : {},
   });
 }
