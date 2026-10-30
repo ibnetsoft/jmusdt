@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { api, identity, checkOrigin, HttpError } from "@/lib/http";
 import { database, transaction } from "@/lib/db";
+import { canManageFunds } from "@/lib/admin-access";
 import { encryptTronKey, clearTronKeyCache } from "@/lib/tron-api-settings";
 
 export async function GET() {
@@ -13,7 +14,8 @@ export async function GET() {
 export async function POST(request: Request) {
   return api(async () => {
     checkOrigin(request);
-    const { user } = await identity(true, true);
+    const { user } = await identity(true);
+    if (!canManageFunds(user)) throw new HttpError(403, "최고관리자 권한이 필요합니다.");
     const parsed = z.object({ key: z.string().trim().min(10).max(200).regex(/^[A-Za-z0-9_-]+$/) }).safeParse(await request.json());
     if (!parsed.success) throw new HttpError(400, "TronGrid API 키를 확인해 주세요.");
     let response: Response;
