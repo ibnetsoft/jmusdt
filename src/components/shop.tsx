@@ -1,6 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
-import { readPreloadedData, clearPreloadedData, fetchPageData } from "@/lib/preload-pages";
+import { getPreloadedShopProducts, subscribePreloadedShopProducts, preloadPages, clearPreloadedData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
@@ -85,7 +85,7 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
   const { tr } = useI18n();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]),
-    [available, setAvailable] = useState("0");
+    [available, setAvailable] = useState("");
   const [selected, setSelected] = useState<Product | null>(null),
     [catalogFresh, setCatalogFresh] = useState(false),
     [quantity, setQuantity] = useState(1),
@@ -117,18 +117,27 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
     }
   }
   useEffect(() => {
-    let active = true, fresh = false;
-    void readPreloadedData<{ products: Product[]; available: string; marketing: typeof marketing }>("/api/shop?catalog=1").then(data => {
-      if (active && !fresh && data) {
-        setProducts(data.products); setAvailable(data.available); setMarketing(data.marketing); setLoading(false);
-        if (productId) { const product = data.products.find(p => p.id === productId); if (product) choose(product); }
-      }
+    let active = true;
+    const update = () => {
+      const cached = getPreloadedShopProducts<Product>();
+      if (!active || !cached) return;
+      setProducts(cached); setLoading(false);
+      if (productId) { const product = cached.find(p => p.id === productId); if (product) setSelected(current => current || product); }
+    };
+    const unsubscribe = subscribePreloadedShopProducts(update);
+    update();
+    if (!getPreloadedShopProducts<Product>()) void preloadPages().then(() => {
+      // If startup preloading failed, retain the normal retry/error path.
+      if (active && !preview && !productId && !getPreloadedShopProducts<Product>())
+        return load().catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
     });
-    load(true).then(() => { fresh = true; })
-      .catch((e) => { fresh = true; if (active) setError(e.message); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [productId]);
+    if (productId) {
+      load(true).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
+    } else if (!preview) {
+      void requestJson("/api/points").then(data => { if (active) setAvailable(data.points); }).catch(e => { if (active) setError(e.message); });
+    }
+    return () => { active = false; unsubscribe(); };
+  }, [productId, preview]);
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("jmusdt-cart") || "[]");
@@ -138,13 +147,6 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
   function updateCart(ids: string[]) {
     try { localStorage.setItem("jmusdt-cart", JSON.stringify(ids)); setCart(ids); return true; }
     catch { setError("장바구니를 저장하지 못했습니다."); return false; }
-  }
-  function choose(product: Product) {
-    setSelected(product);
-    setQuantity(1);
-    key.current = crypto.randomUUID();
-    setNotice("");
-    setError("");
   }
   async function purchase() {
     if (!selected || locked.current) return;
@@ -159,7 +161,7 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
         requestKey: key.current,
         marketingVersion: marketing.version || undefined,
       });
-      clearPreloadedData();
+      clearPreloadedData({ preserveShopProducts: true });
       setNotice(`구매가 완료되었습니다. 주문번호 ${result.id}`);
       setSelected(null);
       key.current = "";
@@ -186,7 +188,7 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
         </div>; })}
         {cart.length > 0 && <Link className="shop-primary" href="/shop/cart">{tr("장바구니 결제")}</Link>}
       </section>}
-      <div className="shop-balance"><strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong></div>
+      <div className="shop-balance">{available !== "" && <strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong>}</div>
       {tr(error) && (
         <p className="shop-error" role="alert">
           {tr(error)}{" "}

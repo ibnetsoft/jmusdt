@@ -100,7 +100,7 @@ export function Points() {
         if (r.status === 409 && d.error === "전환 비율이 변경됐습니다. 새로고침 후 다시 확인해 주세요.") { setConfirm(false); await load(); }
         throw new Error(d.error);
       }
-      clearPreloadedData();
+      clearPreloadedData({ preserveShopProducts: true });
       setConfirm(false);
       setAmount("");
       setNotice("전환이 완료되었습니다.");

@@ -4,6 +4,14 @@ type Account = { id: string } | { invalid: true } | null;
 const entries = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<void>>();
 const sharedRequests = new Map<string, Promise<Response>>();
+let shopProducts: unknown[] | null = null;
+const shopListeners = new Set<() => void>();
+export function getPreloadedShopProducts<T>(): T[] | null { return shopProducts as T[] | null; }
+export function subscribePreloadedShopProducts(listener: () => void) { shopListeners.add(listener); return () => { shopListeners.delete(listener); }; }
+function publishShopProducts(value: unknown) {
+  shopProducts = Array.isArray(value) ? value : null;
+  for (const listener of shopListeners) listener();
+}
 const endpoints = ["/api/shop?catalog=1", "/api/organization?mode=sponsor&depth=3", "/api/organization?mode=referral&depth=3", "/api/points", "/api/rewards", "/api/shop"];
 const cacheableEndpoints = [...endpoints, "/api/wallet"];
 const storageKey = "wu-page-cache-v1";
@@ -40,9 +48,11 @@ async function currentAccount(): Promise<Account> {
   }
   return validation;
 }
-export function clearPreloadedData() {
+export function clearPreloadedData(options?: { preserveShopProducts?: boolean }) {
   generation++; userId = ""; lastWarm = 0; entries.clear(); inFlight.clear(); sharedRequests.clear(); warming = null; scheduling = null; restored = true;
+  if (!options?.preserveShopProducts) publishShopProducts(null);
   try { if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(storageKey); } catch { /* Ignore unavailable storage. */ }
+  if (options?.preserveShopProducts) void preloadPages();
 }
 // Share only concurrent reads. Each consumer receives its own response body and
 // can abandon its result without cancelling requests needed by other screens.
@@ -87,7 +97,10 @@ export function preloadPages(): Promise<void> {
       for (const [endpoint, entry] of entries) if (entry.userId !== id) { entries.delete(endpoint); removedOtherAccount = true; }
       if (removedOtherAccount) persistEntries();
       const catalog = entries.get("/api/shop?catalog=1");
-      if (catalog?.userId === id && catalog.expires > Date.now()) preloadProductImages((catalog.value as { products?: unknown }).products);
+      if (catalog?.userId === id && catalog.expires > Date.now()) {
+        const products = (catalog.value as { products?: unknown }).products;
+        publishShopProducts(products); preloadProductImages(products);
+      }
       if (Date.now() - lastWarm < 30000) return;
       lastWarm = Date.now(); const current = generation;
       const remaining = [...endpoints];
@@ -103,7 +116,7 @@ export function preloadPages(): Promise<void> {
               if (current === generation && userId === id && value?.accountId === id) {
                 entries.set(endpoint, { userId: id, value, expires: Date.now() + cacheLifetime });
                 persistEntries();
-                if (endpoint === "/api/shop?catalog=1") preloadProductImages(value.products);
+                if (endpoint === "/api/shop?catalog=1") { publishShopProducts(value.products); preloadProductImages(value.products); }
               }
             } catch { /* Individual pages still load directly on navigation. */ }
           })();

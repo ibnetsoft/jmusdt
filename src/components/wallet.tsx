@@ -577,7 +577,7 @@ function Send({
         const body = await response.json();
         if (!response.ok) throw new Error(body.error);
       }
-      clearPreloadedData();
+      clearPreloadedData({ preserveShopProducts: true });
       await onUpdate();
       setStage("done");
     } catch (e) {
@@ -790,7 +790,7 @@ function Activity({
     {loadError && filter !== "transactions" && <p role="alert">{tr(loadError)}</p>}
     {filter === "transactions" && <ActivityList transactions={transactions} onSelect={onSelect} />}
     {filter === "rewards" && loadedParts.rewards && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 0)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
-    {filter === "orders" && loadedParts.orders && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => { clearPreloadedData(); setHistoryRevision(n => n + 1); }} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
+    {filter === "orders" && loadedParts.orders && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => { clearPreloadedData({ preserveShopProducts: true }); setHistoryRevision(n => n + 1); }} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
     {filter === "swaps" && loadedParts.swaps && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.received_amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
   </>;
 }

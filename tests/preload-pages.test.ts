@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cacheWalletData, clearPreloadedData, fetchPageData, preloadPages, readPreloadedData } from "../src/lib/preload-pages";
+import { cacheWalletData, clearPreloadedData, fetchPageData, getPreloadedShopProducts, preloadPages, readPreloadedData, subscribePreloadedShopProducts } from "../src/lib/preload-pages";
 import { preloadProductImages, productImageSizes } from "../src/lib/shop-images";
 
 test("preloaded pages are session-scoped and discarded after an account change", async () => {
@@ -68,6 +68,25 @@ test("shop and organization become available before a slow unrelated page", asyn
     assert.deepEqual(await readPreloadedData("/api/organization?mode=sponsor&depth=3"), { accountId: "first", url: "/api/organization?mode=sponsor&depth=3" });
     release(); await warming;
   } finally { release(); clearPreloadedData(); globalThis.fetch = originalFetch; }
+});
+
+test("verified product list is immediately available without an additional request and is cleared on logout", async () => {
+  const originalFetch = globalThis.fetch; let calls = 0, notifications = 0;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    calls++;
+    if (String(input) === "/api/session") return Response.json({ userId: "first" });
+    return Response.json({ accountId: "first", products: [{ id: "p", name: "상품" }], available: "999" });
+  }) as typeof fetch;
+  const unsubscribe = subscribePreloadedShopProducts(() => { notifications++; });
+  try {
+    clearPreloadedData(); await preloadPages();
+    const before = calls;
+    assert.deepEqual(getPreloadedShopProducts(), [{ id: "p", name: "상품" }]);
+    assert.equal(calls, before);
+    assert.ok(notifications > 0);
+    clearPreloadedData();
+    assert.equal(getPreloadedShopProducts(), null);
+  } finally { unsubscribe(); clearPreloadedData(); globalThis.fetch = originalFetch; }
 });
 
 test("concurrent page requests share one fetch without sharing response bodies or cancellation", async () => {
