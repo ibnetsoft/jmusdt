@@ -2617,3 +2617,26 @@ html[lang="ko"] .quick-actions button { font-size: 16.8px; }
   .send-view { display: flex; flex-direction: column; min-height: calc(100dvh - 180px - env(safe-area-inset-bottom)); }
   .send-actions { margin-top: auto; padding-top: 10px; }
 }
+
+/* Bright mode uses darker secondary text on light surfaces and white on green. */
+html[data-theme="light"] :is(.balance-title, .balance-title button, .section-heading button, .field > span, .field-hint, .amount-field > span, .amount-field small, .amount-presets button:not(:last-child), .segmented button:not(.active), .filter-tabs button:not(.active), .details dt, .network-pill, .network-warning, .review-card p, .review-card small, .success-view > p:not(.eyebrow), .success-amount small, .settings-profile p, .settings-list svg, .security-settings small, .detail-amount small, .empty, .empty small, .tx-description small, .tx-amount small, .login-form > p:not(.eyebrow), .login-form .text-button, .shop-order small, .product-content figcaption) { color: var(--muted); }
+html[data-theme="light"] :is(.field input, .field textarea, .amount-field input, .modal, .network-warning b) { color: var(--text); }
+html[data-theme="light"] :is(.field input::placeholder, .field textarea::placeholder, .amount-field input::placeholder) { color: var(--muted); opacity: 1; }
+html[data-theme="light"] :is(.deposit-card, .deposit-address, .login-art, .login-art p, .login-art > span) { color: #fff; }
+html[data-theme="light"] .qr-demo { color: var(--text); }
+html[data-theme="light"] .tx-amount.incoming strong { color: #17695a; }
+html[data-theme="light"] .amount-presets button:last-child { color: #a52626; }
+html[data-theme="light"] :is(.error-banner, .error-banner button, .form-error, .shop-error) { color: #922a2a; }
+html[data-theme="light"] .shop-success { color: #edf5f0; }
+html[data-theme="light"] .admin-sidebar { color: var(--text); }
+html[data-theme="light"] :is(.admin-sidebar nav button, .admin-sidebar-footer a, .admin-sidebar-footer svg, .admin-heading .eyebrow, .admin-heading > div > p:last-child, .admin-topbar > span) { color: var(--muted); }
+html[data-theme="light"] .admin-sidebar nav button.active { background: var(--red); color: #fff; }
+html[data-theme="light"] .heading-actions .dark-button { color: var(--text); border-color: var(--line); }
+html[data-theme="light"] :is(.admin-sidebar .brand small, .admin-network, .admin-demo, .metric > div, .metric > strong small, .metric > p, .panel-heading p, .panel-heading > span, .panel-heading > button, .allocation-ring span, .allocation-ring small, .allocation-legend > div, .operational-status p, .operational-panel dt, .operational-panel > button, .admin-layout th, .admin-layout td small, .admin-layout td em, .address-cell button) { color: var(--muted); }
+html[data-theme="light"] .panel-heading h2 b { color: #922a2a; }
+html[data-theme="light"] .admin-layout .status { color: #4b5952; }
+html[data-theme="light"] :is(.admin-footer, .table-actions .reject) { color: var(--muted); }
+@media (max-width: 700px) {
+  html[data-theme="light"] .bottom-nav a { color: #58655e; }
+  html[data-theme="light"] .bottom-nav a.active { color: #151515; }
+}
