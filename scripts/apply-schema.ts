@@ -50,6 +50,7 @@ try {
   await client.query(await readFile(new URL("../db/branding.sql", import.meta.url), "utf8"));
   await client.query(await readFile(new URL("../db/exchange-rate.sql", import.meta.url), "utf8"));
   await client.query(await readFile(new URL("../db/tron-api-settings.sql", import.meta.url), "utf8"));
+  await client.query(await readFile(new URL("../supabase/migrations/20261030060612_company_wallet_transfers.sql", import.meta.url), "utf8"));
   await client.query("COMMIT");
   console.log("Wallet schema applied.");
 } catch (error) {
