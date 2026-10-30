@@ -2,6 +2,7 @@
 import { getAdminData, fetchAdminData, clearAdminData } from "@/lib/admin-preload";
 import Link from "next/link";
 import { AlertTriangle, ArrowDownLeft, ShieldCheck, Wallet } from "lucide-react";
+import { CompanyWalletBalance } from "./company-wallet-balance";
 import { useI18n } from "./i18n";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -385,6 +386,7 @@ export function Sweeps() {
           </div>
           </section>
           <aside className="sweep-column sweep-sidebar">
+          <CompanyWalletBalance />
           <section className="shop-editor admin-network-status">
             <div className="sweep-section-heading"><ShieldCheck size={17} aria-hidden="true" /><h2>{tr("회사 지갑 및 실행 상태")}</h2></div>
 

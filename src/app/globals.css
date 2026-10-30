@@ -2744,3 +2744,10 @@ html[data-theme="dark"] .sweep-page .sweep-notice { background: #241e12; color: 
 @media (max-width: 1050px) { .sweep-workspace { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .sweep-column, .admin-route-content > .commerce .sweep-history { padding: 16px; } .sweep-badge { display: none; } .sweep-page .sweep-search button { flex: 1 1 auto; } }
 html[data-theme="dark"] .sweep-page .sweep-table th { background: transparent; color: #aeb5bd; }
+.company-wallet-balance .sweep-section-heading button { display: inline-flex; gap: 5px; align-items: center; }
+.company-wallet-balance p { overflow-wrap: anywhere; font-size: 12px; }
+.company-wallet-amounts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.company-wallet-amounts > div { min-width: 0; padding: 12px; border: 1px solid var(--sweep-edge); border-radius: 8px; }
+.company-wallet-amounts small, .company-wallet-amounts strong { display: block; overflow-wrap: anywhere; }
+.company-wallet-amounts small { color: var(--muted); margin-bottom: 8px; }
+@media (max-width: 400px) { .company-wallet-amounts { grid-template-columns: 1fr; } }
