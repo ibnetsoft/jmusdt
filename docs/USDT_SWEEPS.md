@@ -88,4 +88,4 @@ Next.js/Vercel 웹 배포만으로 지속 실행 워커가 생기지는 않습�
 
 ## 무료 회원 회수 워커
 
-`INTERNAL_CUSTODY_ENABLED=true`는 Supabase Vault의 회원 지갑 파생 비밀을 사용해 회원 입금 주소와 승인된 회수 거래를 처리합니다. `SWEEP_BROADCAST_ENABLED=true`는 회원 회수 전송을 별도로 허용하며, 승인 전 임의의 회수 거래를 만들지 않습니다. Supabase pg_cron은 활성 회수 요청이 있을 때만 인증된 Vercel 워커를 호출합니다. 회사 지갑을 생성하고 TRX를 충전한 후 회수 설정을 활성화해야 합니다. 회사 지갑의 개인키와 회원 지갑 파생 비밀을 저장소나 채팅에 공개하지 마세요. Vault 복구를 위해 프로젝트 백업이 필요합니다.
+`INTERNAL_CUSTODY_ENABLED=true`는 Supabase Vault의 회원 지갑 파생 비밀을 사용해 회원 입금 주소와 승인된 회수 거래를 처리합니다. `SWEEP_BROADCAST_ENABLED=true`는 회원 회수 전송을 별도로 허용하며, 승인 전 임의의 회수 거래를 만들지 않습니다. Supabase pg_cron은 활성 회수 요청이 있을 때만 인증된 Vercel 워커를 호출합니다. 운영 환경의 `SWEEP_ENABLE_ON_WALLET_CREATE=true` 설정은 최고관리자가 회사 지갑을 생성할 때 서명 및 백업 준비 상태를 확인하고 회수를 활성화합니다. 회사 지갑에 TRX를 충전해야 실제 회수를 검토할 수 있습니다. 회사 지갑의 개인키와 회원 지갑 파생 비밀을 저장소나 채팅에 공개하지 마세요. Vault 복구를 위해 프로젝트 백업이 필요합니다.

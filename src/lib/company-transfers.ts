@@ -35,6 +35,16 @@ async function wallet(db: Pick<PoolClient,"query">):Promise<WalletRow> {
   if (!row) throw new SweepError("회사 지갑을 먼저 생성하세요.");
   return row;
 }
+export async function enableSweepAfterWalletCreation(db: Pick<PoolClient,"query">, address:string, actor:string) {
+  if(process.env.SWEEP_ENABLE_ON_WALLET_CREATE !== "true") return false;
+  const { sweepRuntime } = await import("./sweeps");
+  const { assertInternalCustodyReady } = await import("./internal-custody");
+  if(sweepRuntime(address).issues.length) return false;
+  await assertInternalCustodyReady(db);
+  const result=await db.query("UPDATE sweep_settings SET enabled=true,version=version+1,updated_at=now() WHERE id=true AND enabled=false RETURNING id");
+  if(result.rowCount) await db.query("INSERT INTO audit_logs(actor,action,details) VALUES($1,'sweep.enabled_after_wallet_creation','{}'::jsonb)",[actor]);
+  return true;
+}
 export async function createCompanyWallet(actor:string) {
   const c=config();
   return transaction(async db=>{
@@ -49,7 +59,8 @@ export async function createCompanyWallet(actor:string) {
     if(!address)throw new SweepError("회사 지갑 생성 실패");
     await db.query("INSERT INTO company_wallets(id,network,address,encrypted_private_key,created_by) VALUES(true,$1,$2,$3,$4)",[c.network,address,encryptTronKey(key,walletSecret()),actor]);
     await db.query("INSERT INTO audit_logs(actor,action,details) VALUES($1,'company.wallet_created',$2)",[actor,JSON.stringify({address,network:c.network})]);
-    return {address};
+    const sweepEnabled=await enableSweepAfterWalletCreation(db,address,actor);
+    return {address,sweepEnabled};
   });
 }
 export async function companyWalletDashboard() {
