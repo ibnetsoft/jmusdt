@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useI18n } from "./i18n";
 
 import { useEffect, useRef, useState } from "react";
@@ -109,8 +110,8 @@ export function OrderAdmin() {
   return (
     <main className="commerce">
       <header>
-        <a href="/admin">{tr("← 관리자 콘솔")}</a>
-        <a href="/admin/shop">{tr("상품 관리")}</a>
+        <Link href="/admin">{tr("← 관리자 콘솔")}</Link>
+        <Link href="/admin/shop">{tr("상품 관리")}</Link>
       </header>
       <p className="shop-kicker">ADMIN / ORDERS</p>
       <h1>{tr("주문 관리")}</h1>

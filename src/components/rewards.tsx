@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useI18n } from "./i18n";
 import { getAuthGeneration, getVerifiedPageData, subscribeVerifiedPageData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
@@ -139,10 +140,10 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
     <>
     <main className="commerce marketing-rewards">
       <header>
-        {admin && <a href="/admin">← {tr("관리자 콘솔")}</a>}
-        <a href={admin ? "/admin/shop" : "/shop"}>
+        {admin && <Link href="/admin">← {tr("관리자 콘솔")}</Link>}
+        <Link href={admin ? "/admin/shop" : "/shop"}>
           {admin ? tr("상품별 보상 설정") : tr("쇼핑몰")}
-        </a>
+        </Link>
         {!admin && <a href="/organization">{tr("조직도")}</a>}
       </header>
       <p className="shop-kicker">WU / MARKETING</p>

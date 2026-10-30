@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useI18n } from "./i18n";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -250,9 +251,9 @@ export function Sweeps() {
   return (
     <main className="commerce sweep-page">
       <header>
-        <a href="/admin">{tr("← 관리자 콘솔")}</a>
-        <a href="/admin#operations">{tr("자금 운영")}</a>
-        <a href="/admin">{tr("관리자 2단계 인증 설정")}</a>
+        <Link href="/admin">{tr("← 관리자 콘솔")}</Link>
+        <Link href="/admin?tab=operations">{tr("자금 운영")}</Link>
+        <Link href="/admin">{tr("관리자 2단계 인증 설정")}</Link>
       </header>
       <p className="shop-kicker">ADMIN / TRC20 COLLECTION</p>
       <h1>{tr("USDT 모으기")}</h1>

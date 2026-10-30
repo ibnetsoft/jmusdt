@@ -4,7 +4,10 @@ import { identity, HttpError } from "@/lib/http";
 import { isDemo } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const { tab } = await searchParams;
+  const tabs = ["overview", "withdrawals", "transactions", "users", "operations", "audit"] as const;
+  const initialTab = tabs.find((item) => item === tab) ?? "overview";
   const { tr } = await serverI18n();
   if (!isDemo()) {
     try {
@@ -20,5 +23,5 @@ export default async function Page() {
       );
     }
   }
-  return <AdminApp />;
+  return <AdminApp initialTab={initialTab} />;
 }

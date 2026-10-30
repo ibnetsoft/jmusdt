@@ -404,9 +404,9 @@ export function ProductAdmin() {
   return (
     <main className="commerce">
       <header>
-        <a href="/admin">{tr("← 관리자 콘솔")}</a>
+        <Link href="/admin">{tr("← 관리자 콘솔")}</Link>
 
-        <a href="/admin/marketing">{tr("마케팅 관리")}</a>
+        <Link href="/admin/marketing">{tr("마케팅 관리")}</Link>
       </header>
       <p className="shop-kicker">ADMIN / COMMERCE</p>
       <h1>{tr("상품 관리")}</h1>

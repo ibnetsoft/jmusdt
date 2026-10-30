@@ -1,5 +1,7 @@
 "use client";
+import Link from "next/link";
 import { useI18n } from "./i18n";
+import { useRouter } from "next/navigation";
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -38,10 +40,12 @@ type Tab =
   | "users"
   | "operations"
   | "audit";
-export function AdminApp() {
+export function AdminApp({ initialTab = "overview" }: { initialTab?: Tab }) {
   const { tr, locale } = useI18n();
+  const router = useRouter();
+  const tab = initialTab;
+  const setTab = (next: Tab) => router.push(next === "overview" ? "/admin" : `/admin?tab=${next}`);
   const [data, setData] = useState<AdminData | null>(null),
-    [tab, setTab] = useState<Tab>("overview"),
     [search, setSearch] = useState(""),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
@@ -68,6 +72,7 @@ export function AdminApp() {
       checkedAt: string;
     } | null>(null),
     [reconBusy, setReconBusy] = useState(false);
+  useEffect(() => { setSearch(""); }, [initialTab]);
   useDialogFocus(Boolean(decision));
   const refresh = useCallback(async () => {
     try {
@@ -287,61 +292,7 @@ export function AdminApp() {
     );
   }
   return (
-    <div className="admin-layout">
-      <aside className="admin-sidebar">
-        <Brand admin />
-        <div className="console-label">WORKSPACE / WU</div>
-        <nav aria-label={tr("관리자 메뉴")}>
-          <button
-            onClick={() => {
-              location.href = "/admin/orders";
-            }}
-          >{tr("주문 관리")}</button>
-          <button
-            onClick={() => {
-              location.href = "/admin/sweeps";
-            }}
-          >{tr("USDT 모으기")}</button>
-          <button onClick={() => { location.href = "/admin/exchange-rate"; }}>{tr("포인트 전환 비율")}</button>
-          <button
-            onClick={() => {
-              location.href = "/admin/marketing";
-            }}
-          >{tr("마케팅 관리")}</button>
-          <button
-            onClick={() => {
-              location.href = "/admin/shop";
-            }}
-          >{tr("상품 관리")}</button>
-          {nav.map((n) => (
-            <button
-              key={n.key}
-              onClick={() => {
-                setTab(n.key);
-                setSearch("");
-              }}
-              className={tab === n.key ? "active" : ""}
-            >
-              <n.icon size={18} />
-              {tr(n.label)}
-              {n.key === "withdrawals" && pending.length ? (
-                <b>{pending.length}</b>
-              ) : null}
-            </button>
-          ))}
-        </nav>
-        <div className="admin-sidebar-footer">
-          <div>
-            <ShieldCheck size={17} />
-            <span>{tr("관리자 콘솔")}<small>
-                {data?.mode === "demo" ? "DEMO WORKSPACE" : "LIVE WORKSPACE"}
-              </small>
-            </span>
-          </div>
-          <a href="/">{tr("사용자 지갑 열기 ")}<ArrowUpRight size={15} />
-          </a>
-        </div>
-      </aside>
+    <>
       <div className="admin-content">
         <header className="admin-topbar">
           <span>
@@ -380,8 +331,8 @@ export function AdminApp() {
               </p>
             </div>
             <div className="heading-actions">
-              <a href="/admin/branding">{tr("로고 설정")}</a>
-              <a href="/admin/grades">{tr("회원등급 관리")}</a>
+              <Link href="/admin/branding">{tr("로고 설정")}</Link>
+              <Link href="/admin/grades">{tr("회원등급 관리")}</Link>
               <button onClick={() => void refresh()}>
                 <RefreshCw size={16} />{tr("새로고침")}</button>
               <button className="dark-button" onClick={csv}>
@@ -903,7 +854,7 @@ export function AdminApp() {
           onClose={() => setSelected(null)}
         />
       ) : null}
-    </div>
+    </>
   );
 }
 function Metric({

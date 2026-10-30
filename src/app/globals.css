@@ -2640,3 +2640,17 @@ html[data-theme="light"] :is(.admin-footer, .table-actions .reject) { color: var
   html[data-theme="light"] .bottom-nav a { color: #58655e; }
   html[data-theme="light"] .bottom-nav a.active { color: #151515; }
 }
+
+/* Keep the administration navigation mounted while routes change. */
+.admin-route-content { flex: 1; min-width: 0; }
+.admin-sidebar { overflow-y: auto; }
+.admin-sidebar nav a { display: flex; align-items: center; gap: 12px; text-align: left; font-size: 11px; color: #939393; padding: 12px 13px; border-radius: 8px; text-decoration: none; }
+.admin-sidebar nav a.active { background: #2a2222; color: #efaaaa; }
+html[data-theme="light"] .admin-sidebar nav a { color: var(--muted); }
+html[data-theme="light"] .admin-sidebar nav a.active { background: var(--red); color: #fff; }
+@media (max-width: 700px) {
+  .admin-sidebar nav a { padding: 14px; justify-content: center; }
+  .admin-sidebar nav a span { display: none; }
+  .admin-sidebar nav a svg { min-width: 18px; }
+}
+.admin-route-content > .commerce { max-width: none; min-height: 100vh; background: var(--bg); }
