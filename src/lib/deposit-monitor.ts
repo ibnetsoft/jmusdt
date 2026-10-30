@@ -55,14 +55,22 @@ export async function runDepositScan() {
       if (Date.now() >= deadline) break;
       const receipts = await chain.rpc<Receipt[]>("walletsolidity/gettransactioninfobyblocknum", {num: block});
       if (!Array.isArray(receipts)) throw new Error("Invalid block receipt response; cursor not advanced");
+      const events: {address: string; amount: string; index: number; txid: string; timestamp: number}[] = [];
       for (const info of receipts) {
         if (info.blockNumber !== block || !Number.isSafeInteger(info.blockTimeStamp) || !/^[a-f0-9]{64}$/i.test(info.id)) throw new Error("Invalid block receipt");
-        for (const event of decodeDeposits(info, contract)) {
-          const owner = (await client.query("SELECT user_id,created_at FROM deposit_addresses WHERE address=$1 AND network=$2", [event.address, network])).rows[0];
-          if (!owner || new Date(owner.created_at).getTime() > info.blockTimeStamp) continue;
-          const result = await client.query("SELECT wallet_credit_deposit($1,$2,$3,$4,$5,$6) AS credited", [owner.user_id, event.amount, network, info.id, event.index, block]);
-          if (result.rows[0].credited) credited++;
-        }
+        for (const event of decodeDeposits(info, contract))
+          events.push({...event, txid: info.id, timestamp: info.blockTimeStamp});
+      }
+      const addresses = [...new Set(events.map(event => event.address))];
+      const owners = addresses.length
+        ? (await client.query("SELECT address,user_id,created_at FROM deposit_addresses WHERE network=$1 AND address=ANY($2::text[])", [network, addresses])).rows
+        : [];
+      const byAddress = new Map(owners.map(owner => [owner.address, owner]));
+      for (const event of events) {
+        const owner = byAddress.get(event.address);
+        if (!owner || new Date(owner.created_at).getTime() > event.timestamp) continue;
+        const result = await client.query("SELECT wallet_credit_deposit($1,$2,$3,$4,$5,$6) AS credited", [owner.user_id, event.amount, network, event.txid, event.index, block]);
+        if (result.rows[0].credited) credited++;
       }
       last = block;
     }
