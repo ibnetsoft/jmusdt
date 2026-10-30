@@ -23,9 +23,9 @@ export function sweepRuntime(companyAddress = process.env.TRON_HOT_WALLET_ADDRES
   if (!validTronAddress(company)) issues.push("회사 지갑 주소 미설정");
   if (!Number.isSafeInteger(feeLimit) || feeLimit < 1 || feeLimit > 1000000000)
     issues.push("수수료 한도 설정 오류");
-  if (!process.env.CUSTODY_URL || !process.env.CUSTODY_TOKEN)
+  if ((!process.env.CUSTODY_URL || !process.env.CUSTODY_TOKEN) && process.env.INTERNAL_CUSTODY_ENABLED !== "true")
     issues.push("격리 수탁·서명 서비스 미설정");
-  if (process.env.TRON_BROADCAST_ENABLED !== "true")
+  if (process.env.TRON_BROADCAST_ENABLED !== "true" && process.env.SWEEP_BROADCAST_ENABLED !== "true")
     issues.push("서버 온체인 전송 비활성");
   if (
     (process.env.SWEEP_REVIEW_SECRET || process.env.CRON_SECRET || "").length <

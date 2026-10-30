@@ -34,7 +34,15 @@ export function validTronAddress(address: string) {
 export async function custody<T>(path: string, body: unknown): Promise<T> {
   const url = process.env.CUSTODY_URL,
     token = process.env.CUSTODY_TOKEN;
-  if (!url || !token) throw new Error("Custody service not configured");
+  if (!url || !token) {
+    if (process.env.INTERNAL_CUSTODY_ENABLED !== "true") throw new Error("Custody service not configured");
+    const internal = await import("./internal-custody");
+    const input = body as { index?: string; kind?: string; id?: string; transaction?: import("tronweb").Types.Transaction; network?: string };
+    if (input.network !== chainConfig().network) throw new Error("Custody network mismatch");
+    if (path === "/addresses" && typeof input.index === "string") return await internal.internalAddress(input.index) as T;
+    if (path === "/sign" && input.kind && input.id && input.transaction) return await internal.internalSignSweep(input.kind,input.id,input.transaction) as T;
+    throw new Error("Unsupported internal custody operation");
+  }
   if (!url.startsWith("https://") && !url.startsWith("http://127.0.0.1:"))
     throw new Error("Custody must use HTTPS");
   const response = await fetch(`${url.replace(/\/$/, "")}${path}`, {

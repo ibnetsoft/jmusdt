@@ -2,6 +2,7 @@ import { z } from "zod";
 import { api, identity, checkOrigin, HttpError } from "@/lib/http";
 import { transaction } from "@/lib/db";
 import { companyWalletAddress } from "@/lib/company-wallet-address";
+import { assertInternalCustodyReady } from "@/lib/internal-custody";
 import {
   sweepDashboard,
   previewSweeps,
@@ -118,6 +119,9 @@ export async function POST(request: Request) {
       if (p.enabled) {
         const runtime = sweepRuntime(await companyWalletAddress(db));
         if (runtime.issues.length) throw new HttpError(409, runtime.issues.join(" · "));
+        if (process.env.INTERNAL_CUSTODY_ENABLED === "true" && (!process.env.CUSTODY_URL || !process.env.CUSTODY_TOKEN)) {
+          try { await assertInternalCustodyReady(db); } catch { throw new HttpError(409, "회원 지갑 서명 및 회사 지갑 백업 설정을 확인하세요."); }
+        }
       }
       const s = await db.query(
         "UPDATE sweep_settings SET enabled=$1,max_topup=$2,company_reserve=$3,version=version+1,updated_at=now() WHERE id=true AND version=$4 RETURNING *",
