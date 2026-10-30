@@ -1,6 +1,7 @@
 "use client";
 import { getAdminData, fetchAdminData, clearAdminData } from "@/lib/admin-preload";
 import Link from "next/link";
+import { AlertTriangle, ArrowDownLeft, ShieldCheck, Wallet } from "lucide-react";
 import { useI18n } from "./i18n";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -250,8 +251,9 @@ export function Sweeps() {
         <Link href="/admin">{tr("관리자 2단계 인증 설정")}</Link>
       </header>
       <p className="shop-kicker">ADMIN / TRC20 COLLECTION</p>
-      <h1>{tr("USDT 모으기")}</h1>
+      <h1><Wallet size={23} aria-hidden="true" /> {tr("USDT 모으기")}</h1>
       <p className="shop-muted">{tr("회원 주소에 보관된 실제 USDT를 회사 지갑으로 이동합니다. 회원의 앱 USDT·포인트 잔액은 변경하지 않습니다. 조회·검토만으로 전송되지 않습니다.")}</p>
+      <div className="sweep-notice"><AlertTriangle size={17} aria-hidden="true" /><span>{tr("회원 지갑의 실제 온체인 USDT를 회사 지갑으로 이동합니다. 검토 후 승인해야 회수가 진행됩니다.")}</span></div>
       {tr(error) && (
         <p role="alert" className="shop-error">
           {tr(error)}
@@ -264,8 +266,128 @@ export function Sweeps() {
       )}
       {data && (
         <>
+          <div className="sweep-workspace">
+          <section className="sweep-column sweep-collection">
+            <div className="sweep-section-heading"><ArrowDownLeft size={17} aria-hidden="true" /><h2>{tr("회원 지갑에서 회사 지갑으로 모으기")}</h2><span className="sweep-badge">TRON TRC20</span></div>
+          <form
+            className="shop-section-head sweep-search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setPage(1);
+              setQuery(q);
+              setError("");
+            }}
+          >
+            <label>{tr("회원·주소 검색")}<input
+                value={q}
+                maxLength={150}
+                onChange={(e) => setQ(e.target.value)}
+              />
+            </label>
+            <button disabled={busy || scanning} type="submit">{tr("검색")}</button>
+            <button
+              type="button"
+              disabled={busy || scanning || loading}
+              onClick={() => {
+                setError("");
+                load(true).catch((e) => setError(e.message));
+              }}
+            >{tr("이 페이지 온체인 잔액 조회")}</button>
+          </form>
+          <p className="sweep-summary">{tr("등록 주소 ")}{data.count}{tr("개 · 이 페이지 확인된 USDT")}{" "}
+            {formatUsdt(total, 6)} ·{" "}
+            {scanning
+              ? tr("조회 중…")
+              : tr("{0}개 잔액 미확인", {"0": data.wallets.filter((w) => w.usdt === null).length})}
+          </p>
+          <div className="sweep-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>{tr("선택")}</th>
+                  <th>{tr("회원 / 주소")}</th>
+                  <th>{tr("확정 USDT")}</th>
+                  <th>{tr("현재 TRX")}</th>
+                  <th>{tr("조회 상태")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.wallets.map((w) => (
+                  <tr key={w.user_id}>
+                    <td>
+                      <input
+                        aria-label={tr("{0} 선택", {"0": w.email})}
+                        type="checkbox"
+                        disabled={
+                          busy ||
+                          scanning ||
+                          !eligible.some((v) => v.user_id === w.user_id)
+                        }
+                        checked={selected.includes(w.user_id)}
+                        onChange={(e) => {
+                          setReview(null);
+                          setSelected((a) =>
+                            e.target.checked
+                              ? [...a, w.user_id]
+                              : a.filter((id) => id !== w.user_id),
+                          );
+                        }}
+                      />
+                    </td>
+                    <td>
+                      {w.name} · {w.email}
+                      <small>{w.address}</small>
+                      {w.status !== "active" && (
+                        <small>{tr("앱 이용 제한 회원")}</small>
+                      )}
+                    </td>
+                    <td>{displayAmount(w.usdt, "USDT")}</td>
+                    <td>{displayAmount(w.trx, "TRX")}</td>
+                    <td>{tr(w.error) || tr("조회 완료")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {!data.wallets.length && <p>{tr("등록된 회원 입금 주소가 없습니다.")}</p>}
+          <div className="shop-section-head sweep-pagination">
+            <button
+              disabled={busy || scanning || page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >{tr("이전")}</button>
+            <span>{page}{tr(" 페이지 · 10개씩")}</span>
+            <button
+              disabled={busy || scanning || page * 10 >= data.count}
+              onClick={() => setPage((p) => p + 1)}
+            >{tr("다음")}</button>
+          </div>
+          <div className="shop-section-head sweep-actions">
+            <button
+              disabled={busy || scanning || !eligible.length}
+              onClick={() => {
+                setSelected(eligible.map((w) => w.user_id));
+                setReview(null);
+              }}
+            >{tr("이 페이지 잔액 보유 지갑 전체 선택")}</button>
+            <button
+              disabled={busy || scanning || !selected.length}
+              onClick={async () => {
+                const d = await act({ action: "review", userIds: selected });
+                if (d) {
+                  setReview(d);
+                  setReason("");
+                  setConfirmation("");
+                }
+              }}
+            >
+              {busy ? tr("처리 중…") : tr("선택 {0}개 회수 검토", {"0": selected.length})}
+            </button>
+          </div>
+          </section>
+          <aside className="sweep-column sweep-sidebar">
           <section className="shop-editor admin-network-status">
-            <h2>{tr("네트워크·실행 상태")}</h2>
+            <div className="sweep-section-heading"><ShieldCheck size={17} aria-hidden="true" /><h2>{tr("회사 지갑 및 실행 상태")}</h2></div>
+
             <p>
               {data.config.network.toUpperCase()}{tr(" · 토큰")}{" "}
               {data.config.contract || tr("미설정")}
@@ -295,7 +417,7 @@ export function Sweeps() {
           </section>
           {settings && (
             <form
-              className="shop-editor"
+              className="shop-editor sweep-settings"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const d = await act({
@@ -352,119 +474,7 @@ export function Sweeps() {
               </fieldset>
             </form>
           )}
-          <form
-            className="shop-section-head"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setPage(1);
-              setQuery(q);
-              setError("");
-            }}
-          >
-            <label>{tr("회원·주소 검색")}<input
-                value={q}
-                maxLength={150}
-                onChange={(e) => setQ(e.target.value)}
-              />
-            </label>
-            <button disabled={busy || scanning} type="submit">{tr("검색")}</button>
-            <button
-              type="button"
-              disabled={busy || scanning || loading}
-              onClick={() => {
-                setError("");
-                load(true).catch((e) => setError(e.message));
-              }}
-            >{tr("이 페이지 온체인 잔액 조회")}</button>
-          </form>
-          <p>{tr("등록 주소 ")}{data.count}{tr("개 · 이 페이지 확인된 USDT")}{" "}
-            {formatUsdt(total, 6)} ·{" "}
-            {scanning
-              ? tr("조회 중…")
-              : tr("{0}개 잔액 미확인", {"0": data.wallets.filter((w) => w.usdt === null).length})}
-          </p>
-          <div className="sweep-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>{tr("선택")}</th>
-                  <th>{tr("회원 / 주소")}</th>
-                  <th>{tr("확정 USDT")}</th>
-                  <th>{tr("현재 TRX")}</th>
-                  <th>{tr("조회 상태")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.wallets.map((w) => (
-                  <tr key={w.user_id}>
-                    <td>
-                      <input
-                        aria-label={tr("{0} 선택", {"0": w.email})}
-                        type="checkbox"
-                        disabled={
-                          busy ||
-                          scanning ||
-                          !eligible.some((v) => v.user_id === w.user_id)
-                        }
-                        checked={selected.includes(w.user_id)}
-                        onChange={(e) => {
-                          setReview(null);
-                          setSelected((a) =>
-                            e.target.checked
-                              ? [...a, w.user_id]
-                              : a.filter((id) => id !== w.user_id),
-                          );
-                        }}
-                      />
-                    </td>
-                    <td>
-                      {w.name} · {w.email}
-                      <small>{w.address}</small>
-                      {w.status !== "active" && (
-                        <small>{tr("앱 이용 제한 회원")}</small>
-                      )}
-                    </td>
-                    <td>{displayAmount(w.usdt, "USDT")}</td>
-                    <td>{displayAmount(w.trx, "TRX")}</td>
-                    <td>{tr(w.error) || tr("조회 완료")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!data.wallets.length && <p>{tr("등록된 회원 입금 주소가 없습니다.")}</p>}
-          <div className="shop-section-head">
-            <button
-              disabled={busy || scanning || page === 1}
-              onClick={() => setPage((p) => p - 1)}
-            >{tr("이전")}</button>
-            <span>{page}{tr(" 페이지 · 10개씩")}</span>
-            <button
-              disabled={busy || scanning || page * 10 >= data.count}
-              onClick={() => setPage((p) => p + 1)}
-            >{tr("다음")}</button>
-          </div>
-          <div className="shop-section-head">
-            <button
-              disabled={busy || scanning || !eligible.length}
-              onClick={() => {
-                setSelected(eligible.map((w) => w.user_id));
-                setReview(null);
-              }}
-            >{tr("이 페이지 잔액 보유 지갑 전체 선택")}</button>
-            <button
-              disabled={busy || scanning || !selected.length}
-              onClick={async () => {
-                const d = await act({ action: "review", userIds: selected });
-                if (d) {
-                  setReview(d);
-                  setReason("");
-                  setConfirmation("");
-                }
-              }}
-            >
-              {busy ? tr("처리 중…") : tr("선택 {0}개 회수 검토", {"0": selected.length})}
-            </button>
+          </aside>
           </div>
         </>
       )}
@@ -552,6 +562,7 @@ export function Sweeps() {
           <button disabled={busy} onClick={() => setReview(null)}>{tr("검토 닫기")}</button>
         </section>
       )}
+      <section className="sweep-history">
       <h2>{tr("회수 진행 이력 (")}{data?.jobCount || 0})</h2>
       <p className="shop-muted">{tr("5초마다 상태를 갱신합니다. 전송 접수는 완료가 아니며 확정 영수증을 확인한 뒤 완료됩니다. 조사 필요 요청은 기존 TX 확인 전 새 전송을 만들지 않습니다.")}</p>
       {data?.jobs.map((j) => (
@@ -618,6 +629,7 @@ export function Sweeps() {
           onClick={() => setHistoryPage((p) => p + 1)}
         >{tr("다음 이력")}</button>
       </div>
+      </section>
     </main>
   );
 }
