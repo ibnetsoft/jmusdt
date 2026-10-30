@@ -85,7 +85,7 @@ export function SecuritySettings({ demo = false }: { demo?: boolean }) {
               alt={tr("인증 앱 등록 QR 코드")}
               width={170}
               height={170}
-              src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr)}`}
+              src={qr}
             />
           ) : null}
           <label className="field">
