@@ -522,9 +522,10 @@ export function ProductAdmin() {
                 <option value="treasure">{tr("보물상자패키지 · 3,500,000 P")}</option>
               </select>
             </label>
-            <section className="shop-editor" aria-label={tr("상품별 마케팅 보상")}>
+            <section className="shop-editor admin-reward-editor" aria-label={tr("상품별 마케팅 보상")}>
               <h3>{tr("상품 1개당 마케팅 보상")}</h3>
               <p className="shop-muted">{tr("고정 포인트를 입력하세요. 0은 미지급입니다. 추천인·후원인·후원인의 추천인에게 지급하며, 맘은 후원리워드가 지급될 때만 발생합니다. 보상 총액은 상품 가격 이하여야 합니다. 복주머니 1,000 P·보물상자 10,000 P × 369일 데일리 전용 플랜은 예외입니다. 이 경우 다른 리워드·회사 적립은 모두 0이어야 합니다. 변경은 이후 구매에만 적용됩니다.")}</p>
+              <div className="admin-reward-fields">
               {(["referral", "sponsor", "mom", "daily"] as const).map((key) => (
                 <label key={key}>
                   {tr(rewardLabels[key])} ({key === "daily" ? tr("하루 P") : "P"})
@@ -580,6 +581,7 @@ export function ProductAdmin() {
                   />
                 </label>
               ))}
+              </div>
               <small>{tr("판매 시 회사에 적립하고 일일 마감 후 해당 패키지 보유 수량에 따라 일반 포인트로 분배합니다.")}</small>
             </section>
             <label className="shop-check">

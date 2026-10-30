@@ -116,7 +116,7 @@ export function OrderAdmin() {
       <h1>{tr("주문 관리")}</h1>
       <p className="shop-muted">{tr("취소 승인 시 결제 자산 전액 반환과 주문 수량만큼의 재고 복구가 함께 처리됩니다.")}</p>
       <form
-        className="shop-editor"
+        className="shop-editor admin-order-filter"
         onSubmit={(e) => {
           e.preventDefault();
           setError("");

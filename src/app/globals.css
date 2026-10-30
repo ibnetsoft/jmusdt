@@ -2654,3 +2654,58 @@ html[data-theme="light"] .admin-sidebar nav a.active { background: var(--red); c
   .admin-sidebar nav a svg { min-width: 18px; }
 }
 .admin-route-content > .commerce { max-width: none; min-height: 100vh; background: var(--bg); }
+
+/* Shared, compact administration workspace */
+.admin-sidebar { scrollbar-width: thin; scrollbar-color: var(--line) transparent; padding-top: 24px; padding-bottom: 24px; }
+.admin-sidebar .console-label { margin: 32px 10px 12px; color: var(--muted); }
+.admin-sidebar nav { gap: 3px; }
+.admin-sidebar nav a { padding: 10px 12px; font-size: 12px; color: var(--muted); }
+.admin-sidebar nav a.active { background: var(--surface-3); color: var(--text); box-shadow: inset 3px 0 var(--red); }
+html[data-theme="light"] .admin-sidebar nav a.active { background: var(--surface-2); color: var(--red); }
+.admin-sidebar-footer { padding-top: 28px; }
+.admin-sidebar-footer > div { border-color: var(--line); padding-block: 18px; }
+.admin-route-content > .commerce { padding: 36px clamp(24px, 4vw, 56px) 90px; color: var(--text); }
+.admin-route-content > .commerce > header { justify-content: flex-start; gap: 20px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.admin-route-content > .commerce > header a { text-decoration: none; }
+.admin-route-content > .commerce > header a:hover { color: var(--red); }
+.admin-route-content > .commerce .shop-kicker { margin: 36px 0 9px; color: var(--muted); font-size: 10px; letter-spacing: 1.6px; font-weight: 700; }
+.admin-route-content > .commerce h1 { margin: 12px 0 12px; font-size: clamp(26px, 2.5vw, 34px); letter-spacing: -.035em; line-height: 1.25; }
+.admin-route-content > .commerce h2 { margin: 0 0 14px; font-size: 17px; line-height: 1.4; }
+.admin-route-content > .commerce h3 { margin: 0 0 10px; font-size: 15px; }
+.admin-route-content > .commerce > p { max-width: 920px; line-height: 1.7; }
+.admin-route-content > .commerce .shop-muted { color: var(--muted); font-size: 13px; line-height: 1.65; }
+.admin-route-content > .commerce .shop-editor, .admin-route-content > .commerce .shop-detail, .admin-route-content > .commerce .product-preview { border: 1px solid var(--line); border-radius: 14px; background: var(--surface-1); }
+.admin-route-content > .commerce .shop-editor { padding: 24px; margin: 20px 0; }
+.admin-route-content > .commerce .shop-editor .shop-editor { background: var(--surface-2); margin: 24px 0; }
+.admin-route-content > .commerce label { margin: 14px 0; font-size: 13px; font-weight: 600; line-height: 1.45; }
+.admin-route-content > .commerce :is(input:not([type="checkbox"]), textarea, select) { min-height: 42px; margin-top: 7px; padding: 10px 12px; border-color: var(--line); border-radius: 8px; color: var(--text); background: var(--surface-base); font-size: 14px; }
+.admin-route-content > .commerce input[type="checkbox"] { display: inline-block; width: 16px; height: 16px; margin: 0; accent-color: var(--red); flex: 0 0 auto; }
+.admin-route-content > .commerce .shop-check { display: flex; align-items: center; gap: 9px; }
+.admin-route-content > .commerce button { min-height: 40px; padding: 9px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-3); color: var(--text); font-size: 13px; font-weight: 600; }
+.admin-route-content > .commerce button:hover:not(:disabled) { border-color: var(--red); }
+.admin-route-content > .commerce .shop-primary { background: var(--red); border-color: var(--red); color: #fff; }
+.admin-route-content > .commerce .shop-order { padding: 18px 0; border-color: var(--line); line-height: 1.5; }
+.admin-route-content > .commerce .shop-order p { margin: 4px 0; color: var(--muted); }
+.admin-route-content > .commerce .shop-order small { color: var(--muted); }
+.admin-route-content .admin-order-filter { display: grid; grid-template-columns: minmax(200px, 2fr) minmax(160px, 1fr) auto; align-items: end; gap: 12px; }
+.admin-route-content .admin-order-filter label { margin: 0; }
+.admin-route-content .admin-order-filter button { min-width: 76px; }
+.admin-route-content .admin-reward-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.admin-route-content .admin-reward-editor > small { display: block; margin-top: 10px; color: var(--muted); line-height: 1.6; }
+.admin-route-content .admin-network-status p { margin: 8px 0; line-height: 1.6; overflow-wrap: anywhere; }
+.admin-route-content .admin-rate-form { max-width: 640px; }
+.admin-route-content .admin-rate-input { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.admin-route-content .admin-rate-input span { white-space: nowrap; font-weight: 600; color: var(--muted); }
+.admin-route-content .admin-rate-input input { max-width: 200px; margin-top: 0 !important; }
+@media (max-width: 700px) {
+  .admin-sidebar { padding: 20px 10px; }
+  .admin-sidebar nav { margin-top: 26px; gap: 4px; }
+  .admin-sidebar nav a { padding: 11px; }
+  .admin-route-content > .commerce { padding: 24px 16px 70px; }
+  .admin-route-content > .commerce .shop-kicker { margin-top: 26px; }
+  .admin-route-content > .commerce .shop-editor { padding: 18px; }
+  .admin-route-content .admin-order-filter { grid-template-columns: 1fr; }
+  .admin-route-content .admin-order-filter button { justify-self: start; }
+  .admin-route-content .admin-reward-fields { grid-template-columns: 1fr; }
+  .admin-route-content .admin-rate-input { gap: 8px; }
+}

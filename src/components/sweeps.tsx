@@ -264,7 +264,7 @@ export function Sweeps() {
       )}
       {data && (
         <>
-          <section className="shop-editor">
+          <section className="shop-editor admin-network-status">
             <h2>{tr("네트워크·실행 상태")}</h2>
             <p>
               {data.config.network.toUpperCase()}{tr(" · 토큰")}{" "}
