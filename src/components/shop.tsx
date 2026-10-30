@@ -1,5 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
+import { getAdminData, fetchAdminData, subscribeAdminData, clearAdminData } from "@/lib/admin-preload";
 import { getPreloadedShopProducts, subscribePreloadedShopProducts, preloadPages, clearPreloadedData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
@@ -40,7 +41,7 @@ async function requestJson(url: string, body?: unknown) {
           body: JSON.stringify(body),
         }
       : {}),
-  }) : await fetchPageData(url);
+  }) : url.startsWith("/api/admin/") ? await fetchAdminData(url) : await fetchPageData(url);
   const data = await response.json();
   if (response.status === 401) {
     location.href = "/login";
@@ -357,7 +358,7 @@ const empty = {
 };
 export function ProductAdmin() {
   const { tr } = useI18n();
-  const [products, setProducts] = useState<Product[]>([]),
+  const [products, setProducts] = useState<Product[]>(() => getAdminData<{products: Product[]}>("/api/admin/products")?.products ?? []),
     [form, setForm] = useState<{
       id?: string;
       version?: number;
@@ -382,7 +383,11 @@ export function ProductAdmin() {
     setProducts((await requestJson("/api/admin/products")).products);
   }
   useEffect(() => {
+    const showCached = () => { const cached = getAdminData<{products: Product[]}>("/api/admin/products"); if (cached) setProducts(cached.products); };
+    const unsubscribe = subscribeAdminData(showCached);
+    showCached();
     load().catch((e) => setError(e.message));
+    return unsubscribe;
   }, []);
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -393,6 +398,7 @@ export function ProductAdmin() {
     try {
       await requestJson("/api/admin/products", form);
       setForm(empty);
+      clearAdminData();
       await load();
       setNotice("상품을 저장했습니다.");
     } catch (e) {

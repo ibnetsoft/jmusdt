@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useI18n } from "./i18n";
+import { getAdminData, fetchAdminData, clearAdminData } from "@/lib/admin-preload";
 
 import { useEffect, useRef, useState } from "react";
 import { formatUsdt } from "@/lib/money";
@@ -33,7 +34,7 @@ type Order = {
 };
 export function OrderAdmin() {
   const { tr, localeTag } = useI18n();
-  const [orders, setOrders] = useState<Order[]>([]),
+  const [orders, setOrders] = useState<Order[]>(() => getAdminData<{orders: Order[]}>("/api/admin/orders?q=&status=all")?.orders ?? []),
     [q, setQ] = useState(""),
     [status, setStatus] = useState("all"),
     [selected, setSelected] = useState<Order | null>(null),
@@ -52,10 +53,7 @@ export function OrderAdmin() {
       detail.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selected]);
   async function load() {
-    const r = await fetch(
-      "/api/admin/orders?" + new URLSearchParams({ q, status }),
-      { cache: "no-store" },
-    );
+    const r = await fetchAdminData("/api/admin/orders?" + new URLSearchParams({ q, status }));
     if (r.status === 401) {
       location.href = "/login";
       return;
@@ -84,6 +82,7 @@ export function OrderAdmin() {
       setSelected(null);
       setConfirmation(false);
       setReason("");
+      clearAdminData();
       await load();
       setNotice(
         action === "approve"
@@ -103,7 +102,7 @@ export function OrderAdmin() {
     try {
       const r = await fetch("/api/admin/orders/shipping", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:selected.id,expectedStatus:selected.shipping.status,status:deliveryStatus,carrier,trackingNumber:tracking})});
       const d = await r.json(); if (!r.ok) throw new Error(d.error);
-      setSelected(null); await load(); setNotice("배송 정보를 저장했습니다.");
+      setSelected(null); clearAdminData(); await load(); setNotice("배송 정보를 저장했습니다.");
     } catch (e) { setError(e instanceof Error ? e.message : "배송 처리 실패"); }
     finally { lock.current = false; setBusy(false); }
   }

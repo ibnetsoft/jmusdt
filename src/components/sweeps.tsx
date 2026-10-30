@@ -1,4 +1,5 @@
 "use client";
+import { getAdminData, fetchAdminData, clearAdminData } from "@/lib/admin-preload";
 import Link from "next/link";
 import { useI18n } from "./i18n";
 
@@ -109,7 +110,7 @@ function txLink(id: string | null, network: string) {
 export function Sweeps() {
   const { tr, localeTag } = useI18n();
   const displayAmount = (value: string | null | undefined, unit: string) => tr(fmt(value, unit));
-  const [data, setData] = useState<Data | null>(null),
+  const [data, setData] = useState<Data | null>(() => getAdminData<Data>("/api/admin/sweeps?q=&page=1&historyPage=1&scan=0")),
     [settings, setSettings] = useState<{
       enabled: boolean;
       maxTopup: string;
@@ -143,16 +144,8 @@ export function Sweeps() {
         busyRef.current = true;
       }
       try {
-        const r = await fetch(
-          "/api/admin/sweeps?" +
-            new URLSearchParams({
-              q: query,
-              page: String(page),
-              historyPage: String(historyPage),
-              scan: scan ? "1" : "0",
-            }),
-          { cache: "no-store", signal },
-        );
+        const endpoint = "/api/admin/sweeps?" + new URLSearchParams({ q: query, page: String(page), historyPage: String(historyPage), scan: scan ? "1" : "0" });
+        const r = scan ? await fetch(endpoint, { cache: "no-store", signal }) : await fetchAdminData(endpoint, signal);
         if (r.status === 401) {
           location.href = "/login";
           return;
@@ -224,6 +217,7 @@ export function Sweeps() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
+      clearAdminData();
       return d;
     } catch (e) {
       setError(e instanceof Error ? e.message : "요청 실패");

@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useI18n } from "./i18n";
+import { getAdminData, fetchAdminData, clearAdminData } from "@/lib/admin-preload";
 import { getAuthGeneration, getVerifiedPageData, subscribeVerifiedPageData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
@@ -54,8 +55,9 @@ function amount(units: string) {
 }
 export function Rewards({ admin = false }: { admin?: boolean }) {
   const { tr, localeTag } = useI18n();
-  const [data, setData] = useState<Data | null>(null),
-    [settings, setSettings] = useState<Settings | null>(null),
+  const cachedAdmin = admin ? getAdminData<Data>("/api/admin/marketing?type=all&status=all&q=&page=1") : null;
+  const [data, setData] = useState<Data | null>(() => cachedAdmin),
+    [settings, setSettings] = useState<Settings | null>(() => cachedAdmin?.settings ?? null),
     [reason, setReason] = useState(""),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
@@ -86,7 +88,8 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
       ? "/api/admin/marketing?" +
         new URLSearchParams({ type, status, q: query, page: String(page) })
       : "/api/rewards";
-    (admin ? fetch(endpoint, { cache: "no-store", signal: controller.signal }) : fetchPageData(endpoint, controller.signal))
+    if (admin) { const cached = getAdminData<Data>(endpoint); if (cached) { setData(cached); if (cached.settings) setSettings(cached.settings); setLoading(false); } }
+    (admin ? fetchAdminData(endpoint, controller.signal) : fetchPageData(endpoint, controller.signal))
       .then(async (r) => {
         if (r.status === 401) {
           location.href = "/login";
@@ -119,6 +122,7 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
+      clearAdminData();
       setNotice(
         d.poolRuns !== undefined
           ? `일일 마감 ${d.poolRuns}건을 처리했습니다.`

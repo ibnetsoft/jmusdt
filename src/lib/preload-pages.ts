@@ -1,3 +1,4 @@
+import { clearAdminData } from "./admin-preload";
 import { preloadProductImages } from "./shop-images";
 type Cached = { userId: string; value: unknown; expires: number };
 type Account = { id: string } | { invalid: true } | null;
@@ -62,6 +63,7 @@ async function currentAccount(): Promise<Account> {
   return validation;
 }
 export function clearPreloadedData(options?: { preserveShopProducts?: boolean }) {
+  if (!options?.preserveShopProducts) clearAdminData();
   generation++; userId = ""; lastWarm = 0; entries.clear(); inFlight.clear(); sharedRequests.clear(); validation = null; warming = null; scheduling = null; restored = true;
   if (!options?.preserveShopProducts) { authGeneration++; publishShopProducts(null); }
   notifyData();

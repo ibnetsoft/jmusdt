@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useI18n } from "./i18n";
-import { useRouter } from "next/navigation";
+import { getAdminData, fetchAdminData, subscribeAdminData, clearAdminData } from "@/lib/admin-preload";
+import { useSearchParams } from "next/navigation";
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -40,12 +41,13 @@ type Tab =
   | "users"
   | "operations"
   | "audit";
-export function AdminApp({ initialTab = "overview" }: { initialTab?: Tab }) {
+export function AdminApp() {
   const { tr, locale } = useI18n();
-  const router = useRouter();
-  const tab = initialTab;
-  const setTab = (next: Tab) => router.push(next === "overview" ? "/admin" : `/admin?tab=${next}`);
-  const [data, setData] = useState<AdminData | null>(null),
+  const params = useSearchParams();
+  const tabs: Tab[] = ["overview", "withdrawals", "transactions", "users", "operations", "audit"];
+  const tab = tabs.find((item) => item === params.get("tab")) ?? "overview";
+  const setTab = (next: Tab) => window.history.pushState(null, "", next === "overview" ? "/admin" : `/admin?tab=${next}`);
+  const [data, setData] = useState<AdminData | null>(() => getAdminData<AdminData>("/api/admin")),
     [search, setSearch] = useState(""),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
@@ -72,11 +74,11 @@ export function AdminApp({ initialTab = "overview" }: { initialTab?: Tab }) {
       checkedAt: string;
     } | null>(null),
     [reconBusy, setReconBusy] = useState(false);
-  useEffect(() => { setSearch(""); }, [initialTab]);
+  useEffect(() => { setSearch(""); }, [tab]);
   useDialogFocus(Boolean(decision));
   const refresh = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin", { cache: "no-store" });
+      const response = await fetchAdminData("/api/admin");
       const body = await response.json();
       if (!response.ok) throw new Error(body.error);
       setData(body.mode === "demo" ? readDemo() : body);
@@ -86,12 +88,16 @@ export function AdminApp({ initialTab = "overview" }: { initialTab?: Tab }) {
     }
   }, []);
   useEffect(() => {
+    const showCached = () => { const cached = getAdminData<AdminData>("/api/admin"); if (cached) setData(cached.mode === "demo" ? readDemo() : cached); else setData(null); };
+    const unsubscribe = subscribeAdminData(showCached);
+    showCached();
     void refresh();
     const update = () => void refresh();
     const timer = setInterval(update, 30000);
     window.addEventListener("jmusdt-demo", update);
     window.addEventListener("storage", update);
     return () => {
+      unsubscribe();
       clearInterval(timer);
       window.removeEventListener("jmusdt-demo", update);
       window.removeEventListener("storage", update);
@@ -123,6 +129,7 @@ export function AdminApp({ initialTab = "overview" }: { initialTab?: Tab }) {
         const body = await response.json();
         if (!response.ok) throw new Error(body.error);
       }
+      clearAdminData();
       setMessage(`${decision.label} 처리했습니다.`);
       setDecision(null);
       setReason("");
