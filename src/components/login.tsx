@@ -4,6 +4,7 @@ import { useI18n } from "./i18n";
 import { useState, useRef } from "react";
 import { ArrowRight, ArrowUpRight, ShieldCheck } from "lucide-react";
 import { Brand, Token } from "./shared";
+import { notifyAuthChange } from "@/lib/preload-pages";
 export function Login({
   demo,
   initialMessage = "",
@@ -73,7 +74,7 @@ export function Login({
         setMessage("인증 이메일을 보냈습니다. 이메일 인증 후 로그인해 주세요.");
         setPending(true);
         setPassword("");
-      } else location.href = "/";
+      } else { notifyAuthChange(); location.href = "/"; }
     } catch (e) {
       setMessage((e as Error).message);
     } finally {

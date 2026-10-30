@@ -4,6 +4,17 @@ type Account = { id: string } | { invalid: true } | null;
 const entries = new Map<string, Cached>();
 const inFlight = new Map<string, Promise<void>>();
 const sharedRequests = new Map<string, Promise<Response>>();
+const dataListeners = new Set<() => void>();
+let authGeneration = 0;
+export function getAuthGeneration() { return authGeneration; }
+export function subscribeVerifiedPageData(listener: () => void) { dataListeners.add(listener); return () => { dataListeners.delete(listener); }; }
+export const authChangeKey = "wu-auth-change";
+export function notifyAuthChange() { try { localStorage.setItem(authChangeKey, crypto.randomUUID()); } catch { /* Other tabs will revalidate on the next refresh. */ } }
+function notifyData() { for (const listener of dataListeners) listener(); }
+export function getVerifiedPageData<T>(endpoint: string): T | null {
+  const entry = entries.get(endpoint);
+  return userId && entry && entry.userId === userId && entry.expires > Date.now() ? entry.value as T : null;
+}
 let shopProducts: unknown[] | null = null;
 const shopListeners = new Set<() => void>();
 export function getPreloadedShopProducts<T>(): T[] | null { return shopProducts as T[] | null; }
@@ -12,8 +23,8 @@ function publishShopProducts(value: unknown) {
   shopProducts = Array.isArray(value) ? value : null;
   for (const listener of shopListeners) listener();
 }
-const endpoints = ["/api/shop?catalog=1", "/api/organization?mode=sponsor&depth=3", "/api/organization?mode=referral&depth=3", "/api/points", "/api/rewards", "/api/shop"];
-const cacheableEndpoints = [...endpoints, "/api/wallet"];
+const endpoints = ["/api/wallet", "/api/shop?catalog=1", "/api/organization?mode=sponsor&depth=3", "/api/organization?mode=referral&depth=3", "/api/points", "/api/rewards", "/api/shop"];
+const cacheableEndpoints = endpoints;
 const storageKey = "wu-page-cache-v1";
 const cacheLifetime = 30 * 60 * 1000;
 let restored = false;
@@ -39,18 +50,21 @@ let userId = "", generation = 0, lastWarm = 0;
 let validation: Promise<Account> | null = null, warming: Promise<void> | null = null, scheduling: Promise<void> | null = null;
 async function currentAccount(): Promise<Account> {
   if (!validation) {
-    validation = fetch("/api/session", { cache: "no-store" }).then(async response => {
+    const request = fetch("/api/session", { cache: "no-store" }).then(async response => {
       if (response.status === 401 || response.status === 403) return { invalid: true } as const;
       if (!response.ok) return null;
       const account = await response.json();
       return typeof account?.userId === "string" ? { id: account.userId as string } : null;
-    }).catch(() => null).finally(() => { validation = null; });
+    }).catch(() => null);
+    validation = request;
+    void request.finally(() => { if (validation === request) validation = null; });
   }
   return validation;
 }
 export function clearPreloadedData(options?: { preserveShopProducts?: boolean }) {
-  generation++; userId = ""; lastWarm = 0; entries.clear(); inFlight.clear(); sharedRequests.clear(); warming = null; scheduling = null; restored = true;
-  if (!options?.preserveShopProducts) publishShopProducts(null);
+  generation++; userId = ""; lastWarm = 0; entries.clear(); inFlight.clear(); sharedRequests.clear(); validation = null; warming = null; scheduling = null; restored = true;
+  if (!options?.preserveShopProducts) { authGeneration++; publishShopProducts(null); }
+  notifyData();
   try { if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(storageKey); } catch { /* Ignore unavailable storage. */ }
   if (options?.preserveShopProducts) void preloadPages();
 }
@@ -77,6 +91,7 @@ export async function cacheWalletData(value: { mode: string; user: { id: string 
   restoreEntries();
   entries.set("/api/wallet", { userId: account.id, value, expires: Date.now() + cacheLifetime });
   persistEntries();
+  notifyData();
 }
 export function preloadPages(): Promise<void> {
   if (warming) return warming;
@@ -96,6 +111,7 @@ export function preloadPages(): Promise<void> {
       let removedOtherAccount = false;
       for (const [endpoint, entry] of entries) if (entry.userId !== id) { entries.delete(endpoint); removedOtherAccount = true; }
       if (removedOtherAccount) persistEntries();
+      notifyData();
       const catalog = entries.get("/api/shop?catalog=1");
       if (catalog?.userId === id && catalog.expires > Date.now()) {
         const products = (catalog.value as { products?: unknown }).products;
@@ -113,9 +129,11 @@ export function preloadPages(): Promise<void> {
               if (!response.ok) return;
               const value = await response.json();
               // The endpoint identifies the account that produced its response.
-              if (current === generation && userId === id && value?.accountId === id) {
+              const responseId = endpoint === "/api/wallet" ? value?.user?.id : value?.accountId;
+              if (current === generation && userId === id && responseId === id) {
                 entries.set(endpoint, { userId: id, value, expires: Date.now() + cacheLifetime });
                 persistEntries();
+                notifyData();
                 if (endpoint === "/api/shop?catalog=1") { publishShopProducts(value.products); preloadProductImages(value.products); }
               }
             } catch { /* Individual pages still load directly on navigation. */ }

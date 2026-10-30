@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cacheWalletData, clearPreloadedData, fetchPageData, getPreloadedShopProducts, preloadPages, readPreloadedData, subscribePreloadedShopProducts } from "../src/lib/preload-pages";
+import { cacheWalletData, clearPreloadedData, fetchPageData, getPreloadedShopProducts, getVerifiedPageData, preloadPages, readPreloadedData, subscribePreloadedShopProducts } from "../src/lib/preload-pages";
 import { preloadProductImages, productImageSizes } from "../src/lib/shop-images";
 
 test("preloaded pages are session-scoped and discarded after an account change", async () => {
@@ -87,6 +87,27 @@ test("verified product list is immediately available without an additional reque
     clearPreloadedData();
     assert.equal(getPreloadedShopProducts(), null);
   } finally { unsubscribe(); clearPreloadedData(); globalThis.fetch = originalFetch; }
+});
+
+test("wallet, organization and history snapshots are immediately available only for the verified session", async () => {
+  const originalFetch = globalThis.fetch; let calls = 0;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    calls++; const url = String(input);
+    if (url === "/api/session") return Response.json({ userId: "first" });
+    if (url === "/api/wallet") return Response.json({ mode: "live", user: { id: "first" }, available: "100" });
+    return Response.json({ accountId: "first", url });
+  }) as typeof fetch;
+  try {
+    clearPreloadedData(); await preloadPages();
+    const before = calls;
+    assert.equal(getVerifiedPageData<{available: string}>("/api/wallet")?.available, "100");
+    assert.equal(getVerifiedPageData<{url: string}>("/api/organization?mode=sponsor&depth=3")?.url, "/api/organization?mode=sponsor&depth=3");
+    assert.equal(getVerifiedPageData<{url: string}>("/api/rewards")?.url, "/api/rewards");
+    assert.equal(calls, before);
+    clearPreloadedData();
+    assert.equal(getVerifiedPageData("/api/wallet"), null);
+    assert.equal(getVerifiedPageData("/api/rewards"), null);
+  } finally { clearPreloadedData(); globalThis.fetch = originalFetch; }
 });
 
 test("concurrent page requests share one fetch without sharing response bodies or cancellation", async () => {

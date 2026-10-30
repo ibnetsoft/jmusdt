@@ -1,7 +1,7 @@
 "use client";
 import { useI18n } from "./i18n";
 import { useRouter } from "next/navigation";
-import { cacheWalletData, clearPreloadedData, preloadPages, readPreloadedData, fetchPageData } from "@/lib/preload-pages";
+import { cacheWalletData, clearPreloadedData, preloadPages, getAuthGeneration, getVerifiedPageData, subscribeVerifiedPageData, fetchPageData, notifyAuthChange } from "@/lib/preload-pages";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
@@ -57,21 +57,27 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
     [view, setView] = useState<View>(initialView),
     [sendKind, setSendKind] = useState<"internal" | "external">("internal"),
     [error, setError] = useState(""),
+    [checking, setChecking] = useState(false),
     [toast, setToast] = useState(""),
     [hidden, setHidden] = useState(false),
     [selected, setSelected] = useState<Transaction | null>(null),
     [install, setInstall] = useState<InstallEvent | null>(null);
   const latestLoaded = useRef(false);
+  const refreshOk = useRef(false);
   const refresh = useCallback(async () => {
+    refreshOk.current = false;
+    const authAtStart = getAuthGeneration();
     try {
-      const response = await fetch("/api/wallet", { cache: "no-store" });
+      const response = await fetchPageData("/api/wallet");
       const body = await response.json();
+      if (authAtStart !== getAuthGeneration()) return;
       if (response.status === 401) {
         location.href = "/login";
         return;
       }
       if (!response.ok) throw new Error(body.error);
       latestLoaded.current = true;
+      refreshOk.current = true;
       setData(body.mode === "demo" ? demoSnapshot() : body);
       setFresh(true);
       if (body.mode !== "demo") { void cacheWalletData(body); void preloadPages(); }
@@ -82,21 +88,39 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
   }, []);
   useEffect(() => {
     let mounted = true;
-    void readPreloadedData<WalletData>("/api/wallet").then(cached => {
-      if (mounted && cached && !latestLoaded.current) setData(cached);
-    });
-    void refresh();
+    let lastAuthGeneration = getAuthGeneration();
+    const fromCache = () => {
+      const cached = getVerifiedPageData<WalletData>("/api/wallet");
+      if (!mounted) return;
+      const authChanged = lastAuthGeneration !== getAuthGeneration();
+      lastAuthGeneration = getAuthGeneration();
+      if (authChanged) { latestLoaded.current = false; refreshOk.current = false; setData(null); setFresh(false); }
+      if (cached && !latestLoaded.current) setData(cached);
+    };
+    const unsubscribe = subscribeVerifiedPageData(fromCache);
+    fromCache();
+    if (!getVerifiedPageData<WalletData>("/api/wallet")) void refresh();
     const update = () => void refresh();
     window.addEventListener("jmusdt-demo", update);
     window.addEventListener("storage", update);
     const timer = setInterval(update, 30000);
     return () => {
       mounted = false;
+      unsubscribe();
       clearInterval(timer);
       window.removeEventListener("jmusdt-demo", update);
       window.removeEventListener("storage", update);
     };
   }, [refresh]);
+  async function openFinancialView(next: "deposit" | "send", kind?: "internal" | "external") {
+    if (checking) return;
+    setChecking(true);
+    await refresh();
+    setChecking(false);
+    if (!refreshOk.current) return;
+    if (kind) setSendKind(kind);
+    setView(next);
+  }
   useEffect(() => {
     if ("serviceWorker" in navigator)
       void navigator.serviceWorker.register("/sw.js");
@@ -121,6 +145,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
   }, []);
   async function logout() {
     clearPreloadedData();
+    notifyAuthChange();
     if (data?.mode === "demo") {
       location.href = "/login";
       return;
@@ -218,10 +243,10 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                   </div>
                 </section>
                 <div className="quick-actions">
-                  <button disabled={!fresh} onClick={() => setView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
-                  <button disabled={!fresh} onClick={() => { setSendKind("internal"); setView("send"); }}><ArrowUpRight size={20} />{tr("이체")}</button>
+                  <button disabled={checking} onClick={() => void openFinancialView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
+                  <button disabled={checking} onClick={() => void openFinancialView("send", "internal")}><ArrowUpRight size={20} />{tr("이체")}</button>
                   <button onClick={() => { router.push("/points"); }}><ArrowLeftRight size={20} />{tr("스왑")}</button>
-                  <button disabled={!fresh} onClick={() => { setSendKind("external"); setView("send"); }}><ExternalLink size={20} />{tr("출금")}</button>
+                  <button disabled={checking} onClick={() => void openFinancialView("send", "external")}><ExternalLink size={20} />{tr("출금")}</button>
                 </div>
                 <div className="section-heading">
                   <h2>{tr("최근 거래")}</h2>
@@ -759,23 +784,28 @@ function Activity({
   useEffect(() => {
     if (data.mode === "demo") { setHistory({ rewards: [], pools: [], swaps: [], orders: [] }); setLoadedParts({ rewards: true, swaps: true, orders: true }); return; }
     const controller = new AbortController();
+    const callbacks: (() => void)[] = [];
     const loadPart = <T,>(name: "rewards" | "swaps" | "orders", endpoint: string, toPart: (value: T) => Partial<NonNullable<typeof history>>) => {
-      let networkDone = false;
       const apply = (value: T) => { setHistory(previous => ({ rewards: [], pools: [], swaps: [], orders: [], ...previous, ...toPart(value) })); setLoadedParts(previous => ({ ...previous, [name]: true })); };
-      if (historyRevision === 0) void readPreloadedData<T>(endpoint).then(cached => {
-        if (!controller.signal.aborted && !networkDone && cached) apply(cached);
-      });
-      void fetchPageData(endpoint, controller.signal).then(async response => {
+      const applyCached = () => {
+        const cached = getVerifiedPageData<T>(endpoint);
+        if (!controller.signal.aborted && cached) { apply(cached); return true; }
+        return false;
+      };
+      callbacks.push(() => { if (!applyCached()) setLoadedParts(previous => ({ ...previous, [name]: false })); });
+      const fetchLatest = () => fetchPageData(endpoint, controller.signal).then(async response => {
         if (!response.ok) throw new Error("내역을 불러오지 못했습니다.");
         const value = await response.json() as T;
-        networkDone = true;
         if (!controller.signal.aborted) apply(value);
-      }).catch(e => { networkDone = true; if (e.name !== "AbortError") setLoadError(e.message); });
+      }).catch(e => { if (e.name !== "AbortError") setLoadError(e.message); });
+      if (historyRevision !== 0) void fetchLatest();
+      else if (!applyCached()) void preloadPages().then(() => { if (!controller.signal.aborted && !applyCached()) void fetchLatest(); });
     };
     loadPart<{ rewards: NonNullable<typeof history>["rewards"]; pools: NonNullable<typeof history>["pools"] }>("rewards", "/api/rewards", value => ({ rewards: value.rewards, pools: value.pools }));
     loadPart<{ history: NonNullable<typeof history>["swaps"] }>("swaps", "/api/points", value => ({ swaps: value.history }));
     loadPart<{ orders: NonNullable<typeof history>["orders"] }>("orders", "/api/shop", value => ({ orders: value.orders }));
-    return () => controller.abort();
+    const unsubscribe = subscribeVerifiedPageData(() => { for (const callback of callbacks) callback(); });
+    return () => { controller.abort(); unsubscribe(); };
   }, [data.mode, historyRevision]);
   const rewards = [
     ...(history?.rewards || []).map(r => ({ id: r.id, date: r.paid_at || `${r.due_date}T00:00:00+09:00`, label: ({ referral: "추천리워드", sponsor: "후원리워드", mom: "맘리워드", daily: "데일리수당" } as Record<string, string>)[r.type] || r.type, amount: r.amount, status: ({ scheduled: "지급 예정", paid: "지급 완료", skipped: "미지급", reversed: "회수 완료", void: "권리 취소" } as Record<string, string>)[r.status] || r.status })),

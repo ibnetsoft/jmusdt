@@ -1,6 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
-import { readPreloadedData, fetchPageData } from "@/lib/preload-pages";
+import { getVerifiedPageData, subscribeVerifiedPageData, preloadPages, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useRef, useState } from "react";
@@ -51,21 +51,20 @@ export function Organization() {
     const abort = new AbortController();
     setLoading(true);
     setError("");
-    let fresh = false;
-    if (depth === 3 && !root && revision === 0) {
-      void readPreloadedData<Data>(`/api/organization?mode=${mode}&depth=3`).then(cached => {
-        if (!abort.signal.aborted && !fresh && cached) { setData(cached); setLoading(false); }
-      });
-    }
-    fetchPageData(
-      "/api/organization?" +
+    const endpoint = "/api/organization?" +
         new URLSearchParams({
           mode,
           depth: String(depth),
           ...(root ? { root } : {}),
-        }),
-      abort.signal,
-    )
+        });
+    const defaultView = depth === 3 && !root && revision === 0;
+    const applyCached = () => {
+      const cached = defaultView ? getVerifiedPageData<Data>(endpoint) : null;
+      if (!abort.signal.aborted && cached) { setData(cached); setLoading(false); }
+      return !!cached;
+    };
+    const unsubscribe = subscribeVerifiedPageData(() => { if (defaultView && !getVerifiedPageData<Data>(endpoint)) { setData(null); setLoading(true); } else applyCached(); });
+    const fetchLatest = () => fetchPageData(endpoint, abort.signal)
       .then(async (r) => {
         if (r.status === 401) {
           location.href = "/login";
@@ -73,16 +72,18 @@ export function Organization() {
         }
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
-        fresh = true;
         setData(d);
       })
       .catch((e) => {
-        if (e.name !== "AbortError") { fresh = true; setError(e.message); }
+        if (e.name !== "AbortError") setError(e.message);
       })
       .finally(() => {
         if (!abort.signal.aborted) setLoading(false);
       });
-    return () => abort.abort();
+    if (defaultView) {
+      if (!applyCached()) { setData(null); void preloadPages().then(() => { if (!abort.signal.aborted && !applyCached()) void fetchLatest(); }); }
+    } else void fetchLatest();
+    return () => { abort.abort(); unsubscribe(); };
   }, [mode, depth, root, revision]);
   function center() {
     const v = viewport.current?.getBoundingClientRect(),

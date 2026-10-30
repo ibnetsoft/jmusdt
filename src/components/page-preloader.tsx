@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { preloadPages } from "@/lib/preload-pages";
+import { authChangeKey, clearPreloadedData, preloadPages } from "@/lib/preload-pages";
 export function PagePreloader() {
   const pathname = usePathname();
   const router = useRouter();
@@ -13,7 +13,9 @@ export function PagePreloader() {
   }, [pathname, router]);
   useEffect(() => {
     const timer = window.setInterval(() => { if (started.current) void preloadPages(); }, 60000);
-    return () => window.clearInterval(timer);
+    const authChanged = (event: StorageEvent) => { if (event.key === authChangeKey) { clearPreloadedData(); if (started.current) void preloadPages(); } };
+    window.addEventListener("storage", authChanged);
+    return () => { window.clearInterval(timer); window.removeEventListener("storage", authChanged); };
   }, []);
   return null;
 }
