@@ -251,13 +251,13 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
               {selected.reward_plan.days}{tr("일. 보상 운영이 켜진 구매에 적용되며 데일리는 구매 다음 날부터입니다.")}</p>
           )}
           {selected.shipping_type === "physical" ? (
-            <button className="shop-primary" disabled={selected.stock < 1} onClick={() => {
+            <button className="shop-primary" disabled={preview || selected.stock < 1} onClick={() => {
               const saved = cart.includes(selected.id) ? true : updateCart([...cart, selected.id]);
               if (saved) router.push("/shop/cart");
             }}>{selected.stock < 1 ? tr("품절") : tr("장바구니 결제")}</button>
           ) : <>
           <label>{tr("수량")}<select aria-label={tr("수량")}
-              disabled={busy}
+              disabled={preview || busy}
               value={quantity}
               onChange={(e) => {
                 setQuantity(Number(e.target.value));
@@ -274,7 +274,7 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
           <button
             className="shop-primary"
             disabled={
-              !catalogFresh || busy || selected.stock < quantity || BigInt(available) < total
+              preview || !catalogFresh || busy || selected.stock < quantity || BigInt(available) < total
             }
             onClick={purchase}
           >

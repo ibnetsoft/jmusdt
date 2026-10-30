@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
-import { clearPreloadedData, readPreloadedData, fetchPageData } from "@/lib/preload-pages";
+import { clearPreloadedData, getPreloadedShopProducts, fetchPageData } from "@/lib/preload-pages";
 import Link from "next/link";
 import { BottomNav } from "./bottom-nav";
 import { formatUsdt } from "@/lib/money";
@@ -12,7 +12,7 @@ type Shipping = { recipient: string; phone: string; address: string; note: strin
 type Item = { productId: string; quantity: number; version: number; requestKey: string; marketingVersion?: number; shipping?: Shipping };
 type Pending = { userId: string; items: Item[] };
 const pendingKey = "jmusdt-cart-checkout-pending";
-export function CartCheckout() {
+export function CartCheckout({ preview = false }: { preview?: boolean }) {
   const { tr } = useI18n();
   const [products, setProducts] = useState<Product[]>([]), [ids, setIds] = useState<string[]>([]), [quantities, setQuantities] = useState<Record<string, number>>({}), [available, setAvailable] = useState("0"), [marketingVersion, setMarketingVersion] = useState<number | undefined>(), [marketing, setMarketing] = useState<{enabled: boolean; daily_paused: boolean} | null>(null), [userId, setUserId] = useState(""), [shipping, setShipping] = useState<Shipping>({recipient:"",phone:"",address:"",note:""}), [pending, setPending] = useState<Pending | null>(null), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [error, setError] = useState(""), [done, setDone] = useState(false);
   const lock = useRef(false);
@@ -24,14 +24,11 @@ export function CartCheckout() {
       const previous = sessionStorage.getItem(pendingKey);
       if (previous) setPending(JSON.parse(previous));
     } catch { setError("장바구니를 불러오지 못했습니다."); }
-    let networkDone = false;
-    void readPreloadedData<{ products: Product[] }>("/api/shop?catalog=1").then(cached => {
-      if (!controller.signal.aborted && !networkDone && cached) setProducts(cached.products);
-    });
+    const cached = getPreloadedShopProducts<Product>();
+    if (cached) setProducts(cached);
     fetchPageData("/api/shop?catalog=1", controller.signal).then(async r => {
       if (r.status === 401) { location.href="/login"; return; }
       const data = await r.json(); if (!r.ok) throw new Error(data.error);
-      networkDone = true;
       setProducts(data.products); setAvailable(data.available); setMarketingVersion(data.marketing?.version); setMarketing(data.marketing); setUserId(data.accountId);
     }).catch(e => {if (e.name !== "AbortError") setError(e.message || "상품을 불러오지 못했습니다.");}).finally(() => {if (!controller.signal.aborted) setLoading(false);});
     return () => controller.abort();
@@ -71,14 +68,14 @@ export function CartCheckout() {
       {marketing && !marketing.enabled && <p className="shop-error">{tr("현재 신규 구매의 마케팅 보상 적용이 중단되어 있습니다. 이 구매에는 추천·후원·맘 리워드와 데일리가 발생하지 않습니다. 일일 분배 적립금은 상품별로 적립됩니다.")}</p>}
       {marketing?.enabled && marketing.daily_paused && <p>{tr("데일리 지급이 일시정지 중입니다. 구매 권리는 생성되며 재개 후 기한이 지난 회차가 지급됩니다.")}</p>}
       {items.map((p, index) => <article className="checkout-item" key={ids[index]}>
-        {p ? <>{p.image_url ? <img className="checkout-thumbnail" src={p.image_url} alt="" referrerPolicy="no-referrer" /> : <span className="checkout-thumbnail checkout-thumbnail-placeholder" aria-hidden="true">WU</span>}<div><strong>{tr(p.name)}</strong><p>{formatUsdt(p.price, 0)} P</p></div><label>{tr("수량")}<select value={quantities[p.id] || 1} disabled={busy || !!pending || p.stock < 1} onChange={e => setQuantities({...quantities,[p.id]:Number(e.target.value)})}>{Array.from({length:Math.min(99,p.stock)},(_,i)=><option key={i+1}>{i+1}</option>)}</select></label></> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
-        <button type="button" disabled={busy || !!pending} onClick={() => remove(ids[index])}>{tr("삭제")}</button>
+        {p ? <>{p.image_url ? <img className="checkout-thumbnail" src={p.image_url} alt="" referrerPolicy="no-referrer" /> : <span className="checkout-thumbnail checkout-thumbnail-placeholder" aria-hidden="true">WU</span>}<div><strong>{tr(p.name)}</strong><p>{formatUsdt(p.price, 0)} P</p></div><label>{tr("수량")}<select value={quantities[p.id] || 1} disabled={preview || busy || !!pending || p.stock < 1} onChange={e => setQuantities({...quantities,[p.id]:Number(e.target.value)})}>{Array.from({length:Math.min(99,p.stock)},(_,i)=><option key={i+1}>{i+1}</option>)}</select></label></> : <span>{tr("판매 중인 상품을 찾을 수 없습니다.")}</span>}
+        <button type="button" disabled={preview || busy || !!pending} onClick={() => remove(ids[index])}>{tr("삭제")}</button>
       </article>)}
-      {physical && <section className="checkout-shipping"><h2>{tr("배송 정보")}</h2>{([ ["recipient","받는 분",100], ["phone","연락처",40], ["address","배송 주소",500], ["note","배송 요청사항 (선택)",500] ] as const).map(([field,label,max]) => <label key={field}>{tr(label)}<input maxLength={max} value={shipping[field]} disabled={busy || !!pending} onChange={e=>setShipping({...shipping,[field]:e.target.value})} /></label>)}</section>}
+      {physical && <section className="checkout-shipping"><h2>{tr("배송 정보")}</h2>{([ ["recipient","받는 분",100], ["phone","연락처",40], ["address","배송 주소",500], ["note","배송 요청사항 (선택)",500] ] as const).map(([field,label,max]) => <label key={field}>{tr(label)}<input maxLength={max} value={shipping[field]} disabled={preview || busy || !!pending} onChange={e=>setShipping({...shipping,[field]:e.target.value})} /></label>)}</section>}
       <div className="shop-total"><span>{tr("결제금액")}</span><strong>{formatUsdt(total, 0)} P</strong></div>
-      <p>{tr("보유 포인트")} {formatUsdt(available, 0)} P</p>
+      {!loading && <p>{tr("보유 포인트")} {formatUsdt(available, 0)} P</p>}
     </>}
-    {(ids.length > 0 || pending) && <button className="shop-primary" disabled={busy || loading || !userId || wrongUser || (!pending && (fractionalPrice || missing || !shippingValid || items.some(p=>!p || p.stock < (quantities[p.id] || 1)) || total > BigInt(available)))} onClick={checkout}>{busy ? tr("결제 확인 중…") : pending ? tr("결제 다시 확인") : tr("포인트 결제")}</button>}
+    {(ids.length > 0 || pending) && <button className="shop-primary" disabled={preview || busy || loading || !userId || wrongUser || (!pending && (fractionalPrice || missing || !shippingValid || items.some(p=>!p || p.stock < (quantities[p.id] || 1)) || total > BigInt(available)))} onClick={checkout}>{busy ? tr("결제 확인 중…") : pending ? tr("결제 다시 확인") : tr("포인트 결제")}</button>}
     {wrongUser && <p role="alert">{tr("결제를 요청한 계정으로 로그인해 주세요.")}</p>}
     {fractionalPrice && !pending && <p role="alert">{tr("상품 가격을 확인할 수 없습니다. 관리자에게 문의해 주세요.")}</p>}
     {!pending && !loading && ids.length > 0 && total > BigInt(available) && <p role="status">{tr("포인트 잔액 부족")}</p>}

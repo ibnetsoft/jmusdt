@@ -1,2 +1,2 @@
-import { RouteLoading } from "@/components/route-loading";
-export default function Loading() { return <RouteLoading active="shop" />; }
+import { CartCheckout } from "@/components/cart-checkout";
+export default function Loading() { return <CartCheckout preview />; }

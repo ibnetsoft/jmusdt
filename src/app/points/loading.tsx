@@ -1,2 +1,2 @@
-import { RouteLoading } from "@/components/route-loading";
-export default function Loading() { return <RouteLoading />; }
+import { Points } from "@/components/points";
+export default function Loading() { return <Points preview />; }

@@ -1,6 +1,6 @@
 "use client";
 import { useI18n } from "./i18n";
-import { readPreloadedData, fetchPageData } from "@/lib/preload-pages";
+import { getAuthGeneration, getVerifiedPageData, subscribeVerifiedPageData, fetchPageData } from "@/lib/preload-pages";
 import { BottomNav } from "./bottom-nav";
 
 import { useEffect, useState, useRef } from "react";
@@ -71,10 +71,16 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
     const controller = new AbortController();
     setLoading(true);
     setError("");
-    let networkDone = false;
-    if (!admin && revision === 0) void readPreloadedData<Data>("/api/rewards").then(cached => {
-      if (!controller.signal.aborted && !networkDone && cached) { setData(cached); setLoading(false); }
-    });
+    let authGeneration = getAuthGeneration();
+    const fromCache = () => {
+      const cached = getVerifiedPageData<Data>("/api/rewards");
+      if (!controller.signal.aborted && cached) { setData(cached); setLoading(false); }
+      else if (!controller.signal.aborted && authGeneration !== getAuthGeneration()) { setData(null); setLoading(true); }
+      authGeneration = getAuthGeneration();
+      return !!cached;
+    };
+    const unsubscribe = !admin && revision === 0 ? subscribeVerifiedPageData(fromCache) : () => {};
+    if (!admin && revision === 0 && fromCache()) return () => { controller.abort(); unsubscribe(); };
     const endpoint = admin
       ? "/api/admin/marketing?" +
         new URLSearchParams({ type, status, q: query, page: String(page) })
@@ -87,18 +93,16 @@ export function Rewards({ admin = false }: { admin?: boolean }) {
         }
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
-        networkDone = true;
         setData(d);
         if (d.settings) setSettings(d.settings);
       })
       .catch((e) => {
-        networkDone = true;
         if (e.name !== "AbortError") setError(e.message);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
-    return () => controller.abort();
+    return () => { controller.abort(); unsubscribe(); };
   }, [admin, type, status, query, page, revision]);
   async function action(body: unknown) {
     if (lock.current) return;

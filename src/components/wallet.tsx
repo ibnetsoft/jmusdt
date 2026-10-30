@@ -49,7 +49,7 @@ type InstallEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: string }>;
 };
-export function WalletApp({initialView = "home"}: {initialView?: View}) {
+export function WalletApp({initialView = "home", preview = false}: {initialView?: View; preview?: boolean}) {
   const { tr } = useI18n();
   const router = useRouter();
   const [data, setData] = useState<WalletData | null>(null),
@@ -113,13 +113,12 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
     };
   }, [refresh]);
   async function openFinancialView(next: "deposit" | "send", kind?: "internal" | "external") {
-    if (checking) return;
+    if (kind) setSendKind(kind);
+    setView(next);
+    setFresh(false);
     setChecking(true);
     await refresh();
     setChecking(false);
-    if (!refreshOk.current) return;
-    if (kind) setSendKind(kind);
-    setView(next);
   }
   useEffect(() => {
     if ("serviceWorker" in navigator)
@@ -243,10 +242,10 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                   </div>
                 </section>
                 <div className="quick-actions">
-                  <button disabled={checking} onClick={() => void openFinancialView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
-                  <button disabled={checking} onClick={() => void openFinancialView("send", "internal")}><ArrowUpRight size={20} />{tr("이체")}</button>
+                  <button disabled={preview} onClick={() => void openFinancialView("deposit")}><ArrowDownLeft size={20} />{tr("입금")}</button>
+                  <button disabled={preview} onClick={() => void openFinancialView("send", "internal")}><ArrowUpRight size={20} />{tr("이체")}</button>
                   <button onClick={() => { router.push("/points"); }}><ArrowLeftRight size={20} />{tr("스왑")}</button>
-                  <button disabled={checking} onClick={() => void openFinancialView("send", "external")}><ExternalLink size={20} />{tr("출금")}</button>
+                  <button disabled={preview} onClick={() => void openFinancialView("send", "external")}><ExternalLink size={20} />{tr("출금")}</button>
                 </div>
                 <div className="section-heading">
                   <h2>{tr("최근 거래")}</h2>
@@ -259,23 +258,25 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                 />
               </>
             ) : null}
-            {view === "deposit" && fresh ? (
+            {view === "deposit" ? (
               <Deposit
                 data={data}
+                fresh={fresh && !checking}
                 onUpdate={refresh}
                 notify={setToast}
               />
             ) : null}
-            {view === "send" && fresh ? (
+            {view === "send" ? (
               <Send
                 initialKind={sendKind}
                 data={data}
+                fresh={fresh && !checking}
                 onBack={() => setView("home")}
                 onUpdate={refresh}
               />
             ) : null}
             {view === "activity" ? (
-              <Activity data={data} onSelect={setSelected} />
+              <Activity data={data} onSelect={setSelected} preview={preview} />
             ) : null}
             {view === "settings" ? (
               <>
@@ -290,9 +291,9 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                     {data.mode === "demo" ? "DEMO ACCOUNT" : "VERIFIED ACCOUNT"}
                   </span>
                 </section>
-                <SiteControls />
+                {!preview && <><SiteControls />
                 <ReferralCard code={data.referralCode} onNotice={setToast} />
-                <SecuritySettings demo={data.mode === "demo"} />
+                <SecuritySettings demo={data.mode === "demo"} /></>}
                 <div className="settings-list">
                   <div>
                     <Globe size={19} />
@@ -311,6 +312,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                     <b>USDT · TRC20</b>
                   </div>
                   <button
+                    disabled={preview}
                     onClick={async () => {
                       if (install) {
                         await install.prompt();
@@ -327,6 +329,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                   </button>
                   {data.mode === "demo" ? (
                     <button
+                      disabled={preview}
                       onClick={() => {
                         resetDemo();
                         setToast("데모 지갑을 초기화했습니다.");
@@ -337,7 +340,7 @@ export function WalletApp({initialView = "home"}: {initialView?: View}) {
                       <ChevronRight size={16} />
                     </button>
                   ) : null}
-                  <button onClick={() => void logout()}>
+                  <button disabled={preview} onClick={() => void logout()}>
                     <LogOut size={19} />
                     <span>{tr("로그아웃")}</span>
                     <ChevronRight size={16} />
@@ -416,10 +419,12 @@ function ReferralCard({code,onNotice}: {code?: string;onNotice:(text:string)=>vo
 }
 function Deposit({
   data,
+  fresh,
   onUpdate,
   notify,
 }: {
   data: WalletData;
+  fresh: boolean;
   onUpdate: () => Promise<void>;
   notify: (value: string) => void;
 }) {
@@ -453,7 +458,7 @@ function Deposit({
           <ArrowDownLeft size={23} />
         </div>
         <h1>{tr("내 지갑에")}<br />{tr("USDT 입금하기.")}</h1>
-        <div className="qr-wrap">
+        {fresh && <><div className="qr-wrap">
           <QRCodeSVG
             value={data.address || "WU-DEMO-NOT-A-DEPOSIT-ADDRESS"}
             size={190}
@@ -473,7 +478,7 @@ function Deposit({
         </div>
         <div className="deposit-address">
           {data.address || tr("계정 연결 후 주소가 표시됩니다.")}
-        </div>
+        </div></>}
       </section>
       <section className="deposit-info">
         <p className="network-warning">
@@ -508,7 +513,7 @@ function Deposit({
         ) : null}
         <button
           className="primary"
-          disabled={busy}
+          disabled={busy || !fresh}
           onClick={async () => {
             if (data.address) {
               try {
@@ -534,11 +539,13 @@ function Deposit({
 function Send({
   initialKind,
   data,
+  fresh,
   onBack,
   onUpdate,
 }: {
   initialKind: "internal" | "external";
   data: WalletData;
+  fresh: boolean;
   onBack: () => void;
   onUpdate: () => Promise<void>;
 }) {
@@ -556,6 +563,7 @@ function Send({
   } catch {}
   const fee = kind === "external" ? BigInt(data.fee) : 0n;
   function review() {
+    if (!fresh) return;
     setError("");
     try {
       const value = parseUsdt(amount);
@@ -583,6 +591,7 @@ function Send({
     }
   }
   async function submit() {
+    if (!fresh) return;
     setBusy(true);
     setError("");
     try {
@@ -697,6 +706,7 @@ function Send({
               </button>
             ))}
             <button
+              disabled={!fresh}
               onClick={() => {
                 const maximum = BigInt(data.available) - fee;
                 setAmount(maximum > 0n ? decimalUsdt(maximum) : "0");
@@ -722,7 +732,7 @@ function Send({
       <dl className="details">
         <div>
           <dt>{tr("사용 가능")}</dt>
-          <dd>{formatUsdt(data.available)} USDT</dd>
+          <dd>{fresh ? `${formatUsdt(data.available)} USDT` : "—"}</dd>
         </div>
         <div>
           <dt>{tr("수수료")}</dt>
@@ -744,7 +754,7 @@ function Send({
       <div className="send-actions">
       <button
         className="primary"
-        disabled={busy}
+        disabled={busy || !fresh}
         onClick={stage === "form" ? review : () => void submit()}
       >
         {busy
@@ -770,9 +780,11 @@ function Send({
 function Activity({
   data,
   onSelect,
+  preview = false,
 }: {
   data: WalletData;
   onSelect: (t: Transaction) => void;
+  preview?: boolean;
 }) {
   const { tr } = useI18n();
   const { localeTag } = useI18n();
@@ -820,7 +832,7 @@ function Activity({
     {loadError && filter !== "transactions" && <p role="alert">{tr(loadError)}</p>}
     {filter === "transactions" && <ActivityList transactions={transactions} onSelect={onSelect} />}
     {filter === "rewards" && loadedParts.rewards && history && (rewards.length ? rewards.map(r => <div className="history-entry" key={r.id}><div><strong>{tr(r.label)}</strong><small>{date(r.date)} · {tr(r.status)}</small></div><strong>{formatUsdt(r.amount, 0)} P</strong></div>) : <p className="history-empty">{tr("수당 내역이 없습니다.")}</p>)}
-    {filter === "orders" && loadedParts.orders && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => { clearPreloadedData({ preserveShopProducts: true }); setHistoryRevision(n => n + 1); }} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
+    {filter === "orders" && loadedParts.orders && history && (history.orders.length ? history.orders.map(order => <div className="history-entry" key={order.id}><div><strong>{tr(order.product_name)} × {order.quantity}</strong><small>{date(order.created_at)} · {tr(order.status === "cancelled" ? "취소·환불 완료" : order.status === "cancellation_requested" ? "취소 승인 대기" : "결제 완료")}</small>{!preview && order.status === "paid" && <CancelOrder orderId={order.id} onDone={async () => { clearPreloadedData({ preserveShopProducts: true }); setHistoryRevision(n => n + 1); }} />}</div><strong>{formatUsdt(order.total, order.currency === "POINT" ? 0 : 6)} {order.currency === "POINT" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("아직 구매 내역이 없습니다.")}</p>)}
     {filter === "swaps" && loadedParts.swaps && history && (history.swaps.length ? history.swaps.map(swap => <div className="history-entry" key={swap.id}><div><strong>{swap.direction === "usdt_to_points" ? "USDT → P" : "P → USDT"}</strong><small>{date(swap.created_at)}</small></div><strong>{formatUsdt(swap.received_amount, swap.direction === "usdt_to_points" ? 0 : 6)} {swap.direction === "usdt_to_points" ? "P" : "USDT"}</strong></div>) : <p className="history-empty">{tr("전환 내역이 없습니다.")}</p>)}
   </>;
 }

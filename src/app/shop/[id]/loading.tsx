@@ -1,2 +1,7 @@
-import { RouteLoading } from "@/components/route-loading";
-export default function Loading() { return <RouteLoading active="shop" />; }
+"use client";
+import { useParams } from "next/navigation";
+import { Shop } from "@/components/shop";
+export default function Loading() {
+  const { id } = useParams<{ id: string }>();
+  return <Shop productId={id} preview />;
+}
