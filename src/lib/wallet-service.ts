@@ -1,3 +1,4 @@
+import { companyWalletAddress } from "./company-wallet-address";
 import { database, transaction } from "./db";
 import { parseUsdt } from "./money";
 import { chainConfig, custody, validTronAddress } from "./tron";
@@ -105,7 +106,7 @@ export async function requestWithdrawal(
   );
   if (address === chainConfig().contract)
     throw new HttpError(400, "토큰 컨트랙트 주소로 출금할 수 없습니다.");
-  if (owned.rowCount || address === process.env.TRON_HOT_WALLET_ADDRESS)
+  if (owned.rowCount || address === await companyWalletAddress())
     throw new HttpError(400, "서비스 내부 주소에는 회원 송금을 이용해 주세요.");
   const result = await database().query(
     "SELECT wallet_request_withdrawal($1,$2,$3,$4,$5) AS id",
@@ -115,7 +116,7 @@ export async function requestWithdrawal(
 }
 export async function adminSnapshot() {
   const pool = database();
-  const [users, withdrawals, history, audit, cursor] = await Promise.all([
+  const [users, withdrawals, history, audit, cursor, hotAddress] = await Promise.all([
     pool.query(
       "SELECT p.*,b.available,b.reserved FROM profiles p JOIN balances b ON b.user_id=p.id ORDER BY p.created_at DESC LIMIT 500",
     ),
@@ -131,6 +132,7 @@ export async function adminSnapshot() {
     pool.query("SELECT * FROM chain_cursor WHERE network=$1", [
       chainConfig().network,
     ]),
+    companyWalletAddress(pool),
   ]);
   return {
     mode: "live",
@@ -144,7 +146,7 @@ export async function adminSnapshot() {
     operations: {
       cursor: cursor.rows[0]?.block_number || null,
       updated_at: cursor.rows[0]?.updated_at || null,
-      hotAddress: process.env.TRON_HOT_WALLET_ADDRESS || null,
+      hotAddress: hotAddress || null,
       network: chainConfig().network,
       broadcast: process.env.TRON_BROADCAST_ENABLED === "true",
     },

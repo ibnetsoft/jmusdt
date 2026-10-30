@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { PoolClient } from "pg";
 import { database, transaction } from "./db";
+import { companyWalletAddress } from "./company-wallet-address";
 import { chainConfig, validTronAddress } from "./tron";
 import { SweepChain, SweepError } from "./sweep-chain";
 import { verifyExistingChainBinding } from "./chain-binding";
@@ -12,9 +13,9 @@ export const ACTIVE_SWEEPS = [
   "broadcast",
   "needs_review",
 ];
-export function sweepRuntime() {
+export function sweepRuntime(companyAddress = process.env.TRON_HOT_WALLET_ADDRESS || "") {
   const c = chainConfig(),
-    company = process.env.TRON_HOT_WALLET_ADDRESS || "",
+    company = companyAddress,
     issues: string[] = [];
   const feeLimit = Number(process.env.TRON_FEE_LIMIT_SUN || 100000000);
   if (!c.contract || !validTronAddress(c.contract))
@@ -85,8 +86,8 @@ export async function sweepDashboard(
   historyPage: number,
   chain = new SweepChain(),
 ) {
-  const c = sweepRuntime(),
-    db = database();
+  const db = database(),
+    c = sweepRuntime(await companyWalletAddress(db));
   const [settings, rows, count, jobs, jobCount, health] = await Promise.all([
     db.query("SELECT * FROM sweep_settings WHERE id=true"),
     db.query(
@@ -170,7 +171,7 @@ export async function previewSweeps(
   userIds: string[],
   chain = new SweepChain(),
 ) {
-  const c = sweepRuntime();
+  const c = sweepRuntime(await companyWalletAddress());
   if (!c.contract || !validTronAddress(c.company))
     throw new SweepError("USDT 토큰·회사 지갑 주소를 먼저 설정하세요.");
   await verifyExistingChainBinding();
@@ -304,7 +305,7 @@ export async function approveSweeps(
           await db.query("SELECT id FROM sweep_jobs WHERE review_id=$1", [id])
         ).rows.map((v) => v.id),
       };
-    const c = sweepRuntime();
+    const c = sweepRuntime(await companyWalletAddress(db));
     if (c.issues.length) throw new SweepError(c.issues.join(" · "));
     if (
       r.network !== c.network ||

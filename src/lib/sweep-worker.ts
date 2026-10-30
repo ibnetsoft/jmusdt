@@ -1,7 +1,8 @@
 import type { Pool } from "pg";
 import type { Types } from "tronweb";
 import { database } from "./db";
-import { custody } from "./tron";
+import { custody, chainConfig } from "./tron";
+import { companyWalletAddress } from "./company-wallet-address";
 import { SweepChain, SweepError } from "./sweep-chain";
 import { sweepRuntime, ACTIVE_SWEEPS } from "./sweeps";
 import { ensureChainBinding } from "./chain-binding";
@@ -41,14 +42,14 @@ type Sign = (
   tx: Types.Transaction,
 ) => Promise<Types.SignedTransaction>;
 const signer: Sign = (kind, id, transaction) =>
-  custody("/sign", { kind, id, transaction, network: sweepRuntime().network });
+  custody("/sign", { kind, id, transaction, network: chainConfig().network });
 export async function advanceSweep(
   pool: Pool = database(),
   chain = new SweepChain(),
   sign: Sign = signer,
   now = Date.now(),
 ) {
-  const c = sweepRuntime();
+  const c = sweepRuntime(await companyWalletAddress(pool));
   await pool.query(
     "INSERT INTO sweep_worker_health(network,last_seen,last_error) VALUES($1,now(),'') ON CONFLICT(network) DO UPDATE SET last_seen=now(),last_error=''",
     [c.network],

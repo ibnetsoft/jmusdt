@@ -1,5 +1,6 @@
 import { api, identity, HttpError } from "@/lib/http";
 import { database } from "@/lib/db";
+import { companyWalletAddress } from "@/lib/company-wallet-address";
 import { chainConfig, tronClient, validTronAddress } from "@/lib/tron";
 export async function GET() {
   return api(async () => {
@@ -7,7 +8,7 @@ export async function GET() {
     const pool = database(),
       tron = await tronClient(),
       { network, contract } = chainConfig();
-    const hot = process.env.TRON_HOT_WALLET_ADDRESS;
+    const hot = await companyWalletAddress(pool);
     if (!contract || !hot || !validTronAddress(hot))
       throw new HttpError(503, "토큰과 핫월렛 주소를 설정해 주세요.");
     const [accounts, liability, fees, revenue, marketing] = await Promise.all([

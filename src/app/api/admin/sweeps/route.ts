@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { api, identity, checkOrigin, HttpError } from "@/lib/http";
 import { transaction } from "@/lib/db";
+import { companyWalletAddress } from "@/lib/company-wallet-address";
 import {
   sweepDashboard,
   previewSweeps,
@@ -114,8 +115,10 @@ export async function POST(request: Request) {
           400,
           "건당 보충 한도는 0~100 TRX, 회사 최소 보유량은 1~1,000,000 TRX입니다.",
         );
-      if (p.enabled && sweepRuntime().issues.length)
-        throw new HttpError(409, sweepRuntime().issues.join(" · "));
+      if (p.enabled) {
+        const runtime = sweepRuntime(await companyWalletAddress(db));
+        if (runtime.issues.length) throw new HttpError(409, runtime.issues.join(" · "));
+      }
       const s = await db.query(
         "UPDATE sweep_settings SET enabled=$1,max_topup=$2,company_reserve=$3,version=version+1,updated_at=now() WHERE id=true AND version=$4 RETURNING *",
         [p.enabled, max.toString(), reserve.toString(), p.version],

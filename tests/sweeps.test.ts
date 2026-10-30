@@ -245,6 +245,7 @@ test("approved sweep lifecycle persists gas/token outbox, retries same bytes, ve
       await db.exec(
         await readFile(new URL("../db/" + f, import.meta.url), "utf8"),
       );
+    await db.exec("CREATE TABLE company_wallets(id boolean primary key, address text, network text);");
     for (const id of [user, actor, outsider]) {
       await query("INSERT INTO auth.users(id) VALUES($1)", [id]);
       await query("INSERT INTO profiles(id,email,name) VALUES($1,$2,'QA')", [
@@ -324,6 +325,8 @@ test("approved sweep lifecycle persists gas/token outbox, retries same bytes, ve
       ]),
       /ALREADY_ACTIVE/,
     );
+    await query("INSERT INTO company_wallets(id,address,network) VALUES(true,$1,'nile')", [company]);
+    delete process.env.TRON_HOT_WALLET_ADDRESS;
     const chain = new FakeChain(),
       sign = async (_kind: string, _id: string, tx: Types.Transaction) =>
         chain.tron.trx.sign(
