@@ -1,4 +1,5 @@
 import { Wallet } from "ethers";
+import { timingSafeEqual } from "node:crypto";
 import { TronWeb, type Types } from "tronweb";
 import type { Pool, PoolClient } from "pg";
 import { database, transaction } from "./db";
@@ -15,6 +16,12 @@ function walletSecret() {
   const key=process.env.COMPANY_WALLET_ENCRYPTION_KEY;
   if(!key || key.length<32) throw new SweepError("회사 지갑 암호화 설정이 필요합니다.");
   return key;
+}
+export async function verifyCompanyWalletBackup(db: Pick<PoolClient,"query"> = database() as unknown as PoolClient) {
+  const key=walletSecret();
+  const value=(await db.query("SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name=$1",["wu_company_wallet_encryption"])).rows[0]?.decrypted_secret;
+  const backup=Buffer.from(typeof value === "string" ? value : ""), configured=Buffer.from(key);
+  if(backup.length!==configured.length || !timingSafeEqual(backup,configured)) throw new SweepError("회사 지갑 암호화 백업 설정을 확인하세요.");
 }
 function config() {
   const c=chainConfig();
@@ -37,6 +44,7 @@ export async function createCompanyWallet(actor:string) {
     if(process.env.TRON_HOT_WALLET_ADDRESS) throw new SweepError("기존 회사 지갑이 설정되어 있습니다. 새 지갑을 중복 생성할 수 없습니다.");
     const binding=(await db.query("INSERT INTO wallet_configuration(id,network,contract) VALUES(true,$1,$2) ON CONFLICT(id) DO UPDATE SET id=true RETURNING network,contract",[c.network,c.contract])).rows[0];
     if(binding.network!==c.network||binding.contract!==c.contract) throw new SweepError("기존 지갑 네트워크와 일치하지 않습니다.");
+    await verifyCompanyWalletBackup(db);
     const key=Wallet.createRandom().privateKey.slice(2), address=TronWeb.address.fromPrivateKey(key);
     if(!address)throw new SweepError("회사 지갑 생성 실패");
     await db.query("INSERT INTO company_wallets(id,network,address,encrypted_private_key,created_by) VALUES(true,$1,$2,$3,$4)",[c.network,address,encryptTronKey(key,walletSecret()),actor]);

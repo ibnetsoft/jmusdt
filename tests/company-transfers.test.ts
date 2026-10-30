@@ -7,7 +7,7 @@ import type { Pool } from 'pg';
 import { SweepChain } from '../src/lib/sweep-chain';
 import { MAINNET_USDT } from '../src/lib/tron';
 import { encryptTronKey } from '../src/lib/tron-api-settings';
-import { advanceCompanyTransfer } from '../src/lib/company-transfers';
+import { advanceCompanyTransfer, verifyCompanyWalletBackup } from '../src/lib/company-transfers';
 import { TRANSFER_TOPIC, transferCalldata, type Unsigned } from '../src/lib/tron-transaction';
 
 test('company transfer saves and reuses one transaction until the matching receipt is confirmed',async()=>{
@@ -30,4 +30,11 @@ test('company transfer saves and reuses one transaction until the matching recei
  await assert.rejects(query("INSERT INTO company_transfers(actor,network,contract,source,destination,amount,fee_limit,status,expires_at) VALUES($1,'mainnet',$2,$3,$4,1,100000000,'approved',now()+interval '5 minutes')",[actor,MAINNET_USDT,from,to]));
  const chain=new MockChain();assert.equal((await advanceCompanyTransfer(chain,pool)).state,'prepared');assert.equal((await advanceCompanyTransfer(chain,pool)).state,'signed');assert.equal((await advanceCompanyTransfer(chain,pool)).state,'broadcast');assert.equal((await advanceCompanyTransfer(chain,pool)).state,'broadcast');assert.equal(broadcasts,2);const beforeExpiry=broadcasts;assert.equal((await advanceCompanyTransfer(chain,pool,Date.now()+120000)).state,'needs_review');assert.equal(broadcasts,beforeExpiry);receipt=true;await advanceCompanyTransfer(chain,pool);const row=(await query('SELECT status,txid FROM company_transfers WHERE id=$1',[id])).rows[0];assert.equal(row.status,'completed');assert.equal(row.txid,txid);assert.equal((await advanceCompanyTransfer(chain,pool)).state,'idle');
  }finally{await db.close();if(previous.network===undefined)delete process.env.TRON_NETWORK;else process.env.TRON_NETWORK=previous.network;if(previous.secret===undefined)delete process.env.COMPANY_WALLET_ENCRYPTION_KEY;else process.env.COMPANY_WALLET_ENCRYPTION_KEY=previous.secret;}
+});
+
+
+test("company wallet creation requires the matching protected key backup",async()=>{
+ const old=process.env.COMPANY_WALLET_ENCRYPTION_KEY;process.env.COMPANY_WALLET_ENCRYPTION_KEY="test-wallet-encryption-key-0123456789";
+ const mock=(key:string)=>({query:async()=>({rows:[{decrypted_secret:key}]})}) as any;
+ try{await verifyCompanyWalletBackup(mock(process.env.COMPANY_WALLET_ENCRYPTION_KEY));await assert.rejects(verifyCompanyWalletBackup(mock("wrong-wallet-encryption-key-0123456789")),/백업 설정/);}finally{if(old===undefined)delete process.env.COMPANY_WALLET_ENCRYPTION_KEY;else process.env.COMPANY_WALLET_ENCRYPTION_KEY=old;}
 });
