@@ -266,6 +266,7 @@ export function Sweeps() {
           {tr(notice)}
         </p>
       )}
+      <CompanyTransfer />
       {data && (
         <>
           <div className="sweep-workspace">
@@ -387,7 +388,6 @@ export function Sweeps() {
           </div>
           </section>
           <aside className="sweep-column sweep-sidebar">
-          <CompanyTransfer />
           <CompanyWalletBalance />
           <section className="shop-editor admin-network-status">
             <div className="sweep-section-heading"><ShieldCheck size={17} aria-hidden="true" /><h2>{tr("회사 지갑 및 실행 상태")}</h2></div>
