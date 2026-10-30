@@ -241,6 +241,7 @@ export function Sweeps() {
   const offline =
     !data?.health ||
     Date.now() - new Date(data.health.last_seen).getTime() > 30000;
+  const hasPendingWork = (data?.jobs || []).some((job) => ["requested", "gas_funding", "gas_confirmed", "signing", "broadcast"].includes(job.status));
   const total = (data?.wallets || []).reduce(
     (n, w) => n + BigInt(w.usdt || "0"),
     0n,
@@ -401,7 +402,7 @@ export function Sweeps() {
             <p>{tr("회사 TRX ")}{displayAmount(data.companyTrx, "TRX")} {tr(data.companyError)}
             </p>
             <p>{tr("회수 ")}{data.settings.enabled ? tr("활성") : tr("중단")}{tr(" · 워커")}{" "}
-              {offline ? tr("연결 확인 필요") : tr("연결됨")}
+              {offline ? tr("최근 실행 기록 없음") : tr("최근 응답 확인")}
               {data.health
                 ? tr(" · 마지막 응답 {0}", {"0": new Date(data.health.last_seen).toLocaleString(localeTag, { timeZone: "Asia/Seoul" })})
                 : ""}
@@ -412,8 +413,8 @@ export function Sweeps() {
                 • {i}
               </p>
             ))}
-            {offline && (
-              <p className="shop-muted">{tr("승인 후 처리는 별도 회수 워커가 수행합니다. 서버의 worker:sweep 실행 상태를 확인하세요.")}</p>
+            {offline && hasPendingWork && (
+              <p className="shop-muted">{tr("회수 요청 처리 중 워커의 최근 응답이 없습니다. 실행 상태를 확인하세요.")}</p>
             )}
             {!data.canExecute && (
               <p className="shop-muted">{tr("조회는 가능하며 설정·승인은 최고관리자와 2단계 인증이 필요합니다.")}</p>
