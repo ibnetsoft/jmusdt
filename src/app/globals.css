@@ -2786,3 +2786,7 @@ html[data-theme="dark"] .sweep-page .sweep-table th { background: transparent; c
   html[data-theme="light"] .bottom-nav a { color: #52665b; }
   html[data-theme="light"] .bottom-nav a.active { color: #17695a; }
 }
+
+/* Hide scrollbar tracks while preserving scrolling by touch, wheel and keyboard. */
+html, body, * { scrollbar-width: none !important; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar { display: none; width: 0; height: 0; }
