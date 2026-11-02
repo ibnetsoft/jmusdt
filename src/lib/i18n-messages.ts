@@ -550,6 +550,7 @@ export const messages: Record<string, readonly [english: string, japanese: strin
   "다음": ["Next", "次へ"],
   "실제 계정을 연결하면 인증 앱을 등록할 수 있습니다.": ["Connect a live account to set up an authenticator app.", "実際のアカウントに接続すると認証アプリを登録できます。"],
   "2단계 인증이 완료되었습니다.": ["Two-factor authentication completed.", "2段階認証が完了しました。"],
+  "이메일 인증됨": ["Email verified", "メール認証済み"],
   "2단계 인증": ["Two-factor authentication", "2段階認証"],
   "인증 앱으로 계정을 보호하세요.": ["Protect your account with an authenticator app.", "認証アプリでアカウントを保護してください。"],
   "인증하기": ["Authenticate", "認証する"],

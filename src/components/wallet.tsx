@@ -24,6 +24,7 @@ import {
   EyeOff,
   Plus,
   Check,
+  UserRound,
   X,
   Download,
   ExternalLink,
@@ -279,15 +280,16 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
             {view === "settings" ? (
               <>
                 <section className="settings-profile">
-                  <span className="profile-avatar large">
-                    {data.user.name.slice(0, 1)}
+                  <span className="profile-avatar large" aria-hidden="true">
+                    <UserRound size={32} strokeWidth={2.4} />
                   </span>
-                  <h2>{data.user.name}</h2>
-                  <p>{data.user.email}</p>
-                  {tr(data.user.gradeName) && <p>{tr("회원등급: ")}{tr(data.user.gradeName)}</p>}
-                  <span className="network-pill">
-                    {data.mode === "demo" ? "DEMO ACCOUNT" : "VERIFIED ACCOUNT"}
-                  </span>
+                  <div className="settings-profile-details">
+                    <h2>{data.user.name}</h2>
+                    <p className="settings-profile-email">
+                      <span>{data.user.email}</span>
+                      {data.mode === "demo" ? <span className="profile-demo-label">DEMO</span> : <span className="profile-verified" role="img" aria-label={tr("이메일 인증됨")} title={tr("이메일 인증됨")}><Check size={13} strokeWidth={3} aria-hidden="true" /></span>}
+                    </p>
+                  </div>
                 </section>
                 {!preview && <><SiteControls />
                 <ReferralCard code={data.referralCode} onNotice={setToast} />
