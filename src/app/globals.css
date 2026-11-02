@@ -2751,3 +2751,38 @@ html[data-theme="dark"] .sweep-page .sweep-table th { background: transparent; c
 .company-wallet-amounts small, .company-wallet-amounts strong { display: block; overflow-wrap: anywhere; }
 .company-wallet-amounts small { color: var(--muted); margin-bottom: 8px; }
 @media (max-width: 400px) { .company-wallet-amounts { grid-template-columns: 1fr; } }
+
+/* Edge-to-edge mobile navigation, with room for the device home indicator. */
+@media (max-width: 700px) {
+  body:has(.bottom-nav) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .bottom-nav {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: 100%;
+    min-height: calc(72px + env(safe-area-inset-bottom));
+    margin: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    gap: 0;
+    border-top: 1px solid #40564a;
+    border-radius: 0;
+    background: #19261f;
+    box-shadow: none;
+  }
+  .bottom-nav a {
+    min-height: 60px;
+    gap: 5px;
+    padding: 6px 2px;
+    color: #aebeb3;
+    font-size: 11px;
+    line-height: 1.2;
+    font-weight: 500;
+  }
+  .bottom-nav a svg { width: 24px; height: 24px; stroke-width: 1.8; }
+  .bottom-nav a.active { color: #bce2c9; font-weight: 700; }
+  .bottom-nav a:focus-visible { outline-offset: -3px; }
+  html[data-theme="light"] .bottom-nav { background: #f5f7f2; border-color: #cfddd4; }
+  html[data-theme="light"] .bottom-nav a { color: #52665b; }
+  html[data-theme="light"] .bottom-nav a.active { color: #17695a; }
+}

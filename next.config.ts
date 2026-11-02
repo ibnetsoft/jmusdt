@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
+  devIndicators: { position: "top-left" },
   images: {
     minimumCacheTTL: 86400,
     remotePatterns: process.env.NEXT_PUBLIC_SUPABASE_URL ? [{
