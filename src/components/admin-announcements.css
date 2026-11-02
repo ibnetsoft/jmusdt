@@ -1,0 +1,14 @@
+.admin-announcements .announcement-form, .admin-announcements .announcement-history { margin-top: 24px; padding: 24px; }
+.announcement-form > .shop-muted { margin: 8px 0 20px; }
+.announcement-languages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; margin-bottom: 20px; }
+.announcement-languages fieldset { min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.announcement-languages legend { color: var(--text); font-weight: 700; padding: 0 6px; }
+.announcement-languages label { display: block; }
+.announcement-languages input, .announcement-languages textarea { display: block; width: 100%; }
+.announcement-languages textarea { resize: vertical; }
+.announcement-form > button { width: auto; }
+.announcement-form .shop-error, .announcement-form .shop-success { margin-top: 14px; }
+.announcement-history article { padding: 18px 0; border-bottom: 1px solid var(--line); }
+.announcement-history article:last-child { border-bottom: 0; }
+.announcement-history p { margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.announcement-history time { font-size: 12px; color: var(--muted); }

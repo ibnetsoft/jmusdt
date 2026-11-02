@@ -1,5 +1,10 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "알림": ["Notifications", "お知らせ"],
+  "공지사항": ["Announcements", "お知らせ管理"],
+  "뒤로 가기": ["Go back", "戻る"],
+  "알림을 불러오지 못했습니다.": ["Unable to load notifications.", "お知らせを読み込めませんでした。"],
+  "새로운 알림이 없습니다.": ["There are no notifications yet.", "お知らせはありません。"],
   "승인 대기 처리": ["Approved, awaiting processing", "承認済み・処理待ち"],
   "서명 준비": ["Preparing signature", "署名準備中"],
   "송금 완료": ["Transfer completed", "送金完了"],

@@ -61,6 +61,18 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
     [hidden, setHidden] = useState(false),
     [selected, setSelected] = useState<Transaction | null>(null),
     [install, setInstall] = useState<InstallEvent | null>(null);
+  useEffect(() => {
+    try {
+      if (location.pathname === "/" && sessionStorage.getItem("wu-returning-from-notifications") === "1") {
+        const previous = sessionStorage.getItem("wu-notification-wallet-view");
+        sessionStorage.removeItem("wu-returning-from-notifications");
+        if (previous === "home" || previous === "deposit" || previous === "send" || previous === "activity" || previous === "settings") setView(previous);
+      }
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try { if (location.pathname === "/") sessionStorage.setItem("wu-notification-wallet-view", view); } catch {}
+  }, [view]);
   const latestLoaded = useRef(false);
   const refreshOk = useRef(false);
   const refresh = useCallback(async () => {

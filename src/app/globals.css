@@ -2812,3 +2812,21 @@ html[data-theme="dark"] .sweep-page .sweep-table th { background: transparent; c
 /* Hide scrollbar tracks while preserving scrolling by touch, wheel and keyboard. */
 html, body, * { scrollbar-width: none !important; -ms-overflow-style: none; }
 html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+.notification-bell { position: absolute; top: 26px; right: max(24px, calc((100vw - 1100px) / 2 + 24px)); z-index: 25; display: grid; place-items: center; width: 42px; height: 42px; color: #bce2c9; border-radius: 10px; }
+html[data-theme="light"] .notification-bell { color: #17695a; }
+.notification-bell:hover { background: var(--surface-2); }
+.commerce .shop-header { padding-right: 50px; }
+.points-header { padding-right: 48px; }
+.notifications-page { max-width: 760px; min-height: 60vh; margin: 0 auto; padding: 32px 24px 110px; }
+.notifications-header { display: flex; gap: 18px; align-items: center; margin-bottom: 28px; }
+.notifications-header button { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; }
+.notifications-header button:hover { background: var(--surface-2); }
+.notifications-header h1 { font-size: 26px; letter-spacing: -.5px; }
+.notifications-empty { display: grid; justify-items: center; gap: 12px; color: var(--muted); padding: 80px 0; }
+.notifications-error { color: #efaaaa; }
+.notification-item { padding: 20px 0; border-bottom: 1px solid var(--line); }
+.notification-item h2 { font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+.notification-item time { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; }
+.notification-item p { margin-top: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .notification-bell { top: 16px; right: 14px; } .notifications-page { padding: 24px 20px calc(100px + env(safe-area-inset-bottom)); } }

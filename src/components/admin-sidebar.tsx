@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { preloadAdminData, clearAdminData } from "@/lib/admin-preload";
 import { authChangeKey } from "@/lib/preload-pages";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { Activity, ArrowUpRight, BadgePercent, ClipboardList, Coins, Image, KeyRound, LayoutDashboard, ShieldCheck, ShoppingBag, Users, Wallet } from "lucide-react";
+import { Bell, Activity, ArrowUpRight, BadgePercent, ClipboardList, Coins, Image, KeyRound, LayoutDashboard, ShieldCheck, ShoppingBag, Users, Wallet } from "lucide-react";
 import { Brand } from "./shared";
 import { useI18n } from "./i18n";
 
@@ -17,6 +17,7 @@ const items = [
   { href: "/admin?tab=operations", label: "지갑 운영", icon: Wallet },
   { href: "/admin?tab=audit", label: "감사 로그", icon: ShieldCheck },
   { href: "/admin/orders", label: "주문 관리", icon: ClipboardList },
+  { href: "/admin/announcements", label: "공지사항", icon: Bell },
   { href: "/admin/sweeps", label: "USDT 모으기", icon: Coins },
   { href: "/admin/exchange-rate", label: "포인트 전환 비율", icon: BadgePercent },
   { href: "/admin/marketing", label: "마케팅 관리", icon: Activity },
