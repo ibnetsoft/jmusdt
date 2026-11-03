@@ -140,7 +140,7 @@ export function Organization() {
   }
   return (
     <>
-    <main className="commerce" aria-label={tr("조직도")}>
+    <main className="commerce organization-page" aria-label={tr("조직도")}>
       {tr(error) && (
         <p role="alert" className="shop-error">
           {tr(error)}

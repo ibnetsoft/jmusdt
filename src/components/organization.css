@@ -133,3 +133,7 @@ html[data-theme="light"] .commerce .org-controls [aria-pressed="true"] {
 .org-controls { margin-bottom: 7px; }
 .org-breadcrumbs:empty { display: none; }
 .org-board { margin-top: 7px; }
+
+/* Keep the organization controls clear of the shared notification icon. */
+.commerce.organization-page { padding-top: 56px; }
+@media (max-width: 700px) { .commerce.organization-page { padding-top: 48px; } }
