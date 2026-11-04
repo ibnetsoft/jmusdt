@@ -179,6 +179,7 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
     <>
     <main className="commerce" aria-label={tr("쇼핑몰")}>
       <header className="shop-header">
+        {available !== "" && <strong className="shop-header-points">{formatUsdt(available, 0)}{tr(" 포인트")}</strong>}
         <button type="button" className="cart-toggle" disabled={preview} aria-expanded={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingBag size={18} /> {tr("장바구니")} ({cart.length})</button>
       </header>
       {cartOpen && <section className="cart-panel" aria-label={tr("장바구니")}>
@@ -189,7 +190,6 @@ export function Shop({ productId, preview = false }: { productId?: string; previ
         </div>; })}
         {cart.length > 0 && <Link className="shop-primary" href="/shop/cart">{tr("장바구니 결제")}</Link>}
       </section>}
-      <div className="shop-balance">{available !== "" && <strong>{formatUsdt(available, 0)}{tr(" 포인트")}</strong>}</div>
       {tr(error) && (
         <p className="shop-error" role="alert">
           {tr(error)}{" "}

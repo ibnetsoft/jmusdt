@@ -2816,7 +2816,6 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar { display
 .notification-bell { position: absolute; top: 26px; right: max(24px, calc((100vw - 1100px) / 2 + 24px)); z-index: 25; display: grid; place-items: center; width: 42px; height: 42px; color: #bce2c9; border-radius: 10px; }
 html[data-theme="light"] .notification-bell { color: #17695a; }
 .notification-bell:hover { background: var(--surface-2); }
-.commerce .shop-header { padding-right: 50px; }
 .points-header { padding-right: 48px; }
 .notifications-page { max-width: 760px; min-height: 60vh; margin: 0 auto; padding: 32px 24px 110px; }
 .notifications-header { display: flex; gap: 18px; align-items: center; margin-bottom: 28px; }

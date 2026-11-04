@@ -313,4 +313,6 @@
   .cart-checkout { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
 }
 
-.commerce .shop-header { justify-content: flex-end; }
+.commerce .shop-header { justify-content: flex-end; gap: 12px; padding: 0 0 16px; margin-bottom: 28px; border-bottom: 1px solid var(--line); }
+.shop-header-points { min-width: 0; overflow-wrap: anywhere; text-align: right; }
+.commerce .shop-header .cart-toggle { flex: 0 0 auto; white-space: nowrap; }
