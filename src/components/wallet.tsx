@@ -640,7 +640,7 @@ function Send({
     );
   return (
     <section className="send-view">
-      <h1>{stage === "review" ? tr("송금 정보 확인") : tr("이체")}</h1>
+      <h1>{stage === "review" ? tr("송금 정보 확인") : tr(kind === "external" ? "출금" : "이체")}</h1>
       {stage === "form" ? (
         <>
           <div className="segmented">
