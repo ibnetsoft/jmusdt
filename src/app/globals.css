@@ -2840,3 +2840,16 @@ body:has(.user-page-brand) :is(.commerce, .points-page, .notifications-page) { p
   .wallet-layout-send .wallet-main { padding-top: 25px; }
   .wallet-layout-send .wallet-header { height: 34px; }
 }
+
+/* Align user-page content below the shared header with the activity tabs. */
+@media (max-width: 700px) {
+  .wallet-assets { margin-top: 22px; }
+  .wallet-layout-send .wallet-header { margin-bottom: 14px; }
+  .settings-profile { padding-top: 0; }
+  body:has(.user-page-brand) :is(.commerce, .notifications-page) { padding-top: 81px; }
+  body:has(.user-page-brand) .points-page { padding-top: 71px; }
+  .organization-page .org-controls { margin-top: 0; }
+}
+@media (max-width: 700px) and (max-height: 700px) {
+  .wallet-layout-send .wallet-header { margin-bottom: 17px; }
+}
