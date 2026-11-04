@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { UserPageBrand } from "@/components/user-page-brand";
 import { NotificationBell } from "@/components/notification-bell";
 import { PagePreloader } from "@/components/page-preloader";
 import { LanguageProvider } from "@/components/i18n";
@@ -33,7 +34,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{__html:"try{var t=localStorage.getItem('jmusdt-theme');document.documentElement.dataset.theme=t==='light'?'light':'dark'}catch(e){document.documentElement.dataset.theme='dark'}"}} /></head>
-      <body><LanguageProvider initialLocale={locale}><PagePreloader /><NotificationBell />{children}</LanguageProvider></body>
+      <body><LanguageProvider initialLocale={locale}><PagePreloader /><UserPageBrand /><NotificationBell />{children}</LanguageProvider></body>
     </html>
   );
 }

@@ -2830,3 +2830,14 @@ html[data-theme="light"] .notification-bell { color: #17695a; }
 .notification-item time { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; }
 .notification-item p { margin-top: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 700px) { .notification-bell { top: 16px; right: 14px; } .notifications-page { padding: 24px 20px calc(100px + env(safe-area-inset-bottom)); } }
+
+/* Align every user-page brand with the wallet header. */
+.user-page-brand { position: absolute; top: 26px; left: max(24px, calc((100vw - 1100px) / 2 + 24px)); z-index: 20; }
+.user-page-brand .brand { font-size: 17px; }
+.user-page-brand .brand-mark { width: 32px; height: 32px; border-radius: 10px; font-size: 21px; }
+body:has(.user-page-brand) :is(.commerce, .points-page, .notifications-page) { padding-top: 78px; }
+@media (max-width: 700px) {
+  .user-page-brand { left: max(24px, calc((100vw - 480px) / 2 + 24px)); }
+  .wallet-layout-send .wallet-main { padding-top: 25px; }
+  .wallet-layout-send .wallet-header { height: 34px; }
+}
