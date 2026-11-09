@@ -241,6 +241,17 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
           <>
             {view === "home" ? (
               <>
+                <section className="wallet-promo-inline" aria-label="Everyday finance">
+                  <div className="wallet-promo-copy">
+                    <span>01 / EVERYDAY FINANCE</span>
+                    <strong>Less friction.<br />More freedom.</strong>
+                    <button onClick={() => void openFinancialView("deposit")}>{tr("내 지갑에 입금하기 ")}<ArrowUpRight size={17} /></button>
+                  </div>
+                  <div className="wallet-promo-art" aria-hidden="true">
+                    <div className="orbit orbit-one" /><div className="orbit orbit-two" />
+                    <div className="promo-token"><Token /></div><span className="spark one">✦</span>
+                  </div>
+                </section>
                 <section className="balance-card wallet-assets">
                   <div className="balance-title"><span>USDT</span><button aria-label={hidden ? tr("잔액 표시") : tr("잔액 숨기기")} onClick={() => setHidden(!hidden)}>{hidden ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>
                   <div className="asset-value">{hidden ? "••••••" : formatUsdt(data.available, 6)} <small>USDT</small></div>
