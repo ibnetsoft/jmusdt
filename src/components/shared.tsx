@@ -29,7 +29,7 @@ export function Brand({ admin = false }: { admin?: boolean }) {
   const { tr } = useI18n();
   return (
     <a className="brand" href={admin ? "/admin" : "/"} aria-label={tr("WU 홈")}>
-      <img className="brand-mark" src="/icons/withusdt-v2-192.png" alt="" width={39} height={39} />
+      <img className="brand-mark" src="/icons/withusdt-v3-192.png" alt="" width={39} height={39} />
       <span>
         WU
         {admin ? <small>ADMIN CONSOLE</small> : null}

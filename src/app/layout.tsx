@@ -14,7 +14,7 @@ const baseMetadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "WU",
   },
-  icons: { icon: "/icons/withusdt-v2-192.png", apple: "/icons/withusdt-v2-192.png" },
+  icons: { icon: "/icons/withusdt-v3-192.png", apple: "/icons/withusdt-v3-192.png" },
 };
 export async function generateMetadata(): Promise<Metadata> {
   const { tr } = await serverI18n();

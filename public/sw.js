@@ -1,11 +1,11 @@
 // Cache only the public offline page and icons. Never cache sessions, APIs,
 // balances, authenticated HTML, Next RSC responses, or financial POSTs.
-const CACHE = "jmusdt-shell-v5-withusdt";
+const CACHE = "jmusdt-shell-v6-withusdt";
 self.addEventListener("install", (event) =>
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(["/offline.html", "/icons/withusdt-v2-192.png"]))
+      .then((cache) => cache.addAll(["/offline.html", "/icons/withusdt-v3-192.png"]))
       .then(() => self.skipWaiting()),
   ),
 );
@@ -39,3 +39,4 @@ self.addEventListener("fetch", (event) => {
     }));
   }
 });
+
