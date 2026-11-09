@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { api, HttpError } from "@/lib/http";
 import { runDepositScan } from "@/lib/deposit-monitor";
+import { provisionMissingAddress } from "@/lib/wallet-service";
 export const maxDuration = 60;
 export async function GET(request: Request) {
   return api(async () => {
@@ -9,6 +10,12 @@ export async function GET(request: Request) {
     const expected = Buffer.from(`Bearer ${secret}`);
     if (secret.length < 32 || given.length !== expected.length || !timingSafeEqual(given, expected))
       throw new HttpError(401, "인증이 필요합니다.");
-    return runDepositScan();
+    const scan = await runDepositScan();
+    try {
+      await provisionMissingAddress();
+    } catch {
+      console.error("Automatic address provisioning retry failed.");
+    }
+    return scan;
   });
 }

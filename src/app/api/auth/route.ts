@@ -3,6 +3,7 @@ import { authClient, isDemo } from "@/lib/supabase";
 import { api, checkOrigin, HttpError } from "@/lib/http";
 import { database } from "@/lib/db";
 import { clearRecoveryGrant } from "@/lib/password-recovery";
+import { provisionSignupAddress } from "@/lib/wallet-service";
 const schema = z.object({
   action: z.enum(["login", "signup"]),
   email: z.string().trim().toLowerCase().email().max(254),
@@ -67,6 +68,14 @@ export async function POST(request: Request) {
                 ? "인증 메일 발송 한도를 초과했습니다. 잠시 후 다시 시도해 주세요."
                 : "회원가입을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       );
+    if (action === "signup" && result.data.user?.id) {
+      try {
+        await provisionSignupAddress(result.data.user.id);
+      } catch {
+        // The account already exists; the deposit worker retries provisioning.
+        console.error("Automatic signup address provisioning failed; retry pending.");
+      }
+    }
     return {
       ok: true,
       confirmationRequired: action === "signup" && !result.data.session,

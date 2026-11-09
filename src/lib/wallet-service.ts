@@ -63,6 +63,10 @@ export async function provisionAddress(userId: string) {
   if (row.network !== network)
     throw new HttpError(409, "기존 주소의 네트워크가 다릅니다.");
   if (row.address) return row.address;
+  if (process.env.INTERNAL_CUSTODY_ENABLED === "true" && (!process.env.CUSTODY_URL || !process.env.CUSTODY_TOKEN)) {
+    const { assertInternalCustodyReady } = await import("./internal-custody");
+    await assertInternalCustodyReady();
+  }
   const response = await custody<{ address: string }>("/addresses", {
     network,
     index: String(row.derivation_index),
@@ -75,6 +79,24 @@ export async function provisionAddress(userId: string) {
     [userId, response.address],
   );
   return result.rows[0].address;
+}
+// Auth can return a synthetic user for an existing email. Only provision for a
+// real profile created by the signup trigger; never reveal account existence.
+export async function provisionSignupAddress(userId: string) {
+  const profile = await database().query("SELECT id FROM profiles WHERE id=$1 AND status='active'", [userId]);
+  if (!profile.rows.length) return null;
+  return provisionAddress(userId);
+}
+
+// Retry interrupted signups and cover older members without changing existing addresses.
+export async function provisionMissingAddress() {
+  const pending = await database().query(
+    `SELECT p.id FROM profiles p LEFT JOIN deposit_addresses a ON a.user_id=p.id
+     WHERE p.status='active' AND a.address IS NULL ORDER BY p.created_at, p.id LIMIT 1`,
+  );
+  if (!pending.rows.length) return false;
+  await provisionAddress(pending.rows[0].id);
+  return true;
 }
 export async function requestTransfer(
   userId: string,
