@@ -2855,7 +2855,6 @@ body:has(.user-page-brand) :is(.commerce, .points-page, .notifications-page) { p
 }
 
 /* Keep the member app at phone width on larger screens. */
-.wallet-promo-inline { display: none; }
 @media (min-width: 701px) {
   .wallet-layout { display: block; width: min(100%, 480px); min-height: 100dvh; margin-inline: auto; padding: 0 24px; }
   .wallet-sidebar, .wallet-aside, .wallet-header .desktop-only { display: none; }
@@ -2887,16 +2886,7 @@ body:has(.user-page-brand) :is(.commerce, .points-page, .notifications-page) { p
   .shop-grid .shop-image-link > img, .shop-grid .shop-image-link > .shop-placeholder { display: flex; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; }
   .shop-grid .shop-card > div:last-child:not(.shop-placeholder) { padding: 12px; }
   .shop-grid .shop-card-price, .shop-grid .shop-card-info h2 { font-size: 14px; overflow-wrap: anywhere; }
-  .wallet-promo-inline { display: flex; position: relative; align-items: center; justify-content: space-between; overflow: hidden; min-height: 155px; padding: 20px 24px; border-radius: 16px; background: var(--red); color: #fff; }
-  .wallet-promo-copy { position: relative; z-index: 1; display: grid; gap: 10px; }
-  .wallet-promo-copy > span { font-size: 8px; letter-spacing: 1.2px; color: #ffe3e3; }
-  .wallet-promo-copy > strong { font-size: 23px; line-height: 1.08; font-weight: 500; letter-spacing: -.7px; }
-  .wallet-promo-copy button { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 11px; }
-  .wallet-promo-art { position: relative; display: grid; place-items: center; flex: 0 0 145px; height: 120px; }
-  .wallet-promo-art .orbit { width: 145px; height: 70px; }
-  .wallet-promo-art .promo-token { width: 70px; height: 70px; }
-  .wallet-promo-art .promo-token .token { width: 60px; height: 60px; }
-  .wallet-promo-art .spark.one { top: 0; right: 0; font-size: 22px; }
+
 }
 @media (min-width: 701px) {
   .login-layout { display: block; max-width: 430px; padding: 24px; }
@@ -2909,3 +2899,16 @@ body:has(.user-page-brand) :is(.commerce, .points-page, .notifications-page) { p
   .login-form h2 { font-size: 25px; }
   .login-form .eyebrow { font-size: 8px; }
 }
+
+/* The wallet introduction is shared by mobile and desktop. */
+.wallet-promo-inline { display: flex; position: relative; align-items: center; justify-content: space-between; overflow: hidden; min-height: 155px; padding: 20px 24px; border-radius: 16px; background: var(--red); color: #fff; }
+.wallet-promo-copy { position: relative; z-index: 1; display: grid; gap: 10px; }
+.wallet-promo-copy > span { font-size: 8px; letter-spacing: 1.2px; color: #ffe3e3; }
+.wallet-promo-copy > strong { font-size: 23px; line-height: 1.08; font-weight: 500; letter-spacing: -.7px; }
+.wallet-promo-copy button { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 11px; }
+.wallet-promo-art { position: relative; display: grid; place-items: center; flex: 0 1 145px; min-width: 105px; height: 120px; }
+.wallet-promo-art .orbit { width: 145px; height: 70px; }
+.wallet-promo-art .promo-token { width: 70px; height: 70px; }
+.wallet-promo-art .promo-token .token { width: 60px; height: 60px; }
+.wallet-promo-art .spark.one { top: 0; right: 0; font-size: 22px; }
+@media (max-width: 360px) { .wallet-promo-inline { padding-inline: 16px; } .wallet-promo-art { transform: scale(.8); } }
