@@ -1,5 +1,14 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "진무 상품 구매": ["Jinmu product purchase", "ジンム商品購入"],
+  "회사 관리 지갑 주소": ["Company wallet address", "会社管理ウォレットのアドレス"],
+  "회사 지갑을 사용할 수 없습니다.": ["The company wallet is unavailable.", "会社ウォレットを利用できません。"],
+  "회사 지갑 주소를 다시 확인해 주세요.": ["Please check the company wallet address again.", "会社ウォレットのアドレスを再確認してください。"],
+  "앱 잔액에서 결제됩니다. 실제 USDT는 관리자가 별도로 모읍니다.": ["Payment is deducted from your app balance. The administrator collects the actual USDT separately.", "アプリ残高から決済されます。実際のUSDTは管理者が別途回収します。"],
+  "앱 잔액에서 차감되었으며, 실제 USDT는 관리자가 별도로 모읍니다.": ["Your app balance was deducted. The administrator collects the actual USDT separately.", "アプリ残高から差し引かれました。実際のUSDTは管理者が別途回収します。"],
+  "구매 결제 완료.": ["Purchase payment completed.", "購入の決済が完了しました。"],
+  "결제하기": ["Pay", "決済する"],
+  "진무 상품 매출": ["Jinmu product revenue", "ジンム商品売上"],
   "알림": ["Notifications", "お知らせ"],
   "공지사항": ["Announcements", "お知らせ管理"],
   "뒤로 가기": ["Go back", "戻る"],

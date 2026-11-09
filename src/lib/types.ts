@@ -6,6 +6,7 @@ export type Transaction = {
     | "transfer_out"
     | "withdrawal"
     | "purchase"
+    | "jinmu_purchase"
     | "swap_in"
     | "swap_out"
     | "refund"
@@ -30,6 +31,7 @@ export type WalletData = {
   referralCode?: string;
   reserved: string;
   address: string | null;
+  companyAddress?: string | null;
   network: string;
   fee: string;
   minimum: string;

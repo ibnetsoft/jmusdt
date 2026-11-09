@@ -43,6 +43,7 @@ export const kindLabels: Record<string, string> = {
   transfer_out: "회원에게 송금",
   withdrawal: "외부 지갑 출금",
   purchase: "쇼핑몰 상품 구매",
+  jinmu_purchase: "진무 상품 구매",
   refund: "상품 구매 환불",
   reward: "마케팅 리워드",
   reward_reversal: "취소 보상 회수·미수금",

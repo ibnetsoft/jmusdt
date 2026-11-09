@@ -557,7 +557,7 @@ function Send({
   onUpdate: () => Promise<void>;
 }) {
   const { tr } = useI18n();
-  const [kind, setKind] = useState<"internal" | "external">(initialKind),
+  const [kind, setKind] = useState<"internal" | "external" | "jinmu">(initialKind),
     [recipient, setRecipient] = useState(""),
     [amount, setAmount] = useState(""),
     [stage, setStage] = useState<"form" | "review" | "done">("form"),
@@ -569,12 +569,13 @@ function Send({
     units = parseUsdt(amount);
   } catch {}
   const fee = kind === "external" ? BigInt(data.fee) : 0n;
+  const destination = kind === "jinmu" ? data.companyAddress || "" : recipient.trim();
   function review() {
     if (!fresh) return;
     setError("");
     try {
       const value = parseUsdt(amount);
-      if (!recipient.trim()) throw new Error("받는 곳을 입력해 주세요.");
+      if (!destination) throw new Error(kind === "jinmu" ? "회사 지갑을 사용할 수 없습니다." : "받는 곳을 입력해 주세요.");
       if (
         kind === "internal" &&
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim())
@@ -603,14 +604,14 @@ function Send({
     setError("");
     try {
       if (data.mode === "demo")
-        demoSend(kind, recipient.trim(), amount, requestKey.current);
+        demoSend(kind, destination, amount, requestKey.current);
       else {
         const response = await fetch("/api/wallet/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             kind,
-            recipient: recipient.trim(),
+            recipient: destination,
             amount,
             key: requestKey.current,
           }),
@@ -636,9 +637,9 @@ function Send({
         <p className="eyebrow">
           {data.mode === "demo" ? "DEMO TRANSACTION" : "REQUEST RECEIVED"}
         </p>
-        <h1>{kind === "internal" ? tr("송금 완료.") : tr("출금 요청 완료.")}</h1>
+        <h1>{kind === "jinmu" ? tr("구매 결제 완료.") : kind === "internal" ? tr("송금 완료.") : tr("출금 요청 완료.")}</h1>
         <p>
-          {kind === "internal"
+          {kind === "jinmu" ? tr("앱 잔액에서 차감되었으며, 실제 USDT는 관리자가 별도로 모읍니다.") : kind === "internal"
             ? tr("회원 지갑으로 USDT를 보냈습니다.")
             : tr("관리자 승인 후 외부 지갑으로 전송됩니다.")}
         </p>
@@ -669,15 +670,17 @@ function Send({
                 setError("");
               }}
             >{tr("외부 지갑 출금")}</button>
+            <button className={kind === "jinmu" ? "active" : ""} onClick={() => { setKind("jinmu"); setError(""); }}>{tr("진무 상품 구매")}</button>
           </div>
           <label className="field">
             <span>
-              {kind === "internal" ? tr("받는 회원 이메일") : tr("받는 TRON 주소")}
+              {kind === "jinmu" ? tr("회사 관리 지갑 주소") : kind === "internal" ? tr("받는 회원 이메일") : tr("받는 TRON 주소")}
             </span>
             <input
               type={kind === "internal" ? "email" : "text"}
               autoComplete="off"
-              value={recipient}
+              value={kind === "jinmu" ? destination : recipient}
+              readOnly={kind === "jinmu"}
               onChange={(e) => setRecipient(e.target.value)}
               placeholder={
                 kind === "internal"
@@ -686,6 +689,7 @@ function Send({
               }
             />
           </label>
+          {kind === "jinmu" && <p className="field-hint">{tr("앱 잔액에서 결제됩니다. 실제 USDT는 관리자가 별도로 모읍니다.")}</p>}
           {data.mode === "demo" && kind === "internal" ? (
             <p className="field-hint">{tr("데모 회원: min@example.com")}</p>
           ) : null}
@@ -728,9 +732,10 @@ function Send({
           <h2>
             {formatUsdt(units, 6)} <small>USDT</small>
           </h2>
-          <p>{recipient}</p>
+          <p>{destination}</p>
+          {kind === "jinmu" && <p>{tr("앱 잔액에서 결제됩니다. 실제 USDT는 관리자가 별도로 모읍니다.")}</p>}
           <span className="network-pill">
-            {kind === "internal"
+            {kind !== "external"
               ? "INTERNAL TRANSFER"
               : `TRON · ${data.network === "nile" ? "NILE" : "TRC20"}`}
           </span>
@@ -768,7 +773,7 @@ function Send({
           ? tr("처리 중…")
           : stage === "form"
             ? tr("송금 정보 확인")
-            : kind === "internal"
+            : kind === "jinmu" ? tr("결제하기") : kind === "internal"
               ? tr("송금하기")
               : tr("출금 요청하기")}
         <ArrowUpRight size={19} />
@@ -830,7 +835,7 @@ function Activity({
     ...(history?.rewards || []).map(r => ({ id: r.id, date: r.paid_at || `${r.due_date}T00:00:00+09:00`, label: ({ referral: "추천리워드", sponsor: "후원리워드", mom: "맘리워드", daily: "데일리수당" } as Record<string, string>)[r.type] || r.type, amount: r.amount, status: ({ scheduled: "지급 예정", paid: "지급 완료", skipped: "미지급", reversed: "회수 완료", void: "권리 취소" } as Record<string, string>)[r.status] || r.status })),
     ...(history?.pools || []).map(p => ({ id: p.kind + p.cutoff, date: p.cutoff, label: p.kind === "lucky" ? "복주머니P" : "보물상자P", amount: p.amount, status: "지급 완료" })),
   ].sort((a, b) => b.date.localeCompare(a.date));
-  const transactions = data.transactions.filter(t => ["deposit", "transfer_in", "transfer_out", "withdrawal"].includes(t.kind));
+  const transactions = data.transactions.filter(t => ["deposit", "transfer_in", "transfer_out", "withdrawal", "jinmu_purchase"].includes(t.kind));
   const date = (value: string) => new Date(value).toLocaleDateString(localeTag, { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" });
   return <>
     <div className="filter-tabs history-tabs">

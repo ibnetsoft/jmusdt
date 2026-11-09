@@ -16,7 +16,7 @@ export async function walletSnapshot(profile: {
   status: string;
 }) {
   const pool = database();
-  const [balance, addresses, history, packages, grade] = await Promise.all([
+  const [balance, addresses, history, packages, grade, companyAddress] = await Promise.all([
     pool.query(
       "SELECT b.*,coalesce(p.available,0)::text AS points FROM balances b LEFT JOIN point_balances p ON p.user_id=b.user_id WHERE b.user_id=$1",
       [profile.id],
@@ -31,6 +31,7 @@ export async function walletSnapshot(profile: {
     ),
     pool.query("SELECT package_type,sum(quantity)::text AS quantity FROM shop_orders WHERE user_id=$1 AND package_type IN ('lucky','treasure') AND status IN ('paid','cancellation_requested') GROUP BY package_type", [profile.id]),
     pool.query("SELECT g.name,n.referral_code FROM profiles p JOIN member_grades g ON g.code=p.grade_code LEFT JOIN member_network n ON n.user_id=p.id WHERE p.id=$1",[profile.id]),
+    companyWalletAddress(pool),
   ]);
   const config = chainConfig();
   const address = addresses.rows[0];
@@ -45,6 +46,7 @@ export async function walletSnapshot(profile: {
     packages: { lucky: packages.rows.find((p) => p.package_type === "lucky")?.quantity || "0", treasure: packages.rows.find((p) => p.package_type === "treasure")?.quantity || "0" },
     reserved: balance.rows[0]?.reserved || "0",
     address: address?.address || null,
+    companyAddress: companyAddress || null,
     network: config.network,
     fee: feeUnits().toString(),
     minimum: parseUsdt(process.env.MIN_WITHDRAWAL_USDT || "10").toString(),
@@ -109,6 +111,14 @@ export async function requestTransfer(
     "SELECT wallet_transfer($1,$2,$3,$4) AS id",
     [userId, recipient, units.toString(), key],
   );
+  return result.rows[0];
+}
+export async function requestJinmuPurchase(userId: string, expectedAddress: string, amount: string, key: string) {
+  await ensureChainBinding();
+  const address = await companyWalletAddress();
+  if (!address || !validTronAddress(address) || expectedAddress !== address)
+    throw new HttpError(409, "회사 지갑 주소를 다시 확인해 주세요.");
+  const result = await database().query("SELECT wallet_jinmu_purchase($1,$2,$3,$4,$5) AS id", [userId, address, chainConfig().network, parseUsdt(amount).toString(), key]);
   return result.rows[0];
 }
 export async function requestWithdrawal(

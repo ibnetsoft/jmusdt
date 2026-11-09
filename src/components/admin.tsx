@@ -64,6 +64,7 @@ export function AdminApp() {
       liability: string;
       fees: string;
       shopRevenue: string;
+      jinmuRevenue: string;
       marketingReserve: string;
       rewardDebt: string;
       difference: string;
@@ -730,6 +731,10 @@ export function AdminApp() {
                               {formatUsdt(reconciliation.rewardDebt || "0", 6)}{" "}
                               USDT
                             </dd>
+                          </div>
+                          <div>
+                            <dt>{tr("진무 상품 매출")}</dt>
+                            <dd>{formatUsdt(reconciliation.jinmuRevenue || "0", 6)} USDT</dd>
                           </div>
                           <div>
                             <dt>{tr("쇼핑몰 매출 (USDT 환산)")}</dt>

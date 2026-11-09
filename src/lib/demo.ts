@@ -10,6 +10,7 @@ export const demoWallet: WalletData = {
   available: "12840500000",
   reserved: "250000000",
   address: null,
+  companyAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
   network: "TRON · 데모",
   fee: "1000000",
   minimum: "10000000",

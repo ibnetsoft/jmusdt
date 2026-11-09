@@ -2910,3 +2910,6 @@ body:has(.user-page-brand) :is(.commerce, .points-page, .notifications-page) { p
 .wallet-promo-art .promo-token .token { width: 60px; height: 60px; }
 .wallet-promo-art .spark.one { top: 0; right: 0; font-size: 22px; }
 @media (max-width: 360px) { .wallet-promo-inline { padding-inline: 16px; } .wallet-promo-art { transform: scale(.8); } }
+
+/* Keep all three transfer choices readable on a phone. */
+.send-view .segmented button { min-width: 0; padding-inline: 4px; word-break: keep-all; }

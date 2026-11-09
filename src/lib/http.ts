@@ -96,6 +96,8 @@ export async function api(run: () => Promise<unknown>) {
         { error: "이미 처리되었거나 요청 내용이 변경되었습니다." },
         { status: 409 },
       );
+    if (message.includes("COMPANY_ADDRESS_CHANGED"))
+      return NextResponse.json({ error: "회사 지갑 주소를 다시 확인해 주세요." }, { status: 409 });
     if (message.includes("ACCOUNT_BLOCKED"))
       return NextResponse.json(
         { error: "이용이 제한된 계정입니다." },

@@ -11,7 +11,7 @@ export async function GET() {
     const hot = await companyWalletAddress(pool);
     if (!contract || !hot || !validTronAddress(hot))
       throw new HttpError(503, "토큰과 핫월렛 주소를 설정해 주세요.");
-    const [accounts, liability, fees, revenue, marketing] = await Promise.all([
+    const [accounts, liability, fees, revenue, marketing, jinmuRevenue] = await Promise.all([
       pool.query(
         "SELECT address FROM deposit_addresses WHERE network=$1 AND address IS NOT NULL",
         [network],
@@ -28,6 +28,7 @@ export async function GET() {
       pool.query(
         "SELECT (SELECT coalesce(sum(units),0)::text FROM journal WHERE account IN ('marketing:reserve','daily:pool_reserve') AND asset='POINT') AS reserve,(SELECT coalesce(sum(outstanding),0)::text FROM marketing_debts) AS debt",
       ),
+      pool.query("SELECT COALESCE(sum(units),0)::text AS units FROM journal WHERE account='company:jinmu_sales' AND asset='USDT'"),
     ]);
     if (accounts.rows.length > 500)
       throw new HttpError(
@@ -59,6 +60,7 @@ export async function GET() {
       BigInt(liability.rows[0].units) +
       BigInt(fees.rows[0].units) +
       BigInt(revenue.rows[0].units) +
+      BigInt(jinmuRevenue.rows[0].units) +
       BigInt(marketing.rows[0].reserve) -
       BigInt(marketing.rows[0].debt);
     return {
@@ -66,6 +68,7 @@ export async function GET() {
       liability: liability.rows[0].units,
       fees: fees.rows[0].units,
       shopRevenue: revenue.rows[0].units,
+      jinmuRevenue: jinmuRevenue.rows[0].units,
       marketingReserve: marketing.rows[0].reserve,
       rewardDebt: marketing.rows[0].debt,
       difference: (onchain - expected).toString(),

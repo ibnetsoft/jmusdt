@@ -40,7 +40,7 @@ export function resetDemo() {
   window.dispatchEvent(new Event("jmusdt-demo"));
 }
 export function demoSend(
-  kind: "internal" | "external",
+  kind: "internal" | "external" | "jinmu",
   recipient: string,
   amount: string,
   key: string,
@@ -68,10 +68,10 @@ export function demoSend(
   const entry = {
     id: key,
     kind:
-      kind === "internal" ? ("transfer_out" as const) : ("withdrawal" as const),
+      kind === "internal" ? ("transfer_out" as const) : kind === "jinmu" ? ("jinmu_purchase" as const) : ("withdrawal" as const),
     amount: units.toString(),
     fee: fee.toString(),
-    status: kind === "internal" ? "completed" : "pending",
+    status: kind === "external" ? "pending" : "completed",
     destination: recipient,
     created_at: new Date().toISOString(),
     email: user.email,
