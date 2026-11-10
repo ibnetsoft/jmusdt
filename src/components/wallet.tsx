@@ -689,7 +689,6 @@ function Send({
               }
             />
           </label>
-          {kind === "jinmu" && <p className="field-hint">{tr("앱 잔액에서 결제됩니다. 실제 USDT는 관리자가 별도로 모읍니다.")}</p>}
           {data.mode === "demo" && kind === "internal" ? (
             <p className="field-hint">{tr("데모 회원: min@example.com")}</p>
           ) : null}
@@ -733,7 +732,6 @@ function Send({
             {formatUsdt(units, 6)} <small>USDT</small>
           </h2>
           <p>{destination}</p>
-          {kind === "jinmu" && <p>{tr("앱 잔액에서 결제됩니다. 실제 USDT는 관리자가 별도로 모읍니다.")}</p>}
           <span className="network-pill">
             {kind !== "external"
               ? "INTERNAL TRANSFER"

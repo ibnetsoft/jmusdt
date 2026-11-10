@@ -6,6 +6,7 @@ import { assertInternalCustodyReady } from "@/lib/internal-custody";
 import {
   sweepDashboard,
   previewSweeps,
+  previewJinmuSweeps,
   approveSweeps,
   cancelSweep,
   sweepRuntime,
@@ -68,6 +69,10 @@ const input = z.discriminatedUnion("action", [
       .refine((a) => new Set(a).size === a.length),
   }),
   z.object({
+    action: z.literal("review_jinmu"),
+    userIds: z.array(z.string().uuid()).min(1).max(10).refine((a) => new Set(a).size === a.length),
+  }),
+  z.object({
     action: z.literal("approve"),
     reviewId: z.string().uuid(),
     token: z.string().regex(/^[0-9a-f]{64}$/),
@@ -102,8 +107,9 @@ export async function POST(request: Request) {
         "회수 대상·확인 문구·사유·한도를 확인해 주세요.",
       );
     const p = parsed.data;
-    const { user } = await identity(true, p.action !== "review");
+    const { user } = await identity(true, p.action !== "review" && p.action !== "review_jinmu");
     if (p.action === "review") return previewSweeps(user.id, p.userIds);
+    if (p.action === "review_jinmu") return previewJinmuSweeps(user.id, p.userIds);
     if (p.action === "approve")
       return approveSweeps(p.reviewId, p.token, user.id, p.reason);
     return transaction(async (db) => {

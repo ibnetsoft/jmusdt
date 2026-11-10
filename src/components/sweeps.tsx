@@ -45,9 +45,12 @@ type Job = {
   legacy_payload: boolean;
   created_at: string;
   updated_at: string;
+  purpose: "general" | "jinmu";
+  jinmu_amount: string;
 };
 type Data = {
   wallets: Wallet[];
+  jinmu?: { sales: string; collected: string; reserved: string; available: string };
   settings: Settings;
   config: {
     network: string;
@@ -67,6 +70,7 @@ type Data = {
 type Review = {
   id: string;
   token: string;
+  purpose: "general" | "jinmu";
   network: string;
   company: string;
   companyTrx: string;
@@ -273,6 +277,12 @@ export function Sweeps() {
           <div className="sweep-workspace">
           <section className="sweep-column sweep-collection">
             <div className="sweep-section-heading"><ArrowDownLeft size={17} aria-hidden="true" /><h2>{tr("회원 지갑에서 회사 지갑으로 모으기")}</h2><span className="sweep-badge">TRON TRC20</span></div>
+          <section className="jinmu-sweep-summary" aria-label={tr("진무 구매금 모으기")}>
+            <h3>{tr("진무 구매금 모으기")}</h3>
+            <p>{tr("총 구매금")} {displayAmount(data.jinmu?.sales, "USDT")} · {tr("회수 완료")} {displayAmount(data.jinmu?.collected, "USDT")}</p>
+            <p>{tr("회수 진행 중")} {displayAmount(data.jinmu?.reserved, "USDT")} · <strong>{tr("회수 가능 구매금")} {displayAmount(data.jinmu?.available, "USDT")}</strong></p>
+            <p className="shop-muted">{tr("일반 모으기에서도 미회수 진무 구매금부터 반영됩니다. 회원 지갑을 선택하면 구매금 한도 내에서 검토합니다.")}</p>
+          </section>
           <form
             className="shop-section-head sweep-search"
             onSubmit={(e) => {
@@ -366,6 +376,13 @@ export function Sweeps() {
             >{tr("다음")}</button>
           </div>
           <div className="shop-section-head sweep-actions">
+            <button
+              disabled={busy || scanning || !selected.length || !data.jinmu || BigInt(data.jinmu.available) <= 0n}
+              onClick={async () => {
+                const d = await act({ action: "review_jinmu", userIds: selected });
+                if (d) { setReview(d); setReason(""); setConfirmation(""); }
+              }}
+            >{busy ? tr("처리 중…") : tr("선택 지갑으로 진무 구매금 모으기 검토")}</button>
             <button
               disabled={busy || scanning || !eligible.length}
               onClick={() => {
@@ -485,7 +502,7 @@ export function Sweeps() {
       )}
       {review && (
         <section className="shop-editor" aria-label={tr("회수 최종 검토")}>
-          <h2>{tr("일괄 회수 최종 검토")}</h2>
+          <h2>{tr(review.purpose === "jinmu" ? "진무 구매금 모으기 최종 검토" : "일괄 회수 최종 검토")}</h2>
           <p>{tr("네트워크 ")}{review.network}{tr(" · 수신 회사 지갑 ")}{review.company}
           </p>
           <p>{tr("검토 만료")}{" "}
@@ -573,13 +590,13 @@ export function Sweeps() {
       {data?.jobs.map((j) => (
         <article className="shop-editor" key={j.id}>
           <h3>
-            {j.email} · {tr(statusLabels[j.status]) || j.status}
+            {j.email} · {tr(j.purpose === "jinmu" ? "진무 구매금 모으기" : "일반 모으기")} · {tr(statusLabels[j.status]) || j.status}
           </h3>
           <p>
             {j.source || tr("기존 요청")} → {j.destination || tr("기존 회사 지갑")}
           </p>
           <p>
-            {displayAmount(j.amount, "USDT")}{tr(" · 보충 상한 ")}{displayAmount(j.max_topup, "TRX")}
+            {displayAmount(j.amount, "USDT")}{tr(" · 보충 상한 ")}{displayAmount(j.max_topup, "TRX")} · {tr("진무 구매금 반영")} {displayAmount(j.jinmu_amount, "USDT")}
           </p>
           <p>
             TRX TX {txLink(j.gas_txid, j.network || data.config.network)} ·{" "}

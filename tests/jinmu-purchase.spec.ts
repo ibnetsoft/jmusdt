@@ -14,7 +14,7 @@ test('Jinmu purchase displays the fixed company address and submits an internal 
  await page.getByRole('textbox',{name:'송금 금액'}).fill('10');
  await expect(page.getByRole('button',{name:'송금 정보 확인'})).toBeEnabled();
  await page.getByRole('button',{name:'송금 정보 확인'}).click();
- await expect(page.getByText('앱 잔액에서 결제됩니다. 실제 USDT는 관리자가 별도로 모읍니다.')).toBeVisible();
+ await expect(page.getByText('앱 잔액에서 결제됩니다. 실제 USDT는 관리자가 별도로 모읍니다.')).toHaveCount(0);
  await page.getByRole('button',{name:'결제하기'}).click();
  await expect(page.getByText('구매 결제 완료.')).toBeVisible();
  expect(submitted).toMatchObject({kind:'jinmu',recipient:company,amount:'10'});

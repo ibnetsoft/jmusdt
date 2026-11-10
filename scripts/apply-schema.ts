@@ -53,6 +53,7 @@ try {
   await client.query(await readFile(new URL("../supabase/migrations/20261030060612_company_wallet_transfers.sql", import.meta.url), "utf8"));
   await client.query(await readFile(new URL("../supabase/migrations/20261102124029_announcements.sql", import.meta.url), "utf8"));
   await client.query(await readFile(new URL("../supabase/migrations/20261109000000_jinmu_purchase.sql", import.meta.url), "utf8"));
+  await client.query(await readFile(new URL("../supabase/migrations/20261110000000_jinmu_sweeps.sql", import.meta.url), "utf8"));
   await client.query("COMMIT");
   console.log("Wallet schema applied.");
 } catch (error) {

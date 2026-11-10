@@ -1,5 +1,17 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "진무 구매금 모으기": ["Collect Jinmu purchase funds", "ジンム購入代金の回収"],
+  "총 구매금": ["Total purchases", "購入総額"],
+  "회수 가능 구매금": ["Purchase funds available to collect", "回収可能な購入代金"],
+  "회수 진행 중": ["Collection in progress", "回収処理中"],
+  "일반 모으기에서도 미회수 진무 구매금부터 반영됩니다. 회원 지갑을 선택하면 구매금 한도 내에서 검토합니다.": ["Regular collections are allocated to outstanding Jinmu purchases first. Select member wallets to review a collection within that limit.", "通常の回収でも未回収のジンム購入代金から優先的に充当します。会員ウォレットを選択して購入代金の範囲内で確認できます。"],
+  "선택 지갑으로 진무 구매금 모으기 검토": ["Review Jinmu collection from selected wallets", "選択ウォレットからジンム購入代金の回収を確認"],
+  "진무 구매금 모으기 최종 검토": ["Final review of Jinmu collection", "ジンム購入代金回収の最終確認"],
+  "일반 모으기": ["Regular collection", "通常の回収"],
+  "진무 구매금 반영": ["Allocated to Jinmu purchases", "ジンム購入代金への充当"],
+  "회수할 진무 구매 금액이 없습니다.": ["There are no Jinmu purchase funds to collect.", "回収するジンム購入代金はありません。"],
+  "선택한 지갑에서 회수할 수 있는 USDT가 없습니다.": ["There is no USDT available to collect from the selected wallets.", "選択したウォレットに回収可能なUSDTがありません。"],
+  "진무 구매 회수 내역을 확인하세요.": ["Check the Jinmu collection records.", "ジンム購入代金の回収記録を確認してください。"],
   "진무 상품 구매": ["Jinmu product purchase", "ジンム商品購入"],
   "회사 관리 지갑 주소": ["Company wallet address", "会社管理ウォレットのアドレス"],
   "회사 지갑을 사용할 수 없습니다.": ["The company wallet is unavailable.", "会社ウォレットを利用できません。"],

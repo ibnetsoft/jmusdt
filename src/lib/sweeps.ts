@@ -79,6 +79,16 @@ export function verifyReviewToken(
   )
     throw new SweepError("검토 인증이 올바르지 않습니다. 다시 검토하세요.");
 }
+export async function jinmuSweepTotals() {
+  const result = await database().query(`SELECT
+    (SELECT COALESCE(sum(amount),0)::text FROM transactions WHERE kind='jinmu_purchase' AND status='completed' AND asset='USDT') AS sales,
+    (SELECT COALESCE(sum(jinmu_amount),0)::text FROM sweep_jobs WHERE status='completed') AS collected,
+    (SELECT COALESCE(sum(jinmu_amount),0)::text FROM sweep_jobs WHERE status IN ('requested','gas_funding','gas_confirmed','signing','broadcast','needs_review')) AS reserved`);
+  const {sales, collected, reserved} = result.rows[0];
+  const available = BigInt(sales) - BigInt(collected) - BigInt(reserved);
+  if (available < 0n) throw new SweepError("진무 구매 회수 내역을 확인하세요.");
+  return { sales, collected, reserved, available: available.toString() };
+}
 export async function sweepDashboard(
   page: number,
   q: string,
@@ -88,7 +98,7 @@ export async function sweepDashboard(
 ) {
   const db = database(),
     c = sweepRuntime(await companyWalletAddress(db));
-  const [settings, rows, count, jobs, jobCount, health] = await Promise.all([
+  const [settings, rows, count, jobs, jobCount, health, jinmu] = await Promise.all([
     db.query("SELECT * FROM sweep_settings WHERE id=true"),
     db.query(
       "SELECT a.user_id,a.address,a.derivation_index,p.email,p.name,p.status FROM deposit_addresses a JOIN profiles p ON p.id=a.user_id WHERE a.network=$1 AND a.address IS NOT NULL AND ($2='' OR p.email ILIKE '%'||$2||'%' OR p.name ILIKE '%'||$2||'%' OR a.address ILIKE '%'||$2||'%') ORDER BY a.user_id LIMIT 10 OFFSET $3",
@@ -99,7 +109,7 @@ export async function sweepDashboard(
       [c.network, q],
     ),
     db.query(
-      "SELECT j.id,j.user_id,p.email,j.status,j.network,j.source,j.destination,j.amount,j.max_topup,j.fee_limit,j.note,j.created_at,j.updated_at,j.review_id,j.txid AS legacy_txid,j.payload IS NOT NULL AS legacy_payload,g.txid AS gas_txid,g.status AS gas_status,t.txid AS token_txid,t.status AS token_status FROM sweep_jobs j JOIN profiles p ON p.id=j.user_id LEFT JOIN sweep_outbox g ON g.job_id=j.id AND g.phase='gas' LEFT JOIN sweep_outbox t ON t.job_id=j.id AND t.phase='token' ORDER BY j.created_at DESC,j.id LIMIT 50 OFFSET $1",
+      "SELECT j.id,j.user_id,p.email,j.status,j.network,j.source,j.destination,j.amount,j.max_topup,j.fee_limit,j.note,j.purpose,j.jinmu_amount,j.created_at,j.updated_at,j.review_id,j.txid AS legacy_txid,j.payload IS NOT NULL AS legacy_payload,g.txid AS gas_txid,g.status AS gas_status,t.txid AS token_txid,t.status AS token_status FROM sweep_jobs j JOIN profiles p ON p.id=j.user_id LEFT JOIN sweep_outbox g ON g.job_id=j.id AND g.phase='gas' LEFT JOIN sweep_outbox t ON t.job_id=j.id AND t.phase='token' ORDER BY j.created_at DESC,j.id LIMIT 50 OFFSET $1",
       [(historyPage - 1) * 50],
     ),
     db.query("SELECT count(*)::int AS count FROM sweep_jobs"),
@@ -107,6 +117,7 @@ export async function sweepDashboard(
       "SELECT last_seen,last_error FROM sweep_worker_health WHERE network=$1",
       [c.network],
     ),
+    jinmuSweepTotals(),
   ]);
   let companyTrx: string | null = null,
     companyError = "";
@@ -124,6 +135,7 @@ export async function sweepDashboard(
       for (const w of wallets) w.error = "토큰 검증 실패: 다시 조회하세요.";
       return {
         settings: settings.rows[0],
+        jinmu,
         config: c,
         wallets,
         count: count.rows[0].count,
@@ -156,6 +168,7 @@ export async function sweepDashboard(
   }
   return {
     settings: settings.rows[0],
+    jinmu,
     config: c,
     wallets,
     count: count.rows[0].count,
@@ -170,6 +183,7 @@ export async function previewSweeps(
   actor: string,
   userIds: string[],
   chain = new SweepChain(),
+  targetAmount?: bigint,
 ) {
   const c = sweepRuntime(await companyWalletAddress());
   if (!c.contract || !validTronAddress(c.company))
@@ -194,8 +208,11 @@ export async function previewSweeps(
   const expires = new Date(Date.now() + 300000),
     items: SweepItem[] = [];
   let totalFunding = 0n,
-    totalCompanyFees = 0n;
+    totalCompanyFees = 0n,
+    remaining = targetAmount;
+  if (remaining !== undefined && remaining <= 0n) throw new SweepError("회수할 진무 구매 금액이 없습니다.");
   for (const userId of userIds) {
+    if (remaining === 0n) break;
     const a = (
       await database().query(
         "SELECT * FROM deposit_addresses WHERE user_id=$1 AND network=$2 AND address IS NOT NULL",
@@ -215,9 +232,12 @@ export async function previewSweeps(
       ).rows.length
     )
       throw new SweepError("선택한 회원 지갑에 진행 중인 요청이 있습니다.");
-    const amount = (await chain.token(a.address)).toString();
+    const available = await chain.token(a.address);
+    if (available === 0n && remaining !== undefined) continue;
+    const amount = (remaining !== undefined && available > remaining ? remaining : available).toString();
     if (BigInt(amount) === 0n)
       throw new SweepError("선택한 지갑의 확정 USDT 잔액이 0입니다.");
+    if (remaining !== undefined) remaining -= BigInt(amount);
     if (BigInt(amount) > 9223372036854775807n)
       throw new SweepError("회수 수량이 지원 한도를 초과합니다.");
     const source = await chain.trx(a.address),
@@ -247,6 +267,7 @@ export async function previewSweeps(
       companyFee: estimate.companyFee,
     });
   }
+  if (!items.length) throw new SweepError("선택한 지갑에서 회수할 수 있는 USDT가 없습니다.");
   if (
     BigInt(company.amount) <
     BigInt(s.company_reserve) + totalFunding + totalCompanyFees
@@ -256,7 +277,7 @@ export async function previewSweeps(
     );
   const r = (
     await database().query<ReviewRow>(
-      "INSERT INTO sweep_reviews(actor,network,contract,company,settings_version,items,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+      "INSERT INTO sweep_reviews(actor,network,contract,company,settings_version,items,expires_at,purpose) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *",
       [
         actor,
         c.network,
@@ -265,11 +286,13 @@ export async function previewSweeps(
         s.version,
         JSON.stringify(items),
         expires,
+        targetAmount === undefined ? "general" : "jinmu",
       ],
     )
   ).rows[0];
   return {
     id: r.id,
+    purpose: targetAmount === undefined ? "general" : "jinmu",
     token: reviewToken(r),
     items,
     network: c.network,
@@ -282,6 +305,10 @@ export async function previewSweeps(
     issues: c.issues,
     enabled: s.enabled,
   };
+}
+export async function previewJinmuSweeps(actor: string, userIds: string[]) {
+  const totals = await jinmuSweepTotals();
+  return previewSweeps(actor, userIds, new SweepChain(), BigInt(totals.available));
 }
 export async function approveSweeps(
   id: string,

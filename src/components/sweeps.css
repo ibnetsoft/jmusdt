@@ -33,3 +33,7 @@
 .sweep-page td input {
   width: auto;
 }
+
+.jinmu-sweep-summary { margin: 16px 0; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-base); }
+.jinmu-sweep-summary h3 { margin: 0 0 10px; }
+.jinmu-sweep-summary p { margin: 7px 0; line-height: 1.5; }
