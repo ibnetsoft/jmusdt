@@ -24,7 +24,7 @@ export type Transaction = {
 };
 export type WalletData = {
   mode: "demo" | "live";
-  user: { id: string; email: string; name: string; status: string; gradeName?: string };
+  user: { id: string; email: string; name: string; status: string; gradeName?: string; avatarVersion?: string | null; demoAvatar?: string };
   available: string;
   points?: string;
   packages?: { lucky: string; treasure: string };

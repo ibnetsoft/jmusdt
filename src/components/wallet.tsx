@@ -25,13 +25,15 @@ import {
   Plus,
   Check,
   UserRound,
+  Camera,
   X,
   Download,
   ExternalLink,
 } from "lucide-react";
 import type { WalletData, Transaction } from "@/lib/types";
-import { demoSnapshot, demoSend, resetDemo } from "@/lib/demo-store";
+import { demoSnapshot, demoSend, resetDemo, setDemoAvatar } from "@/lib/demo-store";
 import { parseUsdt, formatUsdt, decimalUsdt } from "@/lib/money";
+import { prepareProfilePhoto } from "@/lib/prepare-profile-photo";
 import {
   ActivityList,
   Brand,
@@ -60,7 +62,31 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
     [toast, setToast] = useState(""),
     [hidden, setHidden] = useState(false),
     [selected, setSelected] = useState<Transaction | null>(null),
-    [install, setInstall] = useState<InstallEvent | null>(null);
+    [install, setInstall] = useState<InstallEvent | null>(null),
+    [avatarBusy, setAvatarBusy] = useState(false);
+  const avatarInput = useRef<HTMLInputElement>(null);
+  async function uploadAvatar(file: File) {
+    if (!data || avatarBusy) return;
+    const generation = getAuthGeneration(), accountId = data.user.id;
+    setAvatarBusy(true);
+    try {
+      const image = await prepareProfilePhoto(file);
+      if (generation !== getAuthGeneration()) return;
+      if (data.mode === "demo") { await setDemoAvatar(image); setData(demoSnapshot()); }
+      else {
+        const form = new FormData(); form.append("file", image, "avatar.webp"); form.append("accountId", accountId);
+        const response = await fetch("/api/profile/avatar", {method:"POST", body:form});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+        if (generation !== getAuthGeneration()) return;
+        await refresh();
+        if (generation !== getAuthGeneration()) return;
+        setData(current => current?.user.id === accountId ? {...current, user:{...current.user, avatarVersion:result.version}} : current);
+      }
+      setToast("프로필 사진을 변경했습니다.");
+    } catch (error) { setToast(error instanceof Error ? error.message : "프로필 사진을 변경하지 못했습니다."); }
+    finally { setAvatarBusy(false); }
+  }
   useEffect(() => {
     try {
       if (location.pathname === "/" && sessionStorage.getItem("wu-returning-from-notifications") === "1") {
@@ -106,7 +132,7 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
       const authChanged = lastAuthGeneration !== getAuthGeneration();
       lastAuthGeneration = getAuthGeneration();
       if (authChanged) { latestLoaded.current = false; refreshOk.current = false; setData(null); setFresh(false); }
-      if (cached && !latestLoaded.current) setData(cached);
+      if (cached && !latestLoaded.current) setData(cached.mode === "demo" ? demoSnapshot() : cached);
     };
     const unsubscribe = subscribeVerifiedPageData(fromCache);
     fromCache();
@@ -261,6 +287,9 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
                     <span title={tr("회원등급")}><Award size={18} aria-label={tr("회원등급")} />{tr(data.user.gradeName || "일반회원")}</span>
                     <span title={tr("복주머니")}><LuckyBagIcon label={tr("복주머니")} />{data.packages?.lucky ?? "0"}</span>
                     <span title={tr("보물상자")}><TreasureChestIcon label={tr("보물상자")} />{data.packages?.treasure ?? "0"}</span>
+                    <button className="wallet-profile-avatar" type="button" onClick={() => setView("settings")} aria-label={tr("프로필 설정")} title={tr("프로필 설정")}>
+                      <ProfilePortrait data={data} size={18} />
+                    </button>
                   </div>
                 </section>
                 <div className="quick-actions">
@@ -303,9 +332,11 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
             {view === "settings" ? (
               <>
                 <section className="settings-profile">
-                  <span className="profile-avatar large" aria-hidden="true">
-                    <UserRound size={32} strokeWidth={2.4} />
-                  </span>
+                  <button className="profile-avatar large profile-avatar-edit" type="button" disabled={preview || avatarBusy} onClick={() => avatarInput.current?.click()} aria-label={tr("프로필 사진 변경")} title={tr("프로필 사진 변경")}>
+                    <ProfilePortrait data={data} size={32} />
+                    <span className="profile-avatar-camera" aria-hidden="true"><Camera size={12} /></span>
+                  </button>
+                  <input ref={avatarInput} type="file" accept="image/*" hidden onChange={(event) => { const file=event.currentTarget.files?.[0]; event.currentTarget.value=""; if (file) void uploadAvatar(file); }} />
                   <div className="settings-profile-details">
                     <h2>{data.user.name}</h2>
                     <p className="settings-profile-email">
@@ -405,6 +436,11 @@ export function WalletApp({initialView = "home", preview = false}: {initialView?
       ) : null}
     </div>
   );
+}
+function ProfilePortrait({data,size}: {data: WalletData; size: number}) {
+  const source = data.mode === "demo" ? data.user.demoAvatar || "" : data.user.avatarVersion ? `/api/profile/avatar?v=${encodeURIComponent(data.user.avatarVersion)}` : "";
+  const [failedSource, setFailedSource] = useState("");
+  return source && failedSource !== source ? <img src={source} alt="" onError={() => setFailedSource(source)} /> : <UserRound size={size} strokeWidth={2.4} aria-hidden="true" />;
 }
 function ReferralCard({code,onNotice}: {code?: string;onNotice:(text:string)=>void}) {
   const { tr } = useI18n();

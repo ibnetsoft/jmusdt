@@ -3,6 +3,14 @@ import { demoAdmin, demoWallet } from "./demo";
 import type { AdminData, WalletData } from "./types";
 import { parseUsdt } from "./money";
 const KEY = "jmusdt.demo.v1";
+const AVATAR_KEY = "wu.demo.avatar";
+export async function setDemoAvatar(image: Blob) {
+  const data = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader(); reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("이미지를 읽을 수 없습니다.")); reader.onerror = () => reject(new Error("이미지를 읽을 수 없습니다.")); reader.readAsDataURL(image);
+  });
+  localStorage.setItem(AVATAR_KEY, data);
+  window.dispatchEvent(new Event("jmusdt-demo"));
+}
 export function readDemo(): AdminData {
   try {
     const saved = localStorage.getItem(KEY);
@@ -31,12 +39,13 @@ export function demoSnapshot(): WalletData {
     ...demoWallet,
     available: user.available,
     reserved: user.reserved,
-    user: { ...demoWallet.user, status: user.status },
+    user: { ...demoWallet.user, status: user.status, demoAvatar: localStorage.getItem(AVATAR_KEY) || "" },
     transactions: store.transactions.filter((t) => t.email === user.email),
   };
 }
 export function resetDemo() {
   localStorage.removeItem(KEY);
+  localStorage.removeItem(AVATAR_KEY);
   window.dispatchEvent(new Event("jmusdt-demo"));
 }
 export function demoSend(

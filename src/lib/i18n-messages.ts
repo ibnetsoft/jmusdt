@@ -1,5 +1,12 @@
 // Application-owned copy only. User names, addresses, amounts and form values are not translated.
 export const messages: Record<string, readonly [english: string, japanese: string]> = {
+  "계정이 변경되었습니다. 다시 시도해 주세요.": ["Your account changed. Please try again.", "アカウントが変更されました。もう一度お試しください。"],
+  "이미지는 20MB 이하로 선택해 주세요.": ["Choose an image of 20 MB or less.", "20MB以下の画像を選択してください。"],
+  "프로필 사진 변경": ["Change profile photo", "プロフィール写真を変更"],
+  "프로필 설정": ["Profile settings", "プロフィール設定"],
+  "프로필 사진을 변경했습니다.": ["Profile photo updated.", "プロフィール写真を変更しました。"],
+  "프로필 사진을 변경하지 못했습니다.": ["Could not update profile photo.", "プロフィール写真を変更できませんでした。"],
+  "이미지를 읽을 수 없습니다. JPG, PNG, WebP 등의 정지 이미지를 선택해 주세요.": ["Could not read the image. Choose a still image such as JPG, PNG, or WebP.", "画像を読み込めません。JPG、PNG、WebPなどの静止画像を選択してください。"],
   "진무 구매금 모으기": ["Collect Jinmu purchase funds", "ジンム購入代金の回収"],
   "총 구매금": ["Total purchases", "購入総額"],
   "회수 가능 구매금": ["Purchase funds available to collect", "回収可能な購入代金"],
